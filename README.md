@@ -1,8 +1,11 @@
 # sf6-battlegraph
 
 [![Deploy](https://github.com/dyoshimitsu/sf6-battlegraph/actions/workflows/pages.yml/badge.svg)](https://github.com/dyoshimitsu/sf6-battlegraph/actions/workflows/pages.yml)
+[![Release](https://img.shields.io/github/v/release/dyoshimitsu/sf6-battlegraph)](https://github.com/dyoshimitsu/sf6-battlegraph/releases/latest)
 
 **[Live demo](https://dyoshimitsu.github.io/sf6-battlegraph/)**
+
+安定版Chrome拡張は[最新のGitHub Release](https://github.com/dyoshimitsu/sf6-battlegraph/releases/latest)からダウンロードできます。変更履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
 
 ![SF6 Battlegraph](docs/social-preview.svg)
 
@@ -15,7 +18,7 @@ Buckler で参照できる対戦履歴には件数上限があるため、定期
 
 ## Status
 
-Chrome拡張からBucklerの総合履歴を直接取得し、検証、`replay_id`による重複排除、対象プレイヤー基準の正規化、Firestore同期までをボタン一回で実行できます。保存後は期間・実際の対戦モード・使用キャラクターによる絞り込み、全期間の戦績集計、直近14日の日別記録、キャラクター別のランクマッチにおけるLP/MR直近100試合を表示します。LP/MRの初期対象は、最新のランクマッチで使用したキャラクターです。
+`v1.0.0`を初回安定版として公開しています。Chrome拡張からBucklerの総合履歴を直接取得し、検証、`replay_id`による重複排除、対象プレイヤー基準の正規化、Firestore同期までをボタン一回で実行できます。保存後は期間・実際の対戦モード・使用キャラクターによる絞り込み、全期間の戦績集計、直近14日の日別記録、キャラクター別のランクマッチにおけるLP/MR直近100試合を表示します。LP/MRの初期対象は、最新のランクマッチで使用したキャラクターです。
 
 現在のデフォルト対象はユーザーコード`1134991793`です。環境変数を変更すれば、cloneした利用者が自身のユーザーコードとFirebaseプロジェクトでセルフホストできます。
 

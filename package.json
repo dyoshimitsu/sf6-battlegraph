@@ -1,7 +1,7 @@
 {
   "name": "sf6-battlegraph",
   "private": true,
-  "version": "0.2.5",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=20.19.0"

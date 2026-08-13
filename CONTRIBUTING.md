@@ -46,3 +46,12 @@ npm run test:rules
 - コミットメッセージは`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`などのConventional Commit形式を使う
 - push、公開、デプロイは明示的な依頼がある場合だけ行う
 - コミット前に秘密情報や個人のバトルログが含まれていないことを確認する
+
+## Releases
+
+- アプリとChrome拡張は同じSemantic Versionを使用し、`package.json`、`package-lock.json`、`extension/manifest.json`を同時に更新する
+- 安定版タグは`v<major>.<minor>.<patch>`形式の注釈付きGitタグとする
+- 利用者に影響する変更は`CHANGELOG.md`へ記録する
+- release前に`npm run check`、`npm test`、`npm run typecheck`、`npm run build`を実行する
+- GitHub Releaseには同じバージョンの`sf6-battlegraph-connector-v<version>.zip`を添付する
+- タグとReleaseは、対象コミットの`verify`が成功した後に公開する
