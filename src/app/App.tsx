@@ -122,6 +122,8 @@ export function App() {
       : adminAuth.state.status === "signedOut" ? t("firebaseSignedOut")
         : adminAuth.state.status === "admin" ? t("syncReady")
           : adminAuth.state.status === "notAdmin" ? t("notAdmin") : t("firebaseError");
+  const latestMatch = imported?.preview.matches[0];
+  const playerName = latestMatch?.subject.player.fighter_id ?? t("unknownPlayer");
 
   useEffect(() => {
     if (firebaseRuntime.status !== "ready" || (deploymentConfig.visibility !== "public" && adminAuth.state.status !== "admin") || imported !== null) return;
@@ -187,6 +189,18 @@ export function App() {
     setAutoSyncPending(false);
     void synchronize();
   }, [adminAuth.state.status, autoSyncPending, imported]);
+
+  useEffect(() => {
+    if (!syncMessage || syncProgress?.phase !== "complete") return;
+    const timeout = window.setTimeout(() => setSyncMessage(null), 6_000);
+    return () => window.clearTimeout(timeout);
+  }, [syncMessage, syncProgress?.phase]);
+
+  useEffect(() => {
+    if (!restoreProgress || isRestoring) return;
+    const timeout = window.setTimeout(() => setRestoreProgress(null), 6_000);
+    return () => window.clearTimeout(timeout);
+  }, [isRestoring, restoreProgress]);
 
   function openBuckler() {
     const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin);
@@ -267,15 +281,13 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>
+        <div className="header-leading"><a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>{imported && <div className="player-context"><strong>{playerName}</strong><span>{INITIAL_USER_CODE} · {t("latestBattle")} {formatTimestamp(imported.preview.newestPlayedAt)}</span></div>}</div>
         <div className="header-actions">
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
           {adminAuth.state.status === "admin" && connectorVersion !== undefined && connectorVersion !== __CONNECTOR_VERSION__ && <a className="auth-button connector-update" href={connectorDownloadUrl} download>{t(connectorVersion === null ? "connectorInstall" : "connectorUpdate")}</a>}
           {adminAuth.state.status === "admin" && <button className="auth-button header-sync-button" type="button" disabled={isCollecting || isSyncing || connectorVersion !== __CONNECTOR_VERSION__} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>}
-          {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <button className="auth-button" type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button>}
-          {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}
-          {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}
+          {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <details className="admin-menu"><summary aria-label={t("managementMenu")}>•••</summary><div><span>{t("managementMenu")}</span>{adminAuth.state.status === "admin" && <button type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}{adminAuth.state.status === "admin" && <button type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}<button type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button></div></details>}
           <input ref={restoreInputRef} type="file" accept="application/json,.json" hidden onChange={event => { void restoreBackup(event.target.files?.[0]); event.target.value = ""; }} />
           <div className="language-switch" aria-label="Language">
             <button className={locale === "ja" ? "active" : ""} onClick={() => setLocale("ja")}>JP</button>
@@ -286,11 +298,7 @@ export function App() {
 
       <main id="top">
         <section className="workspace">
-          {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
-          {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
-          {syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}
-          {restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}
-          {error && <div className="message error" role="alert">{error}</div>}
+          <div className="notification-stack" aria-live="polite">{isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}{imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}{syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}{restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}{error && <div className="message error" role="alert">{error}</div>}</div>
 
           {imported && <>
             {imported.canSync && <section className="preview">
@@ -302,8 +310,8 @@ export function App() {
             </section>}
 
             <section className="statistics-section">
-              <div className="section-heading"><div><p className="eyebrow">{t("localAnalysis")}</p><h2>{t("recordTitle")}</h2></div><p>{t("showingMatches", { shown: filteredMatches.length, total: imported.preview.uniqueMatchCount })}</p></div>
               <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestHundred")}</span></div><div className="table-wrap"><table className="match-table"><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourPlayer")}</th><th>{t("opponentPlayer")}</th><th>{t("mode")}</th><th>{t("replayId")}</th></tr></thead><tbody>{imported.preview.matches.slice(0, 100).map(match => <tr key={match.replayId}><td><span className="primary-detail">{formatTimestamp(match.playedAtEpoch)}</span></td><td><span className={`result-badge ${match.result}`}>{match.result}</span><div className="round-details">{getRoundDetails(match.subject.round_results, match.opponent.round_results, locale).map(round => <span className={round.outcome} key={round.round} title={`R${round.round}: ${round.description}`} aria-label={`Round ${round.round}: ${round.outcome}, ${round.description}`}>{round.method}</span>)}</div></td><td><strong className="character-detail">{getCharacterName(match.subject, locale)}</strong><small className="input-detail">{getInputType(match.subject.battle_input_type)}</small><small className="secondary-detail rating-detail">{formatRating(match.subject)}</small></td><td><strong className="character-detail">{getCharacterName(match.opponent, locale)}</strong><small className="input-detail">{getInputType(match.opponent.battle_input_type)}</small><small className="secondary-detail rating-detail">{formatRating(match.opponent)}</small><small className="secondary-detail opponent-identity">{match.opponent.player.fighter_id ?? "—"} · {match.opponent.player.short_id} · {match.opponent.player.platform_name ?? "—"}</small></td><td><span className="primary-detail">{match.battleTypeName ?? match.mode}</span></td><td><code className="replay-code">{match.replayId}</code></td></tr>)}</tbody></table></div></article>
+              <section className="analysis-zone"><div className="section-heading"><div><p className="eyebrow">{t("localAnalysis")}</p><h2>{t("recordTitle")}</h2></div><p>{t("showingMatches", { shown: filteredMatches.length, total: imported.preview.uniqueMatchCount })}</p></div>
               <div className="filter-bar">
                 <label><span>{t("fromDate")}</span><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></label><label><span>{t("toDate")}</span><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></label>
                 <label><span>{t("mode")}</span><select value={mode} onChange={e => setMode(e.target.value)}><option value="">{t("all")}</option>{imported.preview.sources.filter(s => s.sourceType !== "all" && s.sourceType !== "unknown").map(s => <option key={s.sourceType}>{s.sourceType}</option>)}</select></label>
@@ -311,11 +319,12 @@ export function App() {
                 <button type="button" onClick={resetFilters}>{t("reset")}</button>
               </div>
               <div className="record-banner"><article><span>{t("winRate")}</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article><article><span>{t("wins")}</span><strong>{statistics.overall.wins}</strong></article><article><span>{t("losses")}</span><strong>{statistics.overall.losses}</strong></article><article><span>{t("undecided")}</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article></div>
-              <DailyTrend records={statistics.byDay} locale={locale} labels={{ eyebrow: t("dailyTrend"), title: t("dailyTrendTitle"), matches: t("dailyMatches"), winRate: t("winRate"), empty: t("noRecords"), activeDays: count => t("activeDays", { count }) }} />
               <RatingChart matches={filteredMatches} locale={locale} labels={{ eyebrow: t("ratingHistory"), title: t("ratingChartTitle"), character: t("ratingCharacter"), latest: t("latestRating"), highest: t("highestRating"), lowest: t("lowestRating"), change: t("ratingChange"), noData: t("noRatingData"), firstMatch: t("firstMatch"), latestMatch: t("latestMatch") }} />
-              <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={opponentRecords} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div>
+              <DailyTrend records={statistics.byDay} locale={locale} labels={{ eyebrow: t("dailyTrend"), title: t("dailyTrendTitle"), matches: t("dailyMatches"), winRate: t("winRate"), empty: t("noRecords"), activeDays: count => t("activeDays", { count }) }} />
+              <div className="character-sections"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={opponentRecords} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div></section>
             </section>
           </>}
+          {!imported && !isLoadingStored && adminAuth.state.status === "admin" && <section className="empty-state"><p className="eyebrow">{t("noStoredData")}</p><h2>{t("noStoredDataTitle")}</h2><p>{t("noStoredDataDescription")}</p><button className="primary-button" type="button" disabled={connectorVersion !== __CONNECTOR_VERSION__} onClick={openBuckler}>{t("refreshFromBuckler")}</button></section>}
         </section>
       </main>
       <footer><span>{t("appName")}</span><span>{t("unofficial")}</span></footer>
