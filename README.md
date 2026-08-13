@@ -54,7 +54,9 @@ Firebase Web設定はブラウザへ配信される公開設定です。サー�
 
 ## GitHub Pages deployment
 
-`master`へのpush時にGitHub Actionsがテスト、型検査、本番ビルドを行い、成功した`dist`をGitHub Pagesへデプロイします。GitHub上でリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。
+`master`へのpush時にGitHub Actionsがテスト、Firestore Security Rulesテスト、型検査、本番ビルドを行います。Pagesへのデプロイを有効にする場合は、GitHub上でリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定し、**Settings → Secrets and variables → Actions → Variables** に`ENABLE_PAGES_DEPLOY=true`を追加してください。
+
+`ENABLE_PAGES_DEPLOY`が未設定の間は検証だけを実行し、Pages jobはスキップします。privateリポジトリでPagesを利用できない期間もCIを成功状態に保てます。
 
 Pull Requestでは検証だけを行い、Pagesへのデプロイは行いません。Actions画面から手動実行することもできます。
 

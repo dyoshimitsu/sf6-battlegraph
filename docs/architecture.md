@@ -52,6 +52,7 @@ React、TypeScript、Vite で構築し、GitHub Pages に配信する。GitHub P
 - raw snapshot の保存
 - replay の正規化と upsert
 - query chunk の生成
+- raw、match、chunk、sync記録の書き込み完了確認
 - manifest の切り替え
 - chunk を使ったフィルタ、集計、可視化
 - データのエクスポートと再構築

@@ -34,6 +34,10 @@ Firebase Web設定はVite環境変数から読み込み、必須4項目の一部
 
 Firestore Security Rulesは`settings/deployment.visibility`を参照し、`private`では管理者だけに読み取りを許可し、`public`ではplayer配下の読み取りを公開する。書き込みはどちらのモードでも`admins/{uid}`登録者だけに許可する。管理者ドキュメントはクライアントから作成・変更・削除できない。Rules EmulatorのテストをCIで実行し、成功後にだけPagesをデプロイする。
 
+privateリポジトリでPagesを利用できない期間は、Repository Variable `ENABLE_PAGES_DEPLOY`を未設定にして検証jobだけを実行する。Pagesを利用可能になった時点で`true`を設定し、成功した検証artifactだけをデプロイする。
+
+Firestore同期前に純粋なTypeScriptでwrite planを生成する。player metadata、raw snapshot/page、完全match、query chunk、sync記録はmanifestより先に書き、全書き込み成功後にmanifestのactive generationを切り替える。raw pageとcomplete matchには元レスポンス・replay objectを保持する。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions
