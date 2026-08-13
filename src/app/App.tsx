@@ -161,8 +161,18 @@ export function App() {
               <button type="button" onClick={() => inputRef.current?.click()}>
                 ファイルを選択
               </button>
-              <a className="collector-link" href="./collector.js" download>
-                Bucklerコレクターをダウンロード
+              <a
+                className={`collector-link ${import.meta.env.DEV ? "is-disabled" : ""}`}
+                href={import.meta.env.DEV ? undefined : "./collector.js"}
+                download={!import.meta.env.DEV}
+                onClick={(event) => {
+                  if (import.meta.env.DEV) {
+                    event.preventDefault();
+                    window.alert("開発中のコレクターは npm run build 後の dist/collector.js を使用してください。");
+                  }
+                }}
+              >
+                {import.meta.env.DEV ? "コレクターは本番ビルドで生成されます" : "Bucklerコレクターをダウンロード"}
               </a>
               <input
                 ref={inputRef}

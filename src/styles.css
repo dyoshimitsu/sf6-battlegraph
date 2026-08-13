@@ -138,6 +138,7 @@ h1 em { color: transparent; -webkit-text-stroke: 1px var(--orange); font-style: 
 .drop-zone button:hover { background: var(--yellow); transform: translateY(-1px); }
 .collector-link { margin-top: 15px; color: #c6c2c4; font-size: 11px; text-underline-offset: 4px; }
 .collector-link:hover { color: var(--orange); }
+.collector-link.is-disabled { color: #68666b; cursor: not-allowed; }
 
 .roadmap-card { padding: 30px; }
 .roadmap-card ol { padding: 0; margin: 28px 0 0; list-style: none; }
