@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "./bridge";
+import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "./bridge";
 import type { BucklerCollectorBundle } from "../domain/buckler/types";
 
 const bundle = {
@@ -36,6 +36,13 @@ describe("collector bridge", () => {
     const status = createCollectorAuthenticationRequiredMessage();
     expect(readCollectorStatusMessage("https://owner.github.io", status, "https://owner.github.io")).toEqual(status);
     expect(readCollectorStatusMessage(BUCKLER_ORIGIN, status, "https://owner.github.io")).toBeNull();
+  });
+
+  it("forwards bounded collector errors only from the receiver origin", () => {
+    const status = createCollectorErrorMessage("x".repeat(600));
+    expect(status.message).toHaveLength(500);
+    expect(readCollectorStatusMessage("https://owner.github.io", status, "https://owner.github.io")).toEqual(status);
+    expect(readCollectorStatusMessage("https://owner.github.io", { ...status, message: 1 }, "https://owner.github.io")).toBeNull();
   });
 
   it("validates connector version announcements", () => {

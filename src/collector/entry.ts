@@ -1,5 +1,5 @@
 import { collectBattleLogs } from "./collectBattleLogs";
-import { createCollectorAuthenticationRequiredMessage, createCollectorResultMessage, readBattlegraphTargetOrigin } from "./bridge";
+import { createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, readBattlegraphTargetOrigin } from "./bridge";
 
 interface NextData {
   buildId?: string;
@@ -70,7 +70,5 @@ void run().catch((error: unknown) => {
     window.postMessage(createCollectorAuthenticationRequiredMessage(), window.location.origin);
     return;
   }
-  window.alert(
-    `SF6 Battlegraph collector failed: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  window.postMessage(createCollectorErrorMessage(error instanceof Error ? error.message : String(error)), window.location.origin);
 });

@@ -156,6 +156,12 @@ export function App() {
       const status = readCollectorStatusMessage(event.origin, event.data, window.location.origin);
       if (status) {
         if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
+        if (status.status === "error") {
+          collectorTimeoutRef.current = null;
+          setIsCollecting(false);
+          setError(t("collectorFailed", { message: status.message ?? t("errorUnexpected") }));
+          return;
+        }
         collectorTimeoutRef.current = window.setTimeout(() => {
           collectorTimeoutRef.current = null;
           setIsCollecting(false);
