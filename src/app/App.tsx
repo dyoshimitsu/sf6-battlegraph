@@ -4,7 +4,7 @@ import { getCharacterName, getCharacterNameBySlug } from "../domain/buckler/char
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
 import { getRoundDetails } from "../domain/buckler/roundResults";
 import { BucklerValidationError, type BucklerBundlePreview, type NormalizedMatch } from "../domain/buckler/types";
-import { ratingMatches } from "../domain/statistics/ratingMatches";
+import { latestRatingCharacterKey, ratingCharacterKey, ratingMatches } from "../domain/statistics/ratingMatches";
 import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import { useI18n } from "../i18n/useI18n";
 import { deploymentConfig, firebaseRuntime } from "../firebase/client";
@@ -384,13 +384,11 @@ function RatingChart({ matches, locale, labels }: { matches: BucklerBundlePrevie
   const [selectedCharacter, setSelectedCharacter] = useState("");
   const characterGroups = new Map<string, BucklerBundlePreview["matches"]>();
   for (const match of ratingMatches(matches)) {
-    const id = match.subject.playing_character_id ?? match.subject.character_id;
-    const slug = match.subject.playing_character_tool_name ?? match.subject.character_tool_name ?? "unknown";
-    const key = id === undefined ? `slug:${slug}` : `id:${id}`;
+    const key = ratingCharacterKey(match);
     characterGroups.set(key, [...(characterGroups.get(key) ?? []), match]);
   }
   const characters = [...characterGroups.entries()].sort((left, right) => right[1].length - left[1].length || compareCharacterSlugs(left[1][0]?.subject.playing_character_tool_name ?? left[1][0]?.subject.character_tool_name ?? "unknown", right[1][0]?.subject.playing_character_tool_name ?? right[1][0]?.subject.character_tool_name ?? "unknown"));
-  const effectiveCharacter = characters.some(([key]) => key === selectedCharacter) ? selectedCharacter : characters[0]?.[0] ?? "";
+  const effectiveCharacter = characters.some(([key]) => key === selectedCharacter) ? selectedCharacter : latestRatingCharacterKey(matches);
   const chartMatches = characterGroups.get(effectiveCharacter) ?? [];
   const ordered = [...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch).slice(-100);
   const number = new Intl.NumberFormat(locale === "ja" ? "ja-JP" : "en-US");
