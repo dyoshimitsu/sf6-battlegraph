@@ -2,6 +2,7 @@ import type { BucklerCollectorBundle } from "../domain/buckler/types";
 
 export const COLLECTOR_MESSAGE_TYPE = "sf6-battlegraph.collector-result";
 export const COLLECTOR_MESSAGE_VERSION = 1;
+export const COLLECTOR_START_MESSAGE_TYPE = "sf6-battlegraph.collector-start";
 export const BUCKLER_ORIGIN = "https://www.streetfighter.com";
 export const BATTLEGRAPH_ORIGIN_PARAMETER = "sf6-battlegraph-origin";
 
@@ -11,12 +12,22 @@ export interface CollectorResultMessage {
   bundle: BucklerCollectorBundle;
 }
 
+export interface CollectorStartMessage {
+  type: typeof COLLECTOR_START_MESSAGE_TYPE;
+  version: typeof COLLECTOR_MESSAGE_VERSION;
+  url: string;
+}
+
+export function createCollectorStartMessage(url: string): CollectorStartMessage {
+  return { type: COLLECTOR_START_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, url };
+}
+
 export function createCollectorResultMessage(bundle: BucklerCollectorBundle): CollectorResultMessage {
   return { type: COLLECTOR_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, bundle };
 }
 
-export function readCollectorResultMessage(origin: string, value: unknown): CollectorResultMessage | null {
-  if (origin !== BUCKLER_ORIGIN || typeof value !== "object" || value === null) return null;
+export function readCollectorResultMessage(origin: string, value: unknown, receiverOrigin?: string): CollectorResultMessage | null {
+  if (![BUCKLER_ORIGIN, receiverOrigin].includes(origin) || typeof value !== "object" || value === null) return null;
   const candidate = value as Partial<CollectorResultMessage>;
   if (candidate.type !== COLLECTOR_MESSAGE_TYPE || candidate.version !== COLLECTOR_MESSAGE_VERSION || !candidate.bundle) return null;
   return candidate as CollectorResultMessage;

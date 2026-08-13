@@ -21,7 +21,7 @@ import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
-import { buildBucklerLaunchUrl, readCollectorResultMessage } from "../collector/bridge";
+import { buildBucklerLaunchUrl, createCollectorStartMessage, readCollectorResultMessage } from "../collector/bridge";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -144,7 +144,7 @@ export function App() {
 
   useEffect(() => {
     function receiveCollectorResult(event: MessageEvent) {
-      const message = readCollectorResultMessage(event.origin, event.data);
+      const message = readCollectorResultMessage(event.origin, event.data, window.location.origin);
       if (!message) return;
       if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
       collectorTimeoutRef.current = null;
@@ -167,11 +167,7 @@ export function App() {
 
   function openBuckler() {
     const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin);
-    const bucklerWindow = window.open(url, "sf6-battlegraph-buckler");
-    if (!bucklerWindow) {
-      setError(t("collectorPopupBlocked"));
-      return;
-    }
+    window.postMessage(createCollectorStartMessage(url), window.location.origin);
     setError(null);
     setIsCollecting(true);
     if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);

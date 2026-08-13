@@ -30,12 +30,11 @@ function resolveUserCode(nextData: NextData): number {
 }
 
 function sendToBattlegraph(bundle: Awaited<ReturnType<typeof collectBattleLogs>>) {
-  if (!window.opener || window.opener.closed) {
-    throw new Error("Open Buckler from SF6 Battlegraph before running the collector");
-  }
   const targetOrigin = readBattlegraphTargetOrigin(window.location.hash);
   if (!targetOrigin) throw new Error("Battlegraph target origin was not found");
-  window.opener.postMessage(createCollectorResultMessage(bundle), targetOrigin);
+  const message = createCollectorResultMessage(bundle);
+  if (window.opener && !window.opener.closed) window.opener.postMessage(message, targetOrigin);
+  window.postMessage(message, window.location.origin);
 }
 
 async function run() {

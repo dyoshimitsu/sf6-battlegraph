@@ -15,6 +15,7 @@ describe("collector bridge", () => {
   it("accepts a versioned result only from Buckler", () => {
     const message = createCollectorResultMessage(bundle);
     expect(readCollectorResultMessage(BUCKLER_ORIGIN, message)).toEqual(message);
+    expect(readCollectorResultMessage("http://192.168.201.128:5174", message, "http://192.168.201.128:5174")).toEqual(message);
     expect(readCollectorResultMessage("https://example.com", message)).toBeNull();
   });
 

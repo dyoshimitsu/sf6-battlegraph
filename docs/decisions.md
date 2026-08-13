@@ -20,6 +20,8 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 
 取得操作はManifest V3 Chrome拡張で自動化する。content scriptのmatch patternをBuckler Battle Logだけに限定し、Battlegraphの接続fragmentがある場合だけmain worldでcollectorを開始する。通常閲覧では動作しない。導入後はBattlegraphのボタン一回でページ表示、取得、返送まで行う。
 
+Bucklerの`window.opener`が別origin間で維持されることに依存しない。Battlegraph側content script、extension service worker、Buckler側content scriptをruntime messageで接続し、service workerが収集ごとに起点タブとBucklerタブをメモリ上で対応付ける。取得bundleは対応する起点タブだけへ返す。
+
 正規化済み試合に対するクライアント集計も実装した。
 
 - 期間は `Asia/Tokyo` の暦日で両端を含めて絞り込む
