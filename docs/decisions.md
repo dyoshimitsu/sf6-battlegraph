@@ -38,6 +38,8 @@ privateリポジトリでPagesを利用できない期間は、Repository Variab
 
 Firestore同期前に純粋なTypeScriptでwrite planを生成する。player metadata、raw snapshot/page、完全match、query chunk、sync記録はmanifestより先に書き、全書き込み成功後にmanifestのactive generationを切り替える。raw pageとcomplete matchには元レスポンス・replay objectを保持する。
 
+raw pageはJSON文字列のUTF-8実測が700 KiB以下ならinlineで保存し、超える場合は700 KiB以下のpartへ分割する。親documentに元のバイト数、part数、SHA-256を保存し、Unicodeを含むJSONも連結して完全復元できることをテストする。
+
 Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのcommit後にmanifestを単独commitする。matchの`sourceSyncIds`は`arrayUnion`で追記し、同期時刻はFirestore server timestampを使用する。同期UIは管理者にだけ表示し、進捗と成功・失敗を通知する。
 
 保存済み戦績の表示では、最初にmanifestを1 document読み、そのactive generationに列挙されたquery chunkだけを読む。generation、chunk数、試合数がmanifestと一致しない不完全な世代は表示しない。`private`では管理者ログイン後、`public`では認証なしで自動読込し、raw snapshotやcomplete matchは通常表示では読まない。

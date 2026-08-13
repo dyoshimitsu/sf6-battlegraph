@@ -3,6 +3,7 @@ import { toTokyoDate } from "../statistics/aggregateMatches";
 import { buildQueryChunkGeneration, type QueryChunk } from "./queryChunks";
 import { mergeStoredMatches } from "./mergeStoredMatches";
 import type { StoredManifest } from "./loadStoredMatches";
+import { buildRawPageWrites } from "./rawPageWrites";
 
 export const STORAGE_SCHEMA_VERSION = 1;
 export const PARSER_VERSION = 1;
@@ -158,9 +159,10 @@ export function buildSyncPlan(
         status: "complete",
       },
     },
-    ...pages.map(page => ({
+    ...pages.flatMap(page => buildRawPageWrites({
       path: `${base}/snapshots/${syncId}/pages/${page.id}`,
-      data: { sourceType: page.sourceType, sourcePath: page.sourcePath, page: page.page, fetchedAt: page.fetchedAt, raw: page.response },
+      metadata: { sourceType: page.sourceType, sourcePath: page.sourcePath, page: page.page, fetchedAt: page.fetchedAt },
+      raw: page.response,
     })),
     ...preview.matches.map(match => ({ path: `${base}/matches/${match.replayId}`, data: completeMatch(match, syncId) })),
     ...chunks.chunks.map(chunk => chunkWrite(userCode, chunk)),

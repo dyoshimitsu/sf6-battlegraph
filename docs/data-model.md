@@ -117,14 +117,15 @@ players/{userCode}/syncs/{syncId}
   "sourceType": "ranked",
   "sourcePath": "/battlelog/rank",
   "page": 1,
-  "totalPages": 10,
-  "fetchedAt": "Timestamp",
-  "responseHash": "sha256...",
+  "fetchedAt": "2026-08-13T00:00:00.000Z",
+  "storage": "inline",
+  "rawUtf8Bytes": 123456,
+  "rawSha256": "sha256...",
   "raw": {}
 }
 ```
 
-Firestore の 1 document 上限を超える場合は、UTF-8 のサイズを測定して raw JSON を複数 part に分割する。復元後の SHA-256 が元レスポンスと一致することを検証する。
+700 KiBを超える場合は`storage: "parts"`と`partCount`を親documentへ記録し、UTF-8の文字境界を保った文字列として`pages/{pageId}/parts/{partNo}`へ分割する。親には元JSONのUTF-8バイト数とSHA-256を保持し、復元時に完全性を検証できるようにする。
 
 ## Query chunks
 
