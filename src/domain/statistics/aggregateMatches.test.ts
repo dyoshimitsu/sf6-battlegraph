@@ -9,6 +9,7 @@ function match(
   subjectCharacterId: number,
   opponentCharacterId: number,
   mode: NormalizedMatch["mode"] = "ranked",
+  subjectSide: NormalizedMatch["subjectSide"] = 1,
 ): NormalizedMatch {
   const subject = {
     player: { short_id: 1000000001 },
@@ -28,7 +29,7 @@ function match(
     playedAtEpoch: epoch,
     mode,
     sourceTypes: [mode],
-    subjectSide: 1,
+    subjectSide,
     result,
     roundsWon: result === "win" ? 2 : 0,
     roundsLost: result === "loss" ? 2 : 0,
@@ -111,6 +112,20 @@ describe("aggregateMatches", () => {
     expect(statistics.byDay.map((day) => [day.date, day.matches, day.winRate])).toEqual([
       ["2026-08-13", 1, 100],
       ["2026-08-14", 1, 0],
+    ]);
+  });
+
+  it("calculates win rates independently for the 1P and 2P sides", () => {
+    const statistics = aggregateMatches([
+      match("1p-win", "win", 3, 21, 1, "ranked", 1),
+      match("1p-loss", "loss", 2, 21, 1, "ranked", 1),
+      match("2p-win", "win", 1, 21, 1, "ranked", 2),
+      match("legacy", "win", 0, 21, 1, "ranked", null),
+    ]);
+
+    expect(statistics.bySide).toEqual([
+      { side: 1, matches: 2, wins: 1, losses: 1, draws: 0, unknown: 0, winRate: 50 },
+      { side: 2, matches: 1, wins: 1, losses: 0, draws: 0, unknown: 0, winRate: 100 },
     ]);
   });
 });

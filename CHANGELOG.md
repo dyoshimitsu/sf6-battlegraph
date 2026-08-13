@@ -2,6 +2,21 @@
 
 このプロジェクトの主な変更を記録します。形式は[Keep a Changelog](https://keepachangelog.com/ja/1.1.0/)を参考にし、バージョン番号は[Semantic Versioning](https://semver.org/lang/ja/)に従います。
 
+## [Unreleased]
+
+### Added
+
+- 直近の試合への1P・2P表示
+- 1P側と2P側それぞれの対戦数・勝率集計
+
+### Changed
+
+- 自動同期中の同期前プレビューを廃止し、同期結果をトーストだけで通知
+- 戦績フィルターの日付表示を`yyyy/mm/dd`へ統一
+- 開発・CIのNode.js要件を26以降へ更新
+- query chunk schemaをv2へ更新し、追跡対象の`subjectSide`を永続化
+- 管理者同期時に旧query chunkで欠落した1P・2P情報を完全matchから一度だけ復元
+
 ## [1.0.0] - 2026-08-14
 
 初回安定版。Buckler's Boot Campの直近履歴を定期的に取得し、上限を越えて失われる対戦履歴をFirestoreへ蓄積・分析できるセルフホスト型アプリケーションとして公開しました。

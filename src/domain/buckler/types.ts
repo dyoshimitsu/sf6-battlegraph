@@ -101,7 +101,7 @@ export interface NormalizedMatch {
   battleTypeName?: string;
   mode: BucklerSourceType;
   sourceTypes: BucklerSourceType[];
-  subjectSide: 1 | 2;
+  subjectSide: 1 | 2 | null;
   result: MatchResult;
   roundsWon: number;
   roundsLost: number;

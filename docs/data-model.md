@@ -149,6 +149,7 @@ query chunk は集計に必要なフィールドをまとめた read optimizatio
       "battleTypeName": "RANKED MATCH",
       "mode": "ranked",
       "sourceTypes": ["all"],
+      "subjectSide": 1,
       "result": "win",
       "roundsWon": 2,
       "roundsLost": 0,
@@ -180,9 +181,11 @@ query chunk は集計に必要なフィールドをまとめた read optimizatio
       }
     }
   ],
-  "schemaVersion": 1
+  "schemaVersion": 2
 }
 ```
+
+`subjectSide`は追跡対象ユーザーが1P側なら`1`、2P側なら`2`。schema version 1の旧chunkには存在しないため、クライアントは推測せず不明として扱う。次の管理者同期時に、不足する完全matchだけからsideを一度読み取り、新しいgenerationへ保存する。移行後の通常閲覧では追加readは発生しない。
 
 chunk は月単位を基本とし、以下のいずれかに達する前に分割する。
 

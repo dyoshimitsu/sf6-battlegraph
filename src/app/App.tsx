@@ -27,20 +27,23 @@ import {
 import { createSyncId } from "../domain/storage/createSyncId";
 import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
 import { exportFirestoreArchive } from "../domain/storage/exportArchive";
+import { hydrateMatchSides } from "../domain/storage/hydrateMatchSides";
 import { loadStoredMatches, type StoredManifest } from "../domain/storage/loadStoredMatches";
-import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
+import { mergeStoredMatches, summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
 import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
 import { getSyncFreshness, readLastSyncedAtEpoch } from "../domain/storage/syncFreshness";
 import { buildSyncPlan } from "../domain/storage/syncPlan";
 import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 import { deploymentConfig, firebaseRuntime } from "../firebase/client";
 import { createFirestoreArchivePort } from "../firebase/firestoreArchivePort";
+import { createFirestoreMatchSidePort } from "../firebase/firestoreMatchSidePort";
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 import { useAdminAuth } from "../firebase/useAdminAuth";
 import { useI18n } from "../i18n/useI18n";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
+import { dateFilterToIso, formatDateFilterInput } from "./dateFilter";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -50,12 +53,6 @@ interface ImportedBundle {
   source: unknown;
   canSync: boolean;
   preview: BucklerBundlePreview;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
 }
 
 function formatWinRate(value: number | null): string {
@@ -143,8 +140,8 @@ export function App() {
   const filteredMatches = useMemo(
     () =>
       filterMatches(imported?.preview.matches ?? [], {
-        fromDate: fromDate || undefined,
-        toDate: toDate || undefined,
+        fromDate: dateFilterToIso(fromDate),
+        toDate: dateFilterToIso(toDate),
         mode: mode ? (mode as BucklerBundlePreview["matches"][number]["mode"]) : undefined,
         subjectCharacterId: subjectCharacterId ? Number(subjectCharacterId) : undefined,
       }),
@@ -385,9 +382,15 @@ export function App() {
               INITIAL_USER_CODE,
             )
           : null;
-      const existing = archivedMatches ?? loaded?.matches ?? [];
+      const stored = archivedMatches ?? loaded?.matches ?? [];
       const previousManifest = storedManifest ?? loaded?.manifest;
-      const summary = summarizeStoredMerge(existing, imported.preview.matches);
+      const summary = summarizeStoredMerge(stored, imported.preview.matches);
+      const merged = mergeStoredMatches(stored, imported.preview.matches);
+      const { matches: existing, hydratedCount } = await hydrateMatchSides(
+        createFirestoreMatchSidePort(firebaseRuntime.services.db),
+        INITIAL_USER_CODE,
+        merged,
+      );
       const plan = buildSyncPlan(
         imported.source,
         imported.preview,
@@ -414,13 +417,16 @@ export function App() {
         canSync: false,
         preview: storedPreview(plan.storedMatches, (plan.manifest.data.chunks as unknown[]).length),
       });
+      const completeMessage = t("syncComplete", {
+        count: summary.totalMatches,
+        newCount: summary.newMatches,
+        refreshedCount: summary.refreshedMatches,
+        retainedCount: summary.retainedMatches,
+      });
       setSyncMessage(
-        t("syncComplete", {
-          count: summary.totalMatches,
-          newCount: summary.newMatches,
-          refreshedCount: summary.refreshedMatches,
-          retainedCount: summary.retainedMatches,
-        }),
+        hydratedCount > 0
+          ? `${completeMessage} ${t("sideMigrationComplete", { count: hydratedCount })}`
+          : completeMessage,
       );
     } catch (cause) {
       setSyncMessage(cause instanceof Error ? cause.message : t("syncFailed"));
@@ -713,311 +719,261 @@ export function App() {
           </div>
 
           {imported && (
-            <>
-              {imported.canSync && (
-                <section className="preview">
-                  <div className="preview-title">
-                    <div>
-                      <p className="eyebrow">{t("validImport")}</p>
-                      <h2>{t("previewTitle")}</h2>
-                    </div>
+            <section className="statistics-section">
+              <article className="recent-card">
+                <div className="card-heading">
+                  <div>
+                    <p className="eyebrow">{t("recentMatches")}</p>
+                    <h3>{t("recentTitle")}</h3>
+                  </div>
+                  <span>{t("latestHundred")}</span>
+                </div>
+                <div className="table-wrap">
+                  <table className="match-table">
+                    <thead>
+                      <tr>
+                        <th>{t("dateTime")}</th>
+                        <th>{t("result")}</th>
+                        <th>{t("yourPlayer")}</th>
+                        <th>{t("opponentPlayer")}</th>
+                        <th>{t("mode")}</th>
+                        <th>{t("replayId")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {imported.preview.matches.slice(0, 100).map((match) => (
+                        <tr key={match.replayId}>
+                          <td>
+                            <span className="primary-detail">
+                              {formatTimestamp(match.playedAtEpoch)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`result-badge ${match.result}`}>{match.result}</span>
+                            <div className="round-details">
+                              {getRoundDetails(
+                                match.subject.round_results,
+                                match.opponent.round_results,
+                                locale,
+                              ).map((round) => (
+                                <span
+                                  role="img"
+                                  className={round.outcome}
+                                  key={round.round}
+                                  title={`R${round.round}: ${round.description}`}
+                                  aria-label={`Round ${round.round}: ${round.outcome}, ${round.description}`}
+                                >
+                                  {round.method}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`side-badge side-${match.subjectSide ?? "unknown"}`}
+                              title={
+                                match.subjectSide === 1
+                                  ? t("playerOne")
+                                  : match.subjectSide === 2
+                                    ? t("playerTwo")
+                                    : t("sideUnknown")
+                              }
+                            >
+                              {match.subjectSide ? `${match.subjectSide}P` : "?P"}
+                            </span>
+                            <strong className="character-detail">
+                              {getCharacterName(match.subject, locale)}
+                            </strong>
+                            <small className="input-detail">
+                              {getInputType(match.subject.battle_input_type)}
+                            </small>
+                            <small className="secondary-detail rating-detail">
+                              {formatRating(match.subject)}
+                            </small>
+                          </td>
+                          <td>
+                            <strong className="character-detail">
+                              {getCharacterName(match.opponent, locale)}
+                            </strong>
+                            <small className="input-detail">
+                              {getInputType(match.opponent.battle_input_type)}
+                            </small>
+                            <small className="secondary-detail rating-detail">
+                              {formatRating(match.opponent)}
+                            </small>
+                            <small className="secondary-detail opponent-identity">
+                              {match.opponent.player.fighter_id ?? "—"} ·{" "}
+                              {match.opponent.player.short_id} ·{" "}
+                              {match.opponent.player.platform_name ?? "—"}
+                            </small>
+                          </td>
+                          <td>
+                            <span className="primary-detail">
+                              {match.battleTypeName ?? match.mode}
+                            </span>
+                          </td>
+                          <td>
+                            <code className="replay-code">{match.replayId}</code>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+              <section className="analysis-zone">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">{t("localAnalysis")}</p>
+                    <h2>{t("recordTitle")}</h2>
+                  </div>
+                  <div className="analysis-scope">
+                    <strong>{t(hasActiveFilters ? "filteredScope" : "allTime")}</strong>
                     <span>
-                      {imported.fileName} · {formatBytes(imported.fileSize)}
+                      {t("showingMatches", {
+                        shown: filteredMatches.length,
+                        total: imported.preview.uniqueMatchCount,
+                      })}
                     </span>
                   </div>
-                  <div className="metrics">
-                    <article>
-                      <span>{t("fetchedPages")}</span>
-                      <strong>{imported.preview.pageCount}</strong>
-                    </article>
-                    <article>
-                      <span>{t("fetchedMatches")}</span>
-                      <strong>{imported.preview.rawMatchCount}</strong>
-                    </article>
-                    <article>
-                      <span>{t("uniqueMatches")}</span>
-                      <strong>{imported.preview.uniqueMatchCount}</strong>
-                    </article>
-                    <article>
-                      <span>{t("warnings")}</span>
-                      <strong>{imported.preview.warnings.length}</strong>
-                    </article>
-                  </div>
-                  <dl className="preview-details">
-                    <div>
-                      <dt>{t("newest")}</dt>
-                      <dd>{formatTimestamp(imported.preview.newestPlayedAt)}</dd>
-                    </div>
-                    <div>
-                      <dt>{t("oldest")}</dt>
-                      <dd>{formatTimestamp(imported.preview.oldestPlayedAt)}</dd>
-                    </div>
-                    <div>
-                      <dt>{t("duplicates")}</dt>
-                      <dd>
-                        {imported.preview.duplicateCount} {t("mergedMatches")}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>{t("buildId")}</dt>
-                      <dd>{imported.preview.buildId ?? t("unknownSinglePage")}</dd>
-                    </div>
-                  </dl>
-                  <div className="source-grid">
-                    {imported.preview.sources.map((source) => (
-                      <article key={source.sourceType}>
-                        <span>{source.sourceType}</span>
-                        <strong>
-                          {source.pages}
-                          <small> / {source.expectedPages} pages</small>
-                        </strong>
-                        <p>
-                          {source.rawMatches} {t("rawMatches")}
-                        </p>
-                      </article>
-                    ))}
-                  </div>
-                  {imported.preview.warnings.length > 0 && (
-                    <ul className="warning-list">
-                      {imported.preview.warnings.map((warning) => (
-                        <li key={warning}>{warning}</li>
+                </div>
+                <div className="filter-bar">
+                  <label>
+                    <span>{t("fromDate")}</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="yyyy/mm/dd"
+                      maxLength={10}
+                      value={fromDate}
+                      onChange={(e) => setFromDate(formatDateFilterInput(e.target.value))}
+                    />
+                  </label>
+                  <label>
+                    <span>{t("toDate")}</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="yyyy/mm/dd"
+                      maxLength={10}
+                      value={toDate}
+                      onChange={(e) => setToDate(formatDateFilterInput(e.target.value))}
+                    />
+                  </label>
+                  <label>
+                    <span>{t("mode")}</span>
+                    <select value={mode} onChange={(e) => setMode(e.target.value)}>
+                      <option value="">{t("all")}</option>
+                      {availableModes.map((value) => (
+                        <option key={value}>{value}</option>
                       ))}
-                    </ul>
-                  )}
-                </section>
-              )}
-
-              <section className="statistics-section">
-                <article className="recent-card">
-                  <div className="card-heading">
-                    <div>
-                      <p className="eyebrow">{t("recentMatches")}</p>
-                      <h3>{t("recentTitle")}</h3>
-                    </div>
-                    <span>{t("latestHundred")}</span>
-                  </div>
-                  <div className="table-wrap">
-                    <table className="match-table">
-                      <thead>
-                        <tr>
-                          <th>{t("dateTime")}</th>
-                          <th>{t("result")}</th>
-                          <th>{t("yourPlayer")}</th>
-                          <th>{t("opponentPlayer")}</th>
-                          <th>{t("mode")}</th>
-                          <th>{t("replayId")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {imported.preview.matches.slice(0, 100).map((match) => (
-                          <tr key={match.replayId}>
-                            <td>
-                              <span className="primary-detail">
-                                {formatTimestamp(match.playedAtEpoch)}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`result-badge ${match.result}`}>{match.result}</span>
-                              <div className="round-details">
-                                {getRoundDetails(
-                                  match.subject.round_results,
-                                  match.opponent.round_results,
-                                  locale,
-                                ).map((round) => (
-                                  <span
-                                    role="img"
-                                    className={round.outcome}
-                                    key={round.round}
-                                    title={`R${round.round}: ${round.description}`}
-                                    aria-label={`Round ${round.round}: ${round.outcome}, ${round.description}`}
-                                  >
-                                    {round.method}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td>
-                              <strong className="character-detail">
-                                {getCharacterName(match.subject, locale)}
-                              </strong>
-                              <small className="input-detail">
-                                {getInputType(match.subject.battle_input_type)}
-                              </small>
-                              <small className="secondary-detail rating-detail">
-                                {formatRating(match.subject)}
-                              </small>
-                            </td>
-                            <td>
-                              <strong className="character-detail">
-                                {getCharacterName(match.opponent, locale)}
-                              </strong>
-                              <small className="input-detail">
-                                {getInputType(match.opponent.battle_input_type)}
-                              </small>
-                              <small className="secondary-detail rating-detail">
-                                {formatRating(match.opponent)}
-                              </small>
-                              <small className="secondary-detail opponent-identity">
-                                {match.opponent.player.fighter_id ?? "—"} ·{" "}
-                                {match.opponent.player.short_id} ·{" "}
-                                {match.opponent.player.platform_name ?? "—"}
-                              </small>
-                            </td>
-                            <td>
-                              <span className="primary-detail">
-                                {match.battleTypeName ?? match.mode}
-                              </span>
-                            </td>
-                            <td>
-                              <code className="replay-code">{match.replayId}</code>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
-                <section className="analysis-zone">
-                  <div className="section-heading">
-                    <div>
-                      <p className="eyebrow">{t("localAnalysis")}</p>
-                      <h2>{t("recordTitle")}</h2>
-                    </div>
-                    <div className="analysis-scope">
-                      <strong>{t(hasActiveFilters ? "filteredScope" : "allTime")}</strong>
-                      <span>
-                        {t("showingMatches", {
-                          shown: filteredMatches.length,
-                          total: imported.preview.uniqueMatchCount,
+                    </select>
+                  </label>
+                  <label>
+                    <span>{t("yourCharacter")}</span>
+                    <select
+                      value={subjectCharacterId}
+                      onChange={(e) => setSubjectCharacterId(e.target.value)}
+                    >
+                      <option value="">{t("all")}</option>
+                      {[...allStatistics.bySubjectCharacter]
+                        .sort((a, b) => compareCharacterSlugs(a.characterSlug, b.characterSlug))
+                        .filter((r) => r.characterId !== null)
+                        .map((r) => {
+                          const sample = imported.preview.matches.find(
+                            (m) =>
+                              (m.subject.playing_character_id ?? m.subject.character_id) ===
+                              r.characterId,
+                          );
+                          return (
+                            <option key={r.characterId} value={r.characterId ?? ""}>
+                              {sample ? getCharacterName(sample.subject, locale) : r.characterName}
+                            </option>
+                          );
                         })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="filter-bar">
-                    <label>
-                      <span>{t("fromDate")}</span>
-                      <input
-                        type="date"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      <span>{t("toDate")}</span>
-                      <input
-                        type="date"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      <span>{t("mode")}</span>
-                      <select value={mode} onChange={(e) => setMode(e.target.value)}>
-                        <option value="">{t("all")}</option>
-                        {availableModes.map((value) => (
-                          <option key={value}>{value}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{t("yourCharacter")}</span>
-                      <select
-                        value={subjectCharacterId}
-                        onChange={(e) => setSubjectCharacterId(e.target.value)}
-                      >
-                        <option value="">{t("all")}</option>
-                        {[...allStatistics.bySubjectCharacter]
-                          .sort((a, b) => compareCharacterSlugs(a.characterSlug, b.characterSlug))
-                          .filter((r) => r.characterId !== null)
-                          .map((r) => {
-                            const sample = imported.preview.matches.find(
-                              (m) =>
-                                (m.subject.playing_character_id ?? m.subject.character_id) ===
-                                r.characterId,
-                            );
-                            return (
-                              <option key={r.characterId} value={r.characterId ?? ""}>
-                                {sample
-                                  ? getCharacterName(sample.subject, locale)
-                                  : r.characterName}
-                              </option>
-                            );
-                          })}
-                      </select>
-                    </label>
-                    <button type="button" onClick={resetFilters}>
-                      {t("reset")}
-                    </button>
-                  </div>
-                  <div className="record-banner">
-                    <article>
-                      <span>{t("winRate")}</span>
-                      <strong>{formatWinRate(statistics.overall.winRate)}</strong>
+                    </select>
+                  </label>
+                  <button type="button" onClick={resetFilters}>
+                    {t("reset")}
+                  </button>
+                </div>
+                <div className="record-banner">
+                  <article>
+                    <span>{t("winRate")}</span>
+                    <strong>{formatWinRate(statistics.overall.winRate)}</strong>
+                  </article>
+                  {statistics.bySide.map((record) => (
+                    <article key={record.side}>
+                      <span>{t(record.side === 1 ? "playerOneWinRate" : "playerTwoWinRate")}</span>
+                      <strong>{formatWinRate(record.winRate)}</strong>
+                      <small>
+                        {t("sideRecord", { wins: record.wins, matches: record.matches })}
+                      </small>
                     </article>
-                    <article>
-                      <span>{t("wins")}</span>
-                      <strong>{statistics.overall.wins}</strong>
-                    </article>
-                    <article>
-                      <span>{t("losses")}</span>
-                      <strong>{statistics.overall.losses}</strong>
-                    </article>
-                    <article>
-                      <span>{t("undecided")}</span>
-                      <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
-                    </article>
-                  </div>
-                  <RatingChart
+                  ))}
+                  <article>
+                    <span>{t("wins")}</span>
+                    <strong>{statistics.overall.wins}</strong>
+                  </article>
+                  <article>
+                    <span>{t("losses")}</span>
+                    <strong>{statistics.overall.losses}</strong>
+                  </article>
+                  <article>
+                    <span>{t("undecided")}</span>
+                    <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
+                  </article>
+                </div>
+                <RatingChart
+                  matches={filteredMatches}
+                  locale={locale}
+                  labels={{
+                    eyebrow: t("ratingHistory"),
+                    title: t("ratingChartTitle"),
+                    character: t("ratingCharacter"),
+                    latest: t("latestRating"),
+                    highest: t("highestRating"),
+                    lowest: t("lowestRating"),
+                    change: t("ratingChange"),
+                    noData: t("noRatingData"),
+                    firstMatch: t("firstMatch"),
+                    latestMatch: t("latestMatch"),
+                  }}
+                />
+                <DailyTrend
+                  records={statistics.byDay}
+                  locale={locale}
+                  labels={{
+                    eyebrow: t("dailyTrend"),
+                    title: t("dailyTrendTitle"),
+                    matches: t("dailyMatches"),
+                    winRate: t("winRate"),
+                    empty: t("noRecords"),
+                    activeDays: (count) => t("activeDays", { count }),
+                  }}
+                />
+                <div className="character-sections">
+                  <CharacterPanel
+                    eyebrow={t("yourFighters")}
+                    title={t("yourCharacterRecords")}
+                    records={statistics.bySubjectCharacter}
                     matches={filteredMatches}
+                    side="subject"
                     locale={locale}
-                    labels={{
-                      eyebrow: t("ratingHistory"),
-                      title: t("ratingChartTitle"),
-                      character: t("ratingCharacter"),
-                      latest: t("latestRating"),
-                      highest: t("highestRating"),
-                      lowest: t("lowestRating"),
-                      change: t("ratingChange"),
-                      noData: t("noRatingData"),
-                      firstMatch: t("firstMatch"),
-                      latestMatch: t("latestMatch"),
-                    }}
+                    recordLine={t}
                   />
-                  <DailyTrend
-                    records={statistics.byDay}
+                  <CharacterPanel
+                    eyebrow={t("matchups")}
+                    title={t("opponentCharacterRecords")}
+                    records={opponentRecords}
+                    matches={filteredMatches}
+                    side="opponent"
                     locale={locale}
-                    labels={{
-                      eyebrow: t("dailyTrend"),
-                      title: t("dailyTrendTitle"),
-                      matches: t("dailyMatches"),
-                      winRate: t("winRate"),
-                      empty: t("noRecords"),
-                      activeDays: (count) => t("activeDays", { count }),
-                    }}
+                    recordLine={t}
                   />
-                  <div className="character-sections">
-                    <CharacterPanel
-                      eyebrow={t("yourFighters")}
-                      title={t("yourCharacterRecords")}
-                      records={statistics.bySubjectCharacter}
-                      matches={filteredMatches}
-                      side="subject"
-                      locale={locale}
-                      recordLine={t}
-                    />
-                    <CharacterPanel
-                      eyebrow={t("matchups")}
-                      title={t("opponentCharacterRecords")}
-                      records={opponentRecords}
-                      matches={filteredMatches}
-                      side="opponent"
-                      locale={locale}
-                      recordLine={t}
-                    />
-                  </div>
-                </section>
+                </div>
               </section>
-            </>
+            </section>
           )}
           {!imported && !isLoadingStored && adminAuth.state.status === "admin" && (
             <section className="empty-state">
