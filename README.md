@@ -166,6 +166,7 @@ GitHub Pages は静的ホスティングであるため、Buckler の取得処�
 - [Collector export format](docs/collector-format.md)
 - [Data model](docs/data-model.md)
 - [Decisions and validation](docs/decisions.md)
+- [Release procedure](docs/releasing.md)
 - [Repository instructions for Codex](AGENTS.md)
 - [Contributing and coding conventions](CONTRIBUTING.md)
 
