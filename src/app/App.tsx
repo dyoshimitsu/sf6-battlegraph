@@ -24,6 +24,20 @@ function formatWinRate(value: number | null): string {
   return value === null ? "—" : `${value.toFixed(1)}%`;
 }
 
+function formatRating(player: BucklerBundlePreview["matches"][number]["subject"]): string {
+  const ratings = [];
+  if ((player.league_point ?? 0) > 0) ratings.push(`${player.league_point?.toLocaleString()} LP`);
+  if ((player.master_rating ?? 0) > 0) ratings.push(`${player.master_rating?.toLocaleString()} MR`);
+  return ratings.join(" · ") || "—";
+}
+
+function getInputType(inputType: number | undefined, locale: "ja" | "en"): string {
+  if (inputType === 0) return locale === "ja" ? "クラシック" : "Classic";
+  if (inputType === 1) return locale === "ja" ? "モダン" : "Modern";
+  if (inputType === 2) return locale === "ja" ? "ダイナミック" : "Dynamic";
+  return "—";
+}
+
 export function App() {
   const { locale, setLocale, t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -132,7 +146,7 @@ export function App() {
               <div className="record-banner"><article><span>{t("winRate")}</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article><article><span>{t("wins")}</span><strong>{statistics.overall.wins}</strong></article><article><span>{t("losses")}</span><strong>{statistics.overall.losses}</strong></article><article><span>{t("undecided")}</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article></div>
               <RatingChart matches={filteredMatches} locale={locale} labels={{ eyebrow: t("ratingHistory"), title: t("ratingChartTitle"), character: t("ratingCharacter"), latest: t("latestRating"), highest: t("highestRating"), lowest: t("lowestRating"), change: t("ratingChange"), noData: t("noRatingData"), firstMatch: t("firstMatch"), latestMatch: t("latestMatch") }} />
               <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={statistics.byOpponentCharacter} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div>
-              <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestHundred")}</span></div><div className="table-wrap"><table><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourCharacter")}</th><th>{t("opponent")}</th><th>{t("mode")}</th><th>{t("rating")}</th></tr></thead><tbody>{filteredMatches.slice(0, 100).map(match => <tr key={match.replayId}><td>{formatTimestamp(match.playedAtEpoch)}</td><td><span className={`result-badge ${match.result}`}>{match.result}</span></td><td>{getCharacterName(match.subject, locale)}</td><td>{getCharacterName(match.opponent, locale)}</td><td>{match.battleTypeName ?? match.mode}</td><td>{match.subject.master_rating || match.subject.league_point || "—"}</td></tr>)}{filteredMatches.length === 0 && <tr><td className="empty-cell" colSpan={6}>{t("noRecords")}</td></tr>}</tbody></table></div></article>
+              <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestHundred")}</span></div><div className="table-wrap"><table className="match-table"><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourPlayer")}</th><th>{t("opponentPlayer")}</th><th>{t("mode")}</th><th>{t("replayId")}</th></tr></thead><tbody>{filteredMatches.slice(0, 100).map(match => <tr key={match.replayId}><td><span className="primary-detail">{formatTimestamp(match.playedAtEpoch)}</span></td><td><span className={`result-badge ${match.result}`}>{match.result}</span><small className="secondary-detail">{match.roundsWon} - {match.roundsLost} {t("rounds")}</small></td><td><strong className="character-detail">{getCharacterName(match.subject, locale)}</strong><small className="secondary-detail">{getInputType(match.subject.battle_input_type, locale)}</small><small className="secondary-detail rating-detail">{formatRating(match.subject)}</small></td><td><strong className="player-detail">{match.opponent.player.fighter_id ?? "—"}</strong><small className="secondary-detail">{getCharacterName(match.opponent, locale)} · {getInputType(match.opponent.battle_input_type, locale)}</small><small className="secondary-detail rating-detail">{formatRating(match.opponent)}</small><small className="secondary-detail">{match.opponent.player.short_id} · {match.opponent.player.platform_name ?? "—"}</small></td><td><span className="primary-detail">{match.battleTypeName ?? match.mode}</span><small className="secondary-detail">{match.sourceTypes.join(" · ")}</small></td><td><code className="replay-code">{match.replayId}</code></td></tr>)}{filteredMatches.length === 0 && <tr><td className="empty-cell" colSpan={6}>{t("noRecords")}</td></tr>}</tbody></table></div></article>
             </section>
           </>}
         </section>
