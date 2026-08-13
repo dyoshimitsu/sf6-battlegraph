@@ -69,7 +69,7 @@ Google認証をFirebase Consoleで有効にし、Authenticationの承認済み�
 
 Firebase Web設定はブラウザへ配信される公開設定です。サービスアカウント鍵や秘密鍵は使用しないでください。
 
-`npm run build` はWebアプリに加えて、Buckler上で自動実行する`dist/extension`と配布用`dist/sf6-battlegraph-extension.zip`を生成します。導入手順は[Chrome connector](docs/chrome-extension.md)を参照してください。
+`npm run build`はWebアプリに加えて、Buckler上で自動実行する`dist/extension`と配布用`dist/sf6-battlegraph-connector-v<version>.zip`を生成します。ZIP名と展開後の単一フォルダ名は同じです。導入手順は[Chrome connector](docs/chrome-extension.md)を参照してください。
 
 ## GitHub Pages deployment
 

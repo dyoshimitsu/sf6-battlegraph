@@ -13,12 +13,14 @@ export default defineConfig({
       name: "serve-connector-package",
       configureServer(server) {
         server.middlewares.use((request, response, next) => {
-          if (request.url?.split("?", 1)[0] !== "/sf6-battlegraph-extension.zip") return next();
+          if (!/^\/sf6-battlegraph-connector-v\d+\.\d+\.\d+\.zip$/.test(request.url?.split("?", 1)[0] ?? "")) return next();
           try {
-            const archive = readFileSync(resolve("dist/sf6-battlegraph-extension.zip"));
+            const fileName = `sf6-battlegraph-connector-v${connectorManifest.version}.zip`;
+            const archive = readFileSync(resolve("dist", fileName));
             response.statusCode = 200;
             response.setHeader("Content-Type", "application/zip");
             response.setHeader("Content-Length", archive.byteLength);
+            response.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
             response.end(archive);
           } catch {
             response.statusCode = 404;

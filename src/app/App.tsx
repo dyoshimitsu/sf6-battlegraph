@@ -245,8 +245,8 @@ export function App() {
     }, 30_000);
   }
 
-  const connectorDownloadUrl = "./sf6-battlegraph-extension.zip";
-  const connectorDownloadName = `sf6-battlegraph-connector-v${__CONNECTOR_VERSION__}-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}.zip`;
+  const connectorDownloadName = `sf6-battlegraph-connector-v${__CONNECTOR_VERSION__}.zip`;
+  const connectorDownloadUrl = `./${connectorDownloadName}`;
 
   function resetFilters() {
     setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId("");
