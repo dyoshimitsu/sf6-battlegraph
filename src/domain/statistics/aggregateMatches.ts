@@ -11,7 +11,6 @@ export interface MatchFilters {
   toDate?: string;
   mode?: BucklerSourceType;
   subjectCharacterId?: number;
-  opponentCharacterId?: number;
 }
 
 export interface RecordSummary {
@@ -79,10 +78,6 @@ export function filterMatches(
     if (
       filters.subjectCharacterId !== undefined &&
       characterId(match.subject) !== filters.subjectCharacterId
-    ) return false;
-    if (
-      filters.opponentCharacterId !== undefined &&
-      characterId(match.opponent) !== filters.opponentCharacterId
     ) return false;
     return true;
   });

@@ -85,7 +85,6 @@ export function App() {
   const [toDate, setToDate] = useState("");
   const [mode, setMode] = useState("");
   const [subjectCharacterId, setSubjectCharacterId] = useState("");
-  const [opponentCharacterId, setOpponentCharacterId] = useState("");
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -112,8 +111,7 @@ export function App() {
     toDate: toDate || undefined,
     mode: mode ? mode as BucklerBundlePreview["matches"][number]["mode"] : undefined,
     subjectCharacterId: subjectCharacterId ? Number(subjectCharacterId) : undefined,
-    opponentCharacterId: opponentCharacterId ? Number(opponentCharacterId) : undefined,
-  }), [fromDate, imported, mode, opponentCharacterId, subjectCharacterId, toDate]);
+  }), [fromDate, imported, mode, subjectCharacterId, toDate]);
   const statistics = useMemo(() => aggregateMatches(filteredMatches), [filteredMatches]);
   const allStatistics = useMemo(() => aggregateMatches(imported?.preview.matches ?? []), [imported]);
   const pendingMerge = useMemo(() => imported?.canSync && archivedMatches !== null
@@ -162,7 +160,7 @@ export function App() {
   }
 
   function resetFilters() {
-    setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId(""); setOpponentCharacterId("");
+    setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId("");
   }
 
   async function synchronize() {
@@ -275,7 +273,6 @@ export function App() {
                 <label><span>{t("fromDate")}</span><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></label><label><span>{t("toDate")}</span><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></label>
                 <label><span>{t("mode")}</span><select value={mode} onChange={e => setMode(e.target.value)}><option value="">{t("all")}</option>{imported.preview.sources.filter(s => s.sourceType !== "all" && s.sourceType !== "unknown").map(s => <option key={s.sourceType}>{s.sourceType}</option>)}</select></label>
                 <label><span>{t("yourCharacter")}</span><select value={subjectCharacterId} onChange={e => setSubjectCharacterId(e.target.value)}><option value="">{t("all")}</option>{[...allStatistics.bySubjectCharacter].sort((a, b) => compareCharacterSlugs(a.characterSlug, b.characterSlug)).filter(r => r.characterId !== null).map(r => { const sample = imported.preview.matches.find(m => (m.subject.playing_character_id ?? m.subject.character_id) === r.characterId); return <option key={r.characterId} value={r.characterId ?? ""}>{sample ? getCharacterName(sample.subject, locale) : r.characterName}</option>; })}</select></label>
-                <label><span>{t("opponentCharacter")}</span><select value={opponentCharacterId} onChange={e => setOpponentCharacterId(e.target.value)}><option value="">{t("all")}</option>{[...allStatistics.byOpponentCharacter].sort((a, b) => compareCharacterSlugs(a.characterSlug, b.characterSlug)).filter(r => r.characterId !== null).map(r => { const sample = imported.preview.matches.find(m => (m.opponent.playing_character_id ?? m.opponent.character_id) === r.characterId); return <option key={r.characterId} value={r.characterId ?? ""}>{sample ? getCharacterName(sample.opponent, locale) : r.characterName}</option>; })}</select></label>
                 <button type="button" onClick={resetFilters}>{t("reset")}</button>
               </div>
               <div className="record-banner"><article><span>{t("winRate")}</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article><article><span>{t("wins")}</span><strong>{statistics.overall.wins}</strong></article><article><span>{t("losses")}</span><strong>{statistics.overall.losses}</strong></article><article><span>{t("undecided")}</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article></div>
