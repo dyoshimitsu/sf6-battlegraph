@@ -10,7 +10,7 @@ export interface SyncWritePort {
 export interface SyncProgress {
   completed: number;
   total: number;
-  phase: "data" | "manifest" | "cleanup" | "complete";
+  phase: "data" | "manifest" | "cleanup" | "finalize" | "complete";
 }
 
 export async function executeSyncPlan(port: SyncWritePort, plan: SyncPlan, onProgress?: (progress: SyncProgress) => void): Promise<void> {
@@ -34,5 +34,8 @@ export async function executeSyncPlan(port: SyncWritePort, plan: SyncPlan, onPro
     await port.commit([plan.cleanupManifest]);
     completed += 1;
   }
+  onProgress?.({ completed, total: plan.writeCount, phase: "finalize" });
+  await port.commit([plan.completion]);
+  completed += 1;
   onProgress?.({ completed: plan.writeCount, total: plan.writeCount, phase: "complete" });
 }

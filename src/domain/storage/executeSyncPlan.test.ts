@@ -4,16 +4,16 @@ import type { PlannedWrite, SyncPlan } from "./syncPlan";
 
 function plan(dataWriteCount: number): SyncPlan {
   const writesBeforeManifest = Array.from({ length: dataWriteCount }, (_, index): PlannedWrite => ({ path: `data/${index}`, data: { index } }));
-  return { syncId: "sync", generation: "generation", userCode: 100, writesBeforeManifest, manifest: { path: "manifest/active", data: {} }, deletesAfterManifest: [], writeCount: dataWriteCount + 1, storedMatches: [] };
+  return { syncId: "sync", generation: "generation", userCode: 100, writesBeforeManifest, manifest: { path: "manifest/active", data: {} }, deletesAfterManifest: [], completion: { path: "syncs/sync", data: { status: "complete" } }, writeCount: dataWriteCount + 2, storedMatches: [] };
 }
 
 describe("executeSyncPlan", () => {
-  it("splits data writes into safe batches and commits the manifest last", async () => {
+  it("splits data writes into safe batches and completes the sync after manifest activation", async () => {
     const commits: string[][] = [];
     const port: SyncWritePort = { commit: async writes => { commits.push(writes.map(write => write.path)); }, remove: async () => undefined };
     await executeSyncPlan(port, plan(MAX_WRITES_PER_BATCH + 2));
-    expect(commits.map(batch => batch.length)).toEqual([MAX_WRITES_PER_BATCH, 2, 1]);
-    expect(commits.at(-1)).toEqual(["manifest/active"]);
+    expect(commits.map(batch => batch.length)).toEqual([MAX_WRITES_PER_BATCH, 2, 1, 1]);
+    expect(commits.slice(-2)).toEqual([["manifest/active"], ["syncs/sync"]]);
   });
 
   it("never activates the manifest after a failed data batch", async () => {
@@ -26,14 +26,14 @@ describe("executeSyncPlan", () => {
   it("reports progress through final activation", async () => {
     const progress: string[] = [];
     await executeSyncPlan({ commit: async () => undefined, remove: async () => undefined }, plan(2), item => progress.push(`${item.phase}:${item.completed}/${item.total}`));
-    expect(progress).toEqual(["data:2/3", "manifest:2/3", "complete:3/3"]);
+    expect(progress).toEqual(["data:2/4", "manifest:2/4", "finalize:3/4", "complete:4/4"]);
   });
 
   it("activates the new manifest before deleting obsolete chunks and then clears the pending list", async () => {
     const value = plan(1);
     value.deletesAfterManifest = ["chunks/old"];
     value.cleanupManifest = { path: "manifest/active", data: { obsoleteChunkIds: [] } };
-    value.writeCount = 4;
+    value.writeCount = 5;
     const operations: string[] = [];
     await executeSyncPlan({
       commit: async writes => { operations.push(`set:${writes.map(write => write.path).join(",")}`); },
@@ -44,7 +44,21 @@ describe("executeSyncPlan", () => {
       "set:manifest/active",
       "delete:chunks/old",
       "set:manifest/active",
+      "set:syncs/sync",
     ]);
+  });
+
+  it("does not mark the sync complete when manifest activation fails", async () => {
+    const value = plan(0);
+    const committed: string[] = [];
+    await expect(executeSyncPlan({
+      commit: async writes => {
+        committed.push(...writes.map(write => write.path));
+        if (writes.some(write => write.path === "manifest/active")) throw new Error("activation failed");
+      },
+      remove: async () => undefined,
+    }, value)).rejects.toThrow("activation failed");
+    expect(committed).not.toContain("syncs/sync");
   });
 
   it("leaves obsolete chunk ids in the active manifest when cleanup fails", async () => {

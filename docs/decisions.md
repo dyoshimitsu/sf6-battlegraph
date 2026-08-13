@@ -54,6 +54,8 @@ Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのc
 
 query chunkはactive generationと直前1世代だけを保持する。同期時は新manifestへ直前世代と削除予定IDを先に記録し、2世代以上前を削除してから削除予定を解除する。manifest切替前の失敗では旧activeを維持し、切替後の整理失敗では新activeを利用しながら次回同期で削除を再試行する。
 
+sync記録はdata batchとともに`prepared`で保存し、manifest有効化と旧世代整理の完了後にだけ`complete`へ更新する。途中失敗した記録は`prepared`のまま残し、同期がどの段階で中断したかを後から判別できるようにする。
+
 管理者はFirestoreの全保存層をパス付きdocument配列として単一JSONへバックアップできる。通常表示では実行せず、明示操作と確認後にだけ完全match、raw snapshot/page/partを含む全対象を読み取る。ダウンロード前にformat、version、対象ユーザー、必須document、重複パス、rawのUTF-8バイト数とSHA-256、partの連続性、JSON復元を検証する。integrity metadata導入前に保存したraw pageはlegacy inlineとして許容する。
 
 復元は管理者のファイル選択と確認後にだけ実行する。対象ユーザーコードを一致確認し、既存データを削除せず同じdocument pathへmergeする。JSON化されたFirestore Timestampを元の型へ戻し、全data batchの成功後にmanifestを最後に書くことで、不完全なquery generationを有効化しない。
