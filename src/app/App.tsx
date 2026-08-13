@@ -96,11 +96,6 @@ export function App() {
       </header>
 
       <main id="top">
-        <section className="hero">
-          <div className="hero-copy"><p className="eyebrow">{t("heroEyebrow")}</p><h1>{t("heroTitle").split("\n").map((line, i) => <span key={line}>{line}{i === 0 && <br />}</span>)}</h1><p className="lead">{t("heroLead")}</p></div>
-          <div className="hero-stat"><span>100</span><b>+</b><small>{t("archiveLabel")}</small></div>
-        </section>
-
         <section className="workspace">
           <div className="section-heading"><div><p className="eyebrow">{t("importEyebrow")}</p><h2>{t("importTitle")}</h2></div><p>{t("userCode")} <strong>{INITIAL_USER_CODE}</strong></p></div>
           <div className="workspace-grid">
