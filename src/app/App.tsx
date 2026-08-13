@@ -14,6 +14,7 @@ import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 import { loadStoredMatches } from "../domain/storage/loadStoredMatches";
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
+import { createSyncId } from "../domain/storage/createSyncId";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -151,7 +152,7 @@ export function App() {
     if (!imported?.canSync || firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin") return;
     setIsSyncing(true); setSyncMessage(null); setSyncProgress(null);
     try {
-      const id = `${Date.now()}-${crypto.randomUUID()}`;
+      const id = createSyncId();
       const stored = await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE);
       const summary = summarizeStoredMerge(stored?.matches ?? [], imported.preview.matches);
       const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, stored?.matches ?? []);
