@@ -36,7 +36,7 @@ Chrome拡張の詳しい導入・更新方法は[Chrome connector](docs/chrome-e
 
 ## Development
 
-Node.js 20.19以降を使用します。Firestore Security RulesのテストにはJava 21以降も必要です。
+Node.js 26以降を使用します。Firestore Security RulesのテストにはJava 21以降も必要です。
 
 ```sh
 npm install
