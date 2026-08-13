@@ -22,9 +22,9 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 - モード、使用キャラクター、相手キャラクターを組み合わせて絞り込む
 - 全体、使用キャラクター別、相手キャラクター別の勝敗と勝率を計算する
 - 勝率の母数は勝敗を判定できた試合とし、draw / unknown は別に表示する
-- 直近100試合を正規化済みデータから表示する
+- 直近100試合を正規化済みデータから表示し、各ラウンドの勝敗と決着方法を併記する
 
-次の段階では、実際のBucklerに対してbattle typeとround resultの意味を検証する。勝敗は現時点では、提供されたサンプルから観察した「各`round_results`の非ゼロ値がそのプレイヤーのラウンド勝利を表す」という規則に基づく推定である。
+`round_results` は Buckler 公式表示が参照する `icon_result{code}_{side}.png` を確認し、`0=敗者側`、`1=KO`、`2=C（削り）`、`3=T（タイムオーバー）`、`4=D（ドロー）`、`5=OD`、`6=SA`、`7=CA`、`8=P（パーフェクト）` として表示する。未知のコードは捨てずに `#<code>` と表示する。
 
 GitHub Pages の検証・デプロイ workflow を実装した。`master`へのpushと手動実行で、テスト・型検査・Webアプリとstandalone collectorのビルドがすべて成功した場合だけPages artifactをデプロイする。Pull Requestでは検証だけを実行する。
 
@@ -97,7 +97,6 @@ UIは日本語と英語に対応する。初回はブラウザ言語から選択
 ### Battle semantics
 
 - 全 `replay_battle_type` と `replay_battle_sub_type` の対応
-- `round_results` の全コードと、勝敗・引き分け・切断の意味
 - LP / MR が試合前と試合後のどちらを表すか
 - placement、Master、Legend、特殊対戦でのフィールド差
 - replay ID の安定性と一意性
