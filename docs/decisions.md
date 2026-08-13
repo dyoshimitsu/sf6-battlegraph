@@ -40,6 +40,8 @@ Firestore同期前に純粋なTypeScriptでwrite planを生成する。player me
 
 Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのcommit後にmanifestを単独commitする。matchの`sourceSyncIds`は`arrayUnion`で追記し、同期時刻はFirestore server timestampを使用する。同期UIは管理者にだけ表示し、進捗と成功・失敗を通知する。
 
+保存済み戦績の表示では、最初にmanifestを1 document読み、そのactive generationに列挙されたquery chunkだけを読む。generation、chunk数、試合数がmanifestと一致しない不完全な世代は表示しない。`private`では管理者ログイン後、`public`では認証なしで自動読込し、raw snapshotやcomplete matchは通常表示では読まない。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions

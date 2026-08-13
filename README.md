@@ -9,7 +9,7 @@ Buckler で参照できる対戦履歴には件数上限があるため、定期
 
 ## Status
 
-現在は初期実装段階です。collector bundleをブラウザへ読み込み、検証、`replay_id`による重複排除、対象プレイヤー基準の正規化、同期前プレビュー、期間・モード・キャラクターによる絞り込みと戦績集計ができます。対象プレイヤーとしてユーザーコード `1134991793` を使って実装を進めますが、将来的には clone した利用者が自身のユーザーコードと Firebase プロジェクトを設定してセルフホストできる構成にします。
+現在は初期実装段階です。collector bundleをブラウザへ読み込み、検証、`replay_id`による重複排除、対象プレイヤー基準の正規化、同期前プレビュー、Firestoreへの同期ができます。保存後はmanifestが示すquery chunkだけを自動で読み込み、期間・モード・キャラクターによる絞り込み、戦績集計、LP/MRグラフを復元します。対象プレイヤーとしてユーザーコード `1134991793` を使って実装を進めますが、将来的には clone した利用者が自身のユーザーコードと Firebase プロジェクトを設定してセルフホストできる構成にします。
 
 ## Development
 
@@ -29,7 +29,7 @@ npm run typecheck
 npm run build
 ```
 
-Firebase Authenticationの管理者判定とFirestore同期を実装しています。管理者ログイン後にcollector JSONを読み込むと、raw snapshot、完全な試合、query chunk、manifestをFirestoreへ同期できます。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
+Firebase Authenticationの管理者判定とFirestore同期を実装しています。管理者ログイン後にcollector JSONを読み込むと、raw snapshot、完全な試合、query chunk、manifestをFirestoreへ同期できます。次回以降は`private`構成では管理者ログイン後、`public`構成ではページ表示時に保存済み戦績を自動で表示します。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
 
 Firebaseを接続する場合は`.env.example`を`.env.local`へコピーし、Firebase Consoleで登録したWebアプリの設定と対象ユーザーコードを入力します。
 

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
 import { getCharacterName } from "../domain/buckler/characterNames";
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
@@ -11,6 +11,8 @@ import { useAdminAuth } from "../firebase/useAdminAuth";
 import { buildSyncPlan } from "../domain/storage/syncPlan";
 import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
+import { loadStoredMatches } from "../domain/storage/loadStoredMatches";
+import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -18,6 +20,7 @@ interface ImportedBundle {
   fileName: string;
   fileSize: number;
   source: unknown;
+  canSync: boolean;
   preview: BucklerBundlePreview;
 }
 
@@ -60,6 +63,7 @@ export function App() {
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoadingStored, setIsLoadingStored] = useState(false);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -69,7 +73,7 @@ export function App() {
   const readiness = [
     { label: t("validateJson"), done: imported !== null },
     { label: t("mergePages"), done: imported !== null && !imported.preview.isSinglePage },
-    { label: t("firestoreSync"), done: false },
+    { label: t("firestoreSync"), done: imported !== null && !imported.canSync },
     { label: t("chartDisplay"), done: imported !== null },
   ];
   const filteredMatches = useMemo(() => filterMatches(imported?.preview.matches ?? [], {
@@ -87,13 +91,33 @@ export function App() {
         : adminAuth.state.status === "admin" ? t("syncReady")
           : adminAuth.state.status === "notAdmin" ? t("notAdmin") : t("firebaseError");
 
+  useEffect(() => {
+    if (firebaseRuntime.status !== "ready" || (deploymentConfig.visibility !== "public" && adminAuth.state.status !== "admin") || imported?.canSync) return;
+    const db = firebaseRuntime.services.db;
+    let active = true;
+    setIsLoadingStored(true);
+    void loadStoredMatches(createFirestoreReadPort(db), INITIAL_USER_CODE).then(stored => {
+      if (!active || !stored) return;
+      const modes = [...new Set(stored.matches.map(match => match.mode))];
+      setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: {
+        userCode: INITIAL_USER_CODE, pageCount: stored.manifest.chunks.length, rawMatchCount: stored.matches.length,
+        uniqueMatchCount: stored.matches.length, duplicateCount: 0, oldestPlayedAt: stored.manifest.oldestPlayedAtEpoch,
+        newestPlayedAt: stored.manifest.newestPlayedAtEpoch, matches: stored.matches,
+        sources: modes.map(sourceType => ({ sourceType, pages: 0, expectedPages: 0, rawMatches: stored.matches.filter(match => match.mode === sourceType).length })),
+        warnings: [], isSinglePage: false,
+      } });
+    }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : t("storedLoadFailed")); })
+      .finally(() => { if (active) setIsLoadingStored(false); });
+    return () => { active = false; };
+  }, [adminAuth.state.status, imported?.canSync, t]);
+
   async function importFile(file?: File) {
     if (!file) return;
     setError(null);
     try {
       const source = JSON.parse(await file.text()) as unknown;
       const preview = parseCollectorImport(source, INITIAL_USER_CODE);
-      setImported({ fileName: file.name, fileSize: file.size, source, preview });
+      setImported({ fileName: file.name, fileSize: file.size, source, canSync: true, preview });
     } catch (cause) {
       setImported(null);
       if (cause instanceof SyntaxError) setError(t("errorInvalidJson"));
@@ -112,7 +136,7 @@ export function App() {
   }
 
   async function synchronize() {
-    if (!imported || firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin") return;
+    if (!imported?.canSync || firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin") return;
     setIsSyncing(true); setSyncMessage(null); setSyncProgress(null);
     try {
       const id = `${Date.now()}-${crypto.randomUUID()}`;
@@ -151,22 +175,23 @@ export function App() {
             </div>
             <aside className="roadmap-card"><p className="eyebrow">{t("steps")}</p><ol>{readiness.map((item, index) => <li className={item.done ? "done" : ""} key={item.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.label}</b><i /></li>)}</ol></aside>
           </div> : <div className="loaded-file-bar">
-            <div><p className="eyebrow">{t("validImport")}</p><strong>{imported.fileName}</strong><span>{formatBytes(imported.fileSize)} · {imported.preview.uniqueMatchCount} {t("uniqueMatches")}</span></div>
+            <div><p className="eyebrow">{imported.canSync ? t("validImport") : t("firestoreData")}</p><strong>{imported.fileName}</strong><span>{imported.canSync ? `${formatBytes(imported.fileSize)} · ` : ""}{imported.preview.uniqueMatchCount} {t("uniqueMatches")}</span></div>
             <button className="primary-button" type="button" onClick={() => inputRef.current?.click()}>{t("replaceFile")}</button>
             <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
           </div>}
-          {imported && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
+          {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
+          {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
           {syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}
           {error && <div className="message error" role="alert">{error}</div>}
 
           {imported && <>
-            <section className="preview">
+            {imported.canSync && <section className="preview">
               <div className="preview-title"><div><p className="eyebrow">{t("validImport")}</p><h2>{t("previewTitle")}</h2></div><span>{imported.fileName} · {formatBytes(imported.fileSize)}</span></div>
               <div className="metrics"><article><span>{t("fetchedPages")}</span><strong>{imported.preview.pageCount}</strong></article><article><span>{t("fetchedMatches")}</span><strong>{imported.preview.rawMatchCount}</strong></article><article><span>{t("uniqueMatches")}</span><strong>{imported.preview.uniqueMatchCount}</strong></article><article><span>{t("warnings")}</span><strong>{imported.preview.warnings.length}</strong></article></div>
               <dl className="preview-details"><div><dt>{t("newest")}</dt><dd>{formatTimestamp(imported.preview.newestPlayedAt)}</dd></div><div><dt>{t("oldest")}</dt><dd>{formatTimestamp(imported.preview.oldestPlayedAt)}</dd></div><div><dt>{t("duplicates")}</dt><dd>{imported.preview.duplicateCount} {t("mergedMatches")}</dd></div><div><dt>{t("buildId")}</dt><dd>{imported.preview.buildId ?? t("unknownSinglePage")}</dd></div></dl>
               <div className="source-grid">{imported.preview.sources.map(source => <article key={source.sourceType}><span>{source.sourceType}</span><strong>{source.pages}<small> / {source.expectedPages} pages</small></strong><p>{source.rawMatches} {t("rawMatches")}</p></article>)}</div>
               {imported.preview.warnings.length > 0 && <ul className="warning-list">{imported.preview.warnings.map(warning => <li key={warning}>{warning}</li>)}</ul>}
-            </section>
+            </section>}
 
             <section className="statistics-section">
               <div className="section-heading"><div><p className="eyebrow">{t("localAnalysis")}</p><h2>{t("recordTitle")}</h2></div><p>{t("showingMatches", { shown: filteredMatches.length, total: imported.preview.uniqueMatchCount })}</p></div>
