@@ -19,14 +19,16 @@ export interface RestoreWritePort {
   commit(writes: RestoreWrite[]): Promise<void>;
 }
 
-export function buildRestorePlan(value: unknown, expectedUserCode: number): RestorePlan {
+export function buildRestorePlan(value: unknown, expectedUserCode: number, visibility: "private" | "public" = "private"): RestorePlan {
   const archive: FirestoreArchive = validateFirestoreArchive(value);
   if (archive.userCode !== expectedUserCode) throw new Error(`Archive user code ${archive.userCode} does not match ${expectedUserCode}`);
   const manifestPath = `players/${expectedUserCode}/manifests/matches`;
   const manifest = archive.documents.find(document => document.path === manifestPath);
   if (!manifest) throw new Error("Archive manifest is missing");
-  const writesBeforeManifest = archive.documents.filter(document => document.path !== manifestPath);
-  return { userCode: expectedUserCode, writesBeforeManifest, manifest, writeCount: archive.documents.length };
+  const writesBeforeManifest = archive.documents
+    .filter(document => document.path !== manifestPath && document.path !== "settings/deployment");
+  writesBeforeManifest.unshift({ path: "settings/deployment", data: { visibility } });
+  return { userCode: expectedUserCode, writesBeforeManifest, manifest, writeCount: writesBeforeManifest.length + 1 };
 }
 
 export async function executeRestorePlan(port: RestoreWritePort, plan: RestorePlan, onProgress?: (completed: number, total: number) => void): Promise<void> {

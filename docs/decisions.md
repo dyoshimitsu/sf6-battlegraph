@@ -60,6 +60,8 @@ sync記録はdata batchとともに`prepared`で保存し、manifest有効化と
 
 復元は管理者のファイル選択と確認後にだけ実行する。対象ユーザーコードを一致確認し、既存データを削除せず同じdocument pathへmergeする。JSON化されたFirestore Timestampを元の型へ戻し、全data batchの成功後にmanifestを最後に書くことで、不完全なquery generationを有効化しない。
 
+バックアップ内の`settings/deployment.visibility`は復元しない。復元先アプリの`VITE_DEPLOYMENT_VISIBILITY`を正として設定documentを上書きし、public環境のバックアップをprivate環境へ戻した際に意図せず公開されることを防ぐ。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions

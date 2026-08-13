@@ -19,13 +19,23 @@ describe("Firestore archive restore", () => {
     expect(() => buildRestorePlan(archive(200), 100)).toThrow(/does not match/);
   });
 
+  it("uses the current deployment visibility instead of a value stored in the backup", () => {
+    const value = archive();
+    value.documents.unshift({ path: "settings/deployment", data: { visibility: "public" } });
+    value.documentCount = value.documents.length;
+    const plan = buildRestorePlan(value, 100, "private");
+    expect(plan.writesBeforeManifest.filter(write => write.path === "settings/deployment")).toEqual([
+      { path: "settings/deployment", data: { visibility: "private" } },
+    ]);
+  });
+
   it("batches data and activates the manifest only after every data batch", async () => {
     const value = archive();
     value.documents.splice(1, 0, ...Array.from({ length: MAX_RESTORE_WRITES_PER_BATCH }, (_, index) => ({ path: `players/100/matches/X${index}`, data: { index } })));
     value.documentCount = value.documents.length;
     const commits: string[][] = [];
     await executeRestorePlan({ commit: async writes => { commits.push(writes.map(write => write.path)); } }, buildRestorePlan(value, 100));
-    expect(commits.map(commit => commit.length)).toEqual([MAX_RESTORE_WRITES_PER_BATCH, 2, 1]);
+    expect(commits.map(commit => commit.length)).toEqual([MAX_RESTORE_WRITES_PER_BATCH, 3, 1]);
     expect(commits.at(-1)).toEqual(["players/100/manifests/matches"]);
   });
 

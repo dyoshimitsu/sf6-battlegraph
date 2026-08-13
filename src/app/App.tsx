@@ -206,7 +206,7 @@ export function App() {
     if (!file || firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin") return;
     setError(null); setRestoreProgress(null);
     try {
-      const plan = buildRestorePlan(JSON.parse(await file.text()) as unknown, INITIAL_USER_CODE);
+      const plan = buildRestorePlan(JSON.parse(await file.text()) as unknown, INITIAL_USER_CODE, deploymentConfig.visibility);
       if (!window.confirm(t("restoreConfirm", { count: plan.writeCount }))) return;
       setIsRestoring(true); setRestoreProgress(t("restoreProgress", { completed: 0, total: plan.writeCount }));
       await executeRestorePlan(createFirestoreRestorePort(firebaseRuntime.services.db), plan, (completed, total) => setRestoreProgress(t("restoreProgress", { completed, total })));
