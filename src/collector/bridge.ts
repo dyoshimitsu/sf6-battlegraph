@@ -4,6 +4,8 @@ export const COLLECTOR_MESSAGE_TYPE = "sf6-battlegraph.collector-result";
 export const COLLECTOR_MESSAGE_VERSION = 1;
 export const COLLECTOR_START_MESSAGE_TYPE = "sf6-battlegraph.collector-start";
 export const COLLECTOR_STATUS_MESSAGE_TYPE = "sf6-battlegraph.collector-status";
+export const CONNECTOR_PING_MESSAGE_TYPE = "sf6-battlegraph.connector-ping";
+export const CONNECTOR_READY_MESSAGE_TYPE = "sf6-battlegraph.connector-ready";
 export const BUCKLER_ORIGIN = "https://www.streetfighter.com";
 export const BATTLEGRAPH_ORIGIN_PARAMETER = "sf6-battlegraph-origin";
 
@@ -25,6 +27,11 @@ export interface CollectorStatusMessage {
   status: "authentication-required";
 }
 
+export interface ConnectorReadyMessage {
+  type: typeof CONNECTOR_READY_MESSAGE_TYPE;
+  version: string;
+}
+
 export function createCollectorStartMessage(url: string): CollectorStartMessage {
   return { type: COLLECTOR_START_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, url };
 }
@@ -40,6 +47,14 @@ export function readCollectorStatusMessage(origin: string, value: unknown, recei
     && candidate.version === COLLECTOR_MESSAGE_VERSION
     && candidate.status === "authentication-required"
     ? candidate as CollectorStatusMessage
+    : null;
+}
+
+export function readConnectorReadyMessage(origin: string, value: unknown, receiverOrigin: string): ConnectorReadyMessage | null {
+  if (origin !== receiverOrigin || typeof value !== "object" || value === null) return null;
+  const candidate = value as Partial<ConnectorReadyMessage>;
+  return candidate.type === CONNECTOR_READY_MESSAGE_TYPE && typeof candidate.version === "string" && /^\d+\.\d+\.\d+$/.test(candidate.version)
+    ? candidate as ConnectorReadyMessage
     : null;
 }
 

@@ -21,7 +21,7 @@ import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
-import { buildBucklerLaunchUrl, createCollectorStartMessage, readCollectorResultMessage, readCollectorStatusMessage } from "../collector/bridge";
+import { buildBucklerLaunchUrl, CONNECTOR_PING_MESSAGE_TYPE, createCollectorStartMessage, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "../collector/bridge";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
@@ -98,6 +98,7 @@ export function App() {
   const [restoreProgress, setRestoreProgress] = useState<string | null>(null);
   const [isCollecting, setIsCollecting] = useState(false);
   const [autoSyncPending, setAutoSyncPending] = useState(false);
+  const [connectorVersion, setConnectorVersion] = useState<string | null | undefined>(undefined);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -140,6 +141,11 @@ export function App() {
 
   useEffect(() => {
     function receiveCollectorResult(event: MessageEvent) {
+      const connector = readConnectorReadyMessage(event.origin, event.data, window.location.origin);
+      if (connector) {
+        setConnectorVersion(connector.version);
+        return;
+      }
       const status = readCollectorStatusMessage(event.origin, event.data, window.location.origin);
       if (status) {
         if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
@@ -167,8 +173,11 @@ export function App() {
       }
     }
     window.addEventListener("message", receiveCollectorResult);
+    window.postMessage({ type: CONNECTOR_PING_MESSAGE_TYPE }, window.location.origin);
+    const connectorDetectionTimeout = window.setTimeout(() => setConnectorVersion(version => version ?? null), 1_500);
     return () => {
       window.removeEventListener("message", receiveCollectorResult);
+      window.clearTimeout(connectorDetectionTimeout);
       if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
     };
   }, [t]);
@@ -191,6 +200,10 @@ export function App() {
       setError(t("collectorTimeout"));
     }, 30_000);
   }
+
+  const connectorDownloadUrl = import.meta.env.DEV
+    ? `${window.location.protocol}//${window.location.hostname}:4173/sf6-battlegraph-extension.zip`
+    : "./sf6-battlegraph-extension.zip";
 
   function resetFilters() {
     setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId("");
@@ -258,7 +271,8 @@ export function App() {
         <div className="header-actions">
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
-          {adminAuth.state.status === "admin" && <button className="auth-button header-sync-button" type="button" disabled={isCollecting || isSyncing} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>}
+          {adminAuth.state.status === "admin" && connectorVersion !== undefined && connectorVersion !== __CONNECTOR_VERSION__ && <a className="auth-button connector-update" href={connectorDownloadUrl} download>{t(connectorVersion === null ? "connectorInstall" : "connectorUpdate")}</a>}
+          {adminAuth.state.status === "admin" && <button className="auth-button header-sync-button" type="button" disabled={isCollecting || isSyncing || connectorVersion !== __CONNECTOR_VERSION__} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>}
           {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <button className="auth-button" type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button>}
           {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}
           {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}

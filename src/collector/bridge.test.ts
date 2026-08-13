@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage } from "./bridge";
+import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "./bridge";
 import type { BucklerCollectorBundle } from "../domain/buckler/types";
 
 const bundle = {
@@ -36,5 +36,12 @@ describe("collector bridge", () => {
     const status = createCollectorAuthenticationRequiredMessage();
     expect(readCollectorStatusMessage("https://owner.github.io", status, "https://owner.github.io")).toEqual(status);
     expect(readCollectorStatusMessage(BUCKLER_ORIGIN, status, "https://owner.github.io")).toBeNull();
+  });
+
+  it("validates connector version announcements", () => {
+    const ready = { type: "sf6-battlegraph.connector-ready", version: "0.1.0" };
+    expect(readConnectorReadyMessage("https://owner.github.io", ready, "https://owner.github.io")).toEqual(ready);
+    expect(readConnectorReadyMessage("https://example.com", ready, "https://owner.github.io")).toBeNull();
+    expect(readConnectorReadyMessage("https://owner.github.io", { ...ready, version: "latest" }, "https://owner.github.io")).toBeNull();
   });
 });

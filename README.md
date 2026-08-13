@@ -47,6 +47,7 @@ Google認証をFirebase Consoleで有効にし、Authenticationの承認済み�
 
 - `VITE_PLAYER_USER_CODE`: 保存対象のSF6ユーザーコード
 - `VITE_DEPLOYMENT_VISIBILITY`: `private`または`public`
+- `VITE_CONNECTOR_ORIGINS`: Battlegraphを配信するoriginをカンマ区切りで指定（パス不可）
 - `VITE_FIREBASE_API_KEY`
 - `VITE_FIREBASE_AUTH_DOMAIN`
 - `VITE_FIREBASE_PROJECT_ID`
@@ -71,11 +72,14 @@ VITE_FIREBASE_API_KEY
 VITE_FIREBASE_AUTH_DOMAIN
 VITE_FIREBASE_PROJECT_ID
 VITE_FIREBASE_APP_ID
+VITE_CONNECTOR_ORIGINS
 ```
 
 `ENABLE_PAGES_DEPLOY=true`なのに必須変数が不足している場合、workflowはFirebase未接続のartifactを公開せず、検証jobを失敗させます。
 
 Pull Requestでは検証だけを行い、Pagesへのデプロイは行いません。Actions画面から手動実行することもできます。
+
+公開時は`VITE_CONNECTOR_ORIGINS=https://<account>.github.io`を設定し、リポジトリをpublicへ変更してからPagesのSourceをGitHub Actionsへ切り替え、最後に`ENABLE_PAGES_DEPLOY=true`を設定する。この順序なら、private期間中に公開用artifactを誤ってデプロイしない。
 
 GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにする必要があります。privateのままPagesを利用できるかはGitHubの契約プランに依存します。
 

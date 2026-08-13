@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SF6 Battlegraph Connector",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Transfers your Buckler battle log directly to SF6 Battlegraph.",
   "background": {
     "service_worker": "background.js"
@@ -31,10 +31,7 @@
     },
     {
       "matches": [
-        "http://localhost/*",
-        "http://127.0.0.1/*",
-        "http://192.168.201.128/*",
-        "https://dyoshimitsu.github.io/*"
+        "http://localhost/*"
       ],
       "js": ["app-bridge.js"],
       "run_at": "document_idle"

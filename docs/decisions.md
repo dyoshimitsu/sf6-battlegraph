@@ -30,6 +30,8 @@ Chrome拡張はブラウザへ一度導入すればセッションをまたい�
 
 Buckler認証切れで接続フラグ付き要求がBattle Log以外のBuckler画面へ遷移した場合、拡張は`authentication-required`を起点タブへ通知し、収集タブを前面へ出す。ログイン後に元のBattle Logへ戻れば既存のタブ対応を維持したまま収集を再開する。認証情報は拡張へ保存しない。
 
+拡張の許可originはmanifestへ固定記述せず、`VITE_CONNECTOR_ORIGINS`からビルド時生成する。アプリは期待するmanifest versionと導入済み拡張が通知するversionを比較し、未導入または不一致の場合だけ更新リンクを表示する。unpacked extensionはChromeが自動更新しないため、更新zipの展開と拡張再読み込みは管理者が行う。
+
 正規化済み試合に対するクライアント集計も実装した。
 
 - 期間は `Asia/Tokyo` の暦日で両端を含めて絞り込む

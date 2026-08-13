@@ -14,6 +14,10 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 
 本番ビルドでは`dist/sf6-battlegraph-extension.zip`も生成する。zipを展開し、同じ方法で展開先を読み込める。
 
+Battlegraphは導入済み拡張のversionを検出する。未導入またはアプリの期待versionと異なる場合だけ、管理者ヘッダーへ「Chrome拡張を導入／更新」を表示する。更新時はzipを展開済みフォルダへ上書きし、`chrome://extensions`で拡張を再読み込みした後、Battlegraphも再読み込みする。
+
+cloneした利用者は`.env.local`またはGitHub Repository Variablesの`VITE_CONNECTOR_ORIGINS`へ配信originをカンマ区切りで設定する。例: `http://localhost:5173,https://alice.github.io`。ビルド時にChromeのmatch patternへ変換し、パス付きURLや未対応protocolは拒否する。
+
 ## Usage
 
 1. Bucklerへログインしておく
@@ -29,7 +33,8 @@ Buckler認証が切れている場合、拡張は認証画面への遷移を検�
 
 ## Permissions and isolation
 
-- content scriptの対象は`https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*`だけ
+- 収集content scriptの対象は`https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*`だけ
+- Battlegraph側content scriptの対象は`VITE_CONNECTOR_ORIGINS`で明示したoriginだけ
 - Bucklerと同じmain worldでsame-origin requestを行い、既存のログインCookieをブラウザ自身に送信させる
 - CookieをJavaScriptで読み取らず、bundle、Firestore、GitHubへ保存しない
 - bundleは一時的に対応付けたBattlegraphタブへだけ返信し、拡張ストレージへ保存しない

@@ -56,12 +56,13 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_CONNECTOR_ORIGINS: ${{ vars.VITE_CONNECTOR_ORIGINS }}
         run: >-
-          node -e 'const required=["VITE_PLAYER_USER_CODE","VITE_DEPLOYMENT_VISIBILITY","VITE_FIREBASE_API_KEY","VITE_FIREBASE_AUTH_DOMAIN","VITE_FIREBASE_PROJECT_ID","VITE_FIREBASE_APP_ID"];
+          node -e 'const required=["VITE_PLAYER_USER_CODE","VITE_DEPLOYMENT_VISIBILITY","VITE_FIREBASE_API_KEY","VITE_FIREBASE_AUTH_DOMAIN","VITE_FIREBASE_PROJECT_ID","VITE_FIREBASE_APP_ID","VITE_CONNECTOR_ORIGINS"];
           const missing=required.filter(key=>!process.env[key]);
           if(missing.length){console.error(`Missing repository variables: ${missing.join(", ")}`); process.exit(1)}'
 
-      - name: Build application and collector
+      - name: Build application and Chrome connector
         run: npm run build
         env:
           VITE_PLAYER_USER_CODE: ${{ vars.VITE_PLAYER_USER_CODE }}
@@ -70,6 +71,7 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_CONNECTOR_ORIGINS: ${{ vars.VITE_CONNECTOR_ORIGINS }}
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request' && vars.ENABLE_PAGES_DEPLOY == 'true'
