@@ -4,7 +4,7 @@
 
 ## Development workflow
 
-Node.js 20.19以降を使用します。Firestore Security RulesのローカルテストにはJava 21以降も必要です。
+Node.js 26以降を使用します。Firestore Security RulesのローカルテストにはJava 21以降も必要です。
 
 ```sh
 npm ci
@@ -44,6 +44,7 @@ npm run test:rules
 - ユーザーから別の指示がない限り`master`だけを使用する
 - 変更目的を一つに絞ったコミットを作る
 - コミットメッセージは`feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`などのConventional Commit形式を使う
+- Pull Requestはsquashやrebaseを使わず、通常のmerge commitでマージする
 - push、公開、デプロイは明示的な依頼がある場合だけ行う
 - コミット前に秘密情報や個人のバトルログが含まれていないことを確認する
 

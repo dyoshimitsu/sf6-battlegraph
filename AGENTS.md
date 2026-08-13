@@ -19,6 +19,7 @@ Treat `docs/decisions.md` as the record of confirmed decisions and unresolved va
 - Do not create or switch to a feature branch without explicit instruction.
 - Complete requested repository changes through a local commit unless the user explicitly asks not to commit.
 - Keep commits focused and use concise Conventional Commit-style messages.
+- Merge pull requests with a regular merge commit. Do not squash or rebase PR commits.
 - Do not push commits or open pull requests unless the user explicitly requests it.
 - Preserve unrelated user changes in the working tree.
 
