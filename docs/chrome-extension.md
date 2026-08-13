@@ -18,6 +18,8 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 
 Battlegraphは導入済み拡張のversionを検出する。未導入またはアプリの期待versionと異なる場合だけ、管理者ヘッダーへ「Chrome拡張を導入／更新」を表示する。リンクを押すと画面内にも次の手順を表示する。
 
+検出状態にかかわらず、管理メニューの「Chrome拡張をダウンロード」からいつでも最新版を再取得できる。
+
 1. ダウンロードしたZIPを展開する
 2. `chrome://extensions`で古いBattlegraph Connectorを削除する
 3. デベロッパーモードを有効にし、新しいバージョン付きフォルダを読み込む
