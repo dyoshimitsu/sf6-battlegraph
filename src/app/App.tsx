@@ -95,7 +95,7 @@ export function App() {
       <main id="top">
         <section className="workspace">
           <div className="section-heading"><div><p className="eyebrow">{t("importEyebrow")}</p><h2>{t("importTitle")}</h2></div><p>{t("userCode")} <strong>{INITIAL_USER_CODE}</strong></p></div>
-          <div className="workspace-grid">
+          {!imported ? <div className="workspace-grid">
             <div className={`drop-zone ${isDragging ? "is-dragging" : ""}`} onDragEnter={() => setIsDragging(true)} onDragLeave={() => setIsDragging(false)} onDragOver={(e) => e.preventDefault()} onDrop={(e: DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); void importFile(e.dataTransfer.files[0]); }}>
               <div className="drop-symbol"><span>↓</span></div><h3>{t("dropTitle")}</h3><p>{t("dropDescription")}</p>
               <button className="primary-button" type="button" onClick={() => inputRef.current?.click()}>{t("selectFile")}</button>
@@ -103,7 +103,11 @@ export function App() {
               <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
             </div>
             <aside className="roadmap-card"><p className="eyebrow">{t("steps")}</p><ol>{readiness.map((item, index) => <li className={item.done ? "done" : ""} key={item.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.label}</b><i /></li>)}</ol></aside>
-          </div>
+          </div> : <div className="loaded-file-bar">
+            <div><p className="eyebrow">{t("validImport")}</p><strong>{imported.fileName}</strong><span>{formatBytes(imported.fileSize)} · {imported.preview.uniqueMatchCount} {t("uniqueMatches")}</span></div>
+            <button className="primary-button" type="button" onClick={() => inputRef.current?.click()}>{t("replaceFile")}</button>
+            <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
+          </div>}
           {error && <div className="message error" role="alert">{error}</div>}
 
           {imported && <>
@@ -125,7 +129,7 @@ export function App() {
                 <button type="button" onClick={resetFilters}>{t("reset")}</button>
               </div>
               <div className="record-banner"><article><span>{t("winRate")}</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article><article><span>{t("wins")}</span><strong>{statistics.overall.wins}</strong></article><article><span>{t("losses")}</span><strong>{statistics.overall.losses}</strong></article><article><span>{t("undecided")}</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article></div>
-              <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={statistics.byOpponentCharacter.slice(0, 8)} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div>
+              <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={statistics.byOpponentCharacter} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div>
               <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestHundred")}</span></div><div className="table-wrap"><table><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourCharacter")}</th><th>{t("opponent")}</th><th>{t("mode")}</th><th>{t("rating")}</th></tr></thead><tbody>{filteredMatches.slice(0, 100).map(match => <tr key={match.replayId}><td>{formatTimestamp(match.playedAtEpoch)}</td><td><span className={`result-badge ${match.result}`}>{match.result}</span></td><td>{getCharacterName(match.subject, locale)}</td><td>{getCharacterName(match.opponent, locale)}</td><td>{match.battleTypeName ?? match.mode}</td><td>{match.subject.master_rating || match.subject.league_point || "—"}</td></tr>)}{filteredMatches.length === 0 && <tr><td className="empty-cell" colSpan={6}>{t("noRecords")}</td></tr>}</tbody></table></div></article>
             </section>
           </>}
