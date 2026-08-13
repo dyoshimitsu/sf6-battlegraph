@@ -26,6 +26,8 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 
 次の段階では、実際の Buckler に対してモード別 endpoint と round result の意味を検証する。勝敗は現時点では、提供されたサンプルから観察した「各 `round_results` の非ゼロ値がそのプレイヤーのラウンド勝利を表す」という規則に基づく推定である。
 
+GitHub Pages の検証・デプロイ workflow を実装した。`master`へのpushと手動実行で、テスト・型検査・Webアプリとstandalone collectorのビルドがすべて成功した場合だけPages artifactをデプロイする。Pull Requestでは検証だけを実行する。
+
 ## Confirmed decisions
 
 ### Hosting and persistence

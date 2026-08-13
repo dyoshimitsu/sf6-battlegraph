@@ -32,6 +32,14 @@ npm run build
 
 `npm run build` はWebアプリに加えて、Buckler上で実行するstandaloneな `dist/collector.js` も生成します。現段階の実行手順は[Collector export format](docs/collector-format.md#running-the-collector)を参照してください。
 
+## GitHub Pages deployment
+
+`master`へのpush時にGitHub Actionsがテスト、型検査、本番ビルドを行い、成功した`dist`をGitHub Pagesへデプロイします。GitHub上でリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。
+
+Pull Requestでは検証だけを行い、Pagesへのデプロイは行いません。Actions画面から手動実行することもできます。
+
+GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにする必要があります。privateのままPagesを利用できるかはGitHubの契約プランに依存します。
+
 ## Goals
 
 - ランク、カジュアル、ルーム、バトルハブを含む全対戦モードを保存する

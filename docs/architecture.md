@@ -153,8 +153,10 @@ raw は Cookie やアクセストークンを含まないことをインポー�
 
 ## Deployment
 
-- push 時に GitHub Actions で lint、型検査、テスト、build を実行する
-- main branch の成功した build artifact を GitHub Pages へデプロイする
+- push 時に GitHub Actions で型検査、テスト、build を実行する
+- `master` branch の成功した build artifact を GitHub Pages へデプロイする
+- Pull Request では検証だけを行い、デプロイ権限を付与しない
+- Pages の書き込み権限と OIDC token は deploy job だけに付与する
 - Firebase Web 設定とユーザーコードはデプロイ環境から注入する
 - Firebase サービスアカウント鍵や Buckler Cookie は使用しない
 
