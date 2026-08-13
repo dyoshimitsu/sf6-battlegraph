@@ -42,7 +42,9 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     const sourceTabId = sender.tab.id;
     findTargetTab(sourceTabId).then((targetTabId) => {
       if (targetTabId === undefined) return;
-      return chrome.tabs.sendMessage(targetTabId, message).then(() => chrome.tabs.update(sourceTabId, { active: true }));
+      return chrome.tabs.sendMessage(targetTabId, message).then(() => {
+        if (message.status === "authentication-required") return chrome.tabs.update(sourceTabId, { active: true });
+      });
     });
   }
 });
