@@ -84,6 +84,7 @@ export function App() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingStored, setIsLoadingStored] = useState(false);
+  const [archivedMatches, setArchivedMatches] = useState<NormalizedMatch[] | null>(null);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -105,6 +106,9 @@ export function App() {
   }), [fromDate, imported, mode, opponentCharacterId, subjectCharacterId, toDate]);
   const statistics = useMemo(() => aggregateMatches(filteredMatches), [filteredMatches]);
   const allStatistics = useMemo(() => aggregateMatches(imported?.preview.matches ?? []), [imported]);
+  const pendingMerge = useMemo(() => imported?.canSync && archivedMatches !== null
+    ? summarizeStoredMerge(archivedMatches, imported.preview.matches)
+    : null, [archivedMatches, imported]);
   const authLabel = adminAuth.state.status === "disabled" ? t("localPreview")
     : adminAuth.state.status === "loading" ? t("firebaseConnecting")
       : adminAuth.state.status === "signedOut" ? t("firebaseSignedOut")
@@ -117,7 +121,9 @@ export function App() {
     let active = true;
     setIsLoadingStored(true);
     void loadStoredMatches(createFirestoreReadPort(db), INITIAL_USER_CODE).then(stored => {
-      if (!active || !stored) return;
+      if (!active) return;
+      setArchivedMatches(stored?.matches ?? []);
+      if (!stored) return;
       setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(stored.matches, stored.manifest.chunks.length) });
     }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : t("storedLoadFailed")); })
       .finally(() => { if (active) setIsLoadingStored(false); });
@@ -153,10 +159,11 @@ export function App() {
     setIsSyncing(true); setSyncMessage(null); setSyncProgress(null);
     try {
       const id = createSyncId();
-      const stored = await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE);
-      const summary = summarizeStoredMerge(stored?.matches ?? [], imported.preview.matches);
-      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, stored?.matches ?? []);
+      const existing = archivedMatches ?? (await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE))?.matches ?? [];
+      const summary = summarizeStoredMerge(existing, imported.preview.matches);
+      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, existing);
       await executeSyncPlan(createFirestoreSyncPort(firebaseRuntime.services.db), plan, setSyncProgress);
+      setArchivedMatches(plan.storedMatches);
       setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(plan.storedMatches, (plan.manifest.data.chunks as unknown[]).length) });
       setSyncMessage(t("syncComplete", { count: summary.totalMatches, newCount: summary.newMatches, refreshedCount: summary.refreshedMatches, retainedCount: summary.retainedMatches }));
     } catch (cause) {
@@ -196,7 +203,7 @@ export function App() {
             <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
           </div>}
           {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
-          {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
+          {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
           {syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}
           {error && <div className="message error" role="alert">{error}</div>}
 
