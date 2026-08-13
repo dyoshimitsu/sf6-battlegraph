@@ -56,6 +56,8 @@ query chunkはactive generationと直前1世代だけを保持する。同期時
 
 sync記録はdata batchとともに`prepared`で保存し、manifest有効化と旧世代整理の完了後にだけ`complete`へ更新する。途中失敗した記録は`prepared`のまま残し、同期がどの段階で中断したかを後から判別できるようにする。
 
+raw snapshot親documentも最初は`prepared`と`startedAt`を保存し、全pageを含む同期成功後にsync記録と同じ最終batchで`complete`と`completedAt`を保存する。page保存の途中で失敗したsnapshotを完全データとして扱わない。
+
 管理者はFirestoreの全保存層をパス付きdocument配列として単一JSONへバックアップできる。通常表示では実行せず、明示操作と確認後にだけ完全match、raw snapshot/page/partを含む全対象を読み取る。ダウンロード前にformat、version、対象ユーザー、必須document、重複パス、rawのUTF-8バイト数とSHA-256、partの連続性、JSON復元を検証する。integrity metadata導入前に保存したraw pageはlegacy inlineとして許容する。
 
 復元は管理者のファイル選択と確認後にだけ実行する。対象ユーザーコードを一致確認し、既存データを削除せず同じdocument pathへmergeする。JSON化されたFirestore Timestampを元の型へ戻し、全data batchの成功後にmanifestを最後に書くことで、不完全なquery generationを有効化しない。

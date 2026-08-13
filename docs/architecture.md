@@ -132,7 +132,7 @@ mark synchronization complete
 
 同期が途中で失敗した場合、通常画面は以前の active generation を継続して読む。
 manifest切替後の整理に失敗した場合、新世代はそのまま利用でき、削除予定IDは次回同期で再試行する。
-sync記録は準備開始時に`prepared`で作成し、manifest切替と整理がすべて成功した最後にだけ`complete`にする。
+sync記録とraw snapshot親documentは準備開始時に`prepared`で作成し、manifest切替と整理がすべて成功した最後に同じbatchで`complete`にする。
 
 ## Read path
 

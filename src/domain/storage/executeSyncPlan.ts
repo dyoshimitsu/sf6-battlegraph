@@ -35,7 +35,7 @@ export async function executeSyncPlan(port: SyncWritePort, plan: SyncPlan, onPro
     completed += 1;
   }
   onProgress?.({ completed, total: plan.writeCount, phase: "finalize" });
-  await port.commit([plan.completion]);
-  completed += 1;
+  await port.commit(plan.completionWrites);
+  completed += plan.completionWrites.length;
   onProgress?.({ completed: plan.writeCount, total: plan.writeCount, phase: "complete" });
 }

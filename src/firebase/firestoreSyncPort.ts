@@ -8,7 +8,10 @@ function withServerMetadata(write: PlannedWrite): Record<string, unknown> {
     data.sourceSyncIds = arrayUnion(...((write.data.sourceSyncIds as string[] | undefined) ?? []));
     data.lastSeenAt = serverTimestamp();
   }
-  if (/\/snapshots\/[^/]+$/.test(write.path)) data.savedAt = serverTimestamp();
+  if (/\/snapshots\/[^/]+$/.test(write.path)) {
+    if (write.data.status === "prepared") data.startedAt = serverTimestamp();
+    if (write.data.status === "complete") data.completedAt = serverTimestamp();
+  }
   if (/\/syncs\/[^/]+$/.test(write.path)) data.updatedAt = serverTimestamp();
   if (/\/manifests\/matches$/.test(write.path)) data.updatedAt = serverTimestamp();
   if (/^players\/[^/]+$/.test(write.path)) data.lastSyncedAt = serverTimestamp();

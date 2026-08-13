@@ -21,7 +21,7 @@ export interface SyncPlan {
   manifest: PlannedWrite;
   deletesAfterManifest: string[];
   cleanupManifest?: PlannedWrite;
-  completion: PlannedWrite;
+  completionWrites: PlannedWrite[];
   writeCount: number;
   storedMatches: NormalizedMatch[];
 }
@@ -157,7 +157,7 @@ export function buildSyncPlan(
         matchCount: preview.rawMatchCount,
         schemaVersion: STORAGE_SCHEMA_VERSION,
         collectorVersion: 1,
-        status: "complete",
+        status: "prepared",
       },
     },
     ...pages.flatMap(page => buildRawPageWrites({
@@ -200,12 +200,12 @@ export function buildSyncPlan(
   const cleanupManifest = deletesAfterManifest.length > 0
     ? { path: `${base}/manifests/matches`, data: { obsoleteChunkIds: [] } }
     : undefined;
-  const completion: PlannedWrite = {
-    path: `${base}/syncs/${syncId}`,
-    data: { status: "complete", activatedGeneration: generation },
-  };
+  const completionWrites: PlannedWrite[] = [
+    { path: `${base}/snapshots/${syncId}`, data: { status: "complete" } },
+    { path: `${base}/syncs/${syncId}`, data: { status: "complete", activatedGeneration: generation } },
+  ];
   return {
-    syncId, generation, userCode, writesBeforeManifest, manifest, deletesAfterManifest, cleanupManifest, completion,
-    writeCount: writesBeforeManifest.length + 2 + deletesAfterManifest.length + (cleanupManifest ? 1 : 0), storedMatches: allMatches,
+    syncId, generation, userCode, writesBeforeManifest, manifest, deletesAfterManifest, cleanupManifest, completionWrites,
+    writeCount: writesBeforeManifest.length + 1 + completionWrites.length + deletesAfterManifest.length + (cleanupManifest ? 1 : 0), storedMatches: allMatches,
   };
 }

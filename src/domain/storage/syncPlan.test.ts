@@ -28,8 +28,12 @@ describe("buildSyncPlan", () => {
       "players/100/syncs/sync-1",
     ]);
     expect(plan.manifest.path).toBe("players/100/manifests/matches");
-    expect(plan.completion).toEqual({ path: "players/100/syncs/sync-1", data: { status: "complete", activatedGeneration: "generation-1" } });
-    expect(plan.writeCount).toBe(9);
+    expect(plan.writesBeforeManifest.find(write => write.path === "players/100/snapshots/sync-1")?.data.status).toBe("prepared");
+    expect(plan.completionWrites).toEqual([
+      { path: "players/100/snapshots/sync-1", data: { status: "complete" } },
+      { path: "players/100/syncs/sync-1", data: { status: "complete", activatedGeneration: "generation-1" } },
+    ]);
+    expect(plan.writeCount).toBe(10);
   });
 
   it("keeps the complete replay object in the match document", () => {
