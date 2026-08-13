@@ -4,7 +4,7 @@ const requests = new Map();
 
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message?.type === START_TYPE && sender.tab?.id !== undefined) {
-    chrome.tabs.create({ url: message.url }).then((tab) => {
+    chrome.tabs.create({ url: message.url, active: false }).then((tab) => {
       if (tab.id !== undefined) requests.set(tab.id, sender.tab.id);
     });
     return;
@@ -13,6 +13,6 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     const targetTabId = requests.get(sender.tab.id);
     if (targetTabId === undefined) return;
     requests.delete(sender.tab.id);
-    chrome.tabs.sendMessage(targetTabId, message);
+    chrome.tabs.sendMessage(targetTabId, message).then(() => chrome.tabs.remove(sender.tab.id));
   }
 });

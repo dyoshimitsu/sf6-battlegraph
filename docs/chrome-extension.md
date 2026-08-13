@@ -18,9 +18,10 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 
 1. Bucklerへログインしておく
 2. Battlegraphで「Bucklerから取得」を押す
-3. 拡張のbackgroundがBattlegraphタブと新しいBattle Logタブを対応付ける
+3. 拡張のbackgroundがBattle Logを背面タブで開き、Battlegraphタブと対応付ける
 4. 接続フラグ付きBattle Logページだけで自動的に全ページを取得する
-5. 完全なcollector bundleを拡張内部のmessage経由で元のBattlegraphタブへ返し、従来と同じ検証と同期前プレビューを通す
+5. 完全なcollector bundleを拡張内部のmessage経由で元のBattlegraphタブへ返す
+6. Battlegraphが検証後にFirestore同期と画面更新を続けて実行し、Bucklerタブを閉じる
 
 通常のBuckler閲覧では接続フラグがないため収集しない。取得失敗時は不完全なbundleを返さない。
 

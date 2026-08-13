@@ -22,6 +22,10 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 
 Bucklerの`window.opener`が別origin間で維持されることに依存しない。Battlegraph側content script、extension service worker、Buckler側content scriptをruntime messageで接続し、service workerが収集ごとに起点タブとBucklerタブをメモリ上で対応付ける。取得bundleは対応する起点タブだけへ返す。
 
+管理者がBattlegraphから取得を開始した場合、完全bundleの受信と検証成功を契機にFirestore同期を自動開始する。成功後は保存済みデータへ表示を切り替える。認証・権限不足時は同期を開始せず、同期失敗時は検証済みbundleを画面に保持して手動再試行を可能にする。
+
+Bucklerの収集タブは`active: false`で背面に開き、Battlegraphからフォーカスを移さない。bundleの返送成功後に収集タブを閉じる。
+
 正規化済み試合に対するクライアント集計も実装した。
 
 - 期間は `Asia/Tokyo` の暦日で両端を含めて絞り込む
