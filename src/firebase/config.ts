@@ -27,18 +27,25 @@ export function parseDeploymentConfig(env: Record<string, unknown>): DeploymentC
   }
 
   const userCodeText = value(env, "VITE_PLAYER_USER_CODE") || "1134991793";
-  if (!/^\d+$/.test(userCodeText)) throw new Error("VITE_PLAYER_USER_CODE must contain digits only");
+  if (!/^\d+$/.test(userCodeText))
+    throw new Error("VITE_PLAYER_USER_CODE must contain digits only");
   const playerUserCode = Number(userCodeText);
-  if (!Number.isSafeInteger(playerUserCode)) throw new Error("VITE_PLAYER_USER_CODE is outside the safe integer range");
+  if (!Number.isSafeInteger(playerUserCode))
+    throw new Error("VITE_PLAYER_USER_CODE is outside the safe integer range");
 
-  const entries = Object.entries(FIREBASE_ENV).map(([option, envKey]) => [option, envKey, value(env, envKey)] as const);
+  const entries = Object.entries(FIREBASE_ENV).map(
+    ([option, envKey]) => [option, envKey, value(env, envKey)] as const,
+  );
   if (entries.every(([, , configured]) => !configured)) return { playerUserCode, visibility };
   const missing = entries.filter(([, , configured]) => !configured).map(([, envKey]) => envKey);
-  if (missing.length) throw new Error(`Firebase configuration is incomplete: ${missing.join(", ")}`);
+  if (missing.length)
+    throw new Error(`Firebase configuration is incomplete: ${missing.join(", ")}`);
 
   return {
     playerUserCode,
     visibility,
-    firebase: Object.fromEntries(entries.map(([option, , configured]) => [option, configured])) as FirebaseOptions,
+    firebase: Object.fromEntries(
+      entries.map(([option, , configured]) => [option, configured]),
+    ) as FirebaseOptions,
   };
 }

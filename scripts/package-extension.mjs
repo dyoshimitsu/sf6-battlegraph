@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -12,7 +12,11 @@ const output = resolve(dist, `${folderName}.zip`);
 
 rmSync(staging, { recursive: true, force: true });
 for (const fileName of readdirSync(dist)) {
-  if (fileName === "sf6-battlegraph-extension.zip" || /^sf6-battlegraph-connector-v\d+\.\d+\.\d+\.zip$/.test(fileName)) rmSync(resolve(dist, fileName));
+  if (
+    fileName === "sf6-battlegraph-extension.zip" ||
+    /^sf6-battlegraph-connector-v\d+\.\d+\.\d+\.zip$/.test(fileName)
+  )
+    rmSync(resolve(dist, fileName));
 }
 mkdirSync(staging, { recursive: true });
 cpSync(source, resolve(staging, folderName), { recursive: true });

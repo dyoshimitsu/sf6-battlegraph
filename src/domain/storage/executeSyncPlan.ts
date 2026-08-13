@@ -13,7 +13,11 @@ export interface SyncProgress {
   phase: "data" | "manifest" | "cleanup" | "finalize" | "complete";
 }
 
-export async function executeSyncPlan(port: SyncWritePort, plan: SyncPlan, onProgress?: (progress: SyncProgress) => void): Promise<void> {
+export async function executeSyncPlan(
+  port: SyncWritePort,
+  plan: SyncPlan,
+  onProgress?: (progress: SyncProgress) => void,
+): Promise<void> {
   let completed = 0;
   for (let offset = 0; offset < plan.writesBeforeManifest.length; offset += MAX_WRITES_PER_BATCH) {
     const writes = plan.writesBeforeManifest.slice(offset, offset + MAX_WRITES_PER_BATCH);

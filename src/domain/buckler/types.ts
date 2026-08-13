@@ -67,13 +67,7 @@ export interface BucklerPagePreview {
   response: BucklerPageResponse;
 }
 
-export type BucklerSourceType =
-  | "all"
-  | "ranked"
-  | "casual"
-  | "custom"
-  | "hub"
-  | "unknown";
+export type BucklerSourceType = "all" | "ranked" | "casual" | "custom" | "hub" | "unknown";
 
 export interface BucklerCollectorPage {
   sourceType: BucklerSourceType;

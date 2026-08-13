@@ -21,21 +21,27 @@ async function forgetRequest(sourceTabId) {
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message?.type === START_TYPE && sender.tab?.id !== undefined) {
     const targetTabId = sender.tab.id;
-    chrome.tabs.create({ url: message.url, active: false }).then((tab) => {
-      if (tab.id !== undefined) return rememberRequest(tab.id, targetTabId);
-    }).catch((error) => chrome.tabs.sendMessage(targetTabId, {
-      type: STATUS_TYPE,
-      version: 1,
-      status: "error",
-      message: `Could not open the Buckler tab: ${error instanceof Error ? error.message : String(error)}`,
-    }));
+    chrome.tabs
+      .create({ url: message.url, active: false })
+      .then((tab) => {
+        if (tab.id !== undefined) return rememberRequest(tab.id, targetTabId);
+      })
+      .catch((error) =>
+        chrome.tabs.sendMessage(targetTabId, {
+          type: STATUS_TYPE,
+          version: 1,
+          status: "error",
+          message: `Could not open the Buckler tab: ${error instanceof Error ? error.message : String(error)}`,
+        }),
+      );
     return;
   }
   if (message?.type === RESULT_TYPE && sender.tab?.id !== undefined) {
     const sourceTabId = sender.tab.id;
     findTargetTab(sourceTabId).then((targetTabId) => {
       if (targetTabId === undefined) return;
-      return chrome.tabs.sendMessage(targetTabId, message)
+      return chrome.tabs
+        .sendMessage(targetTabId, message)
         .then(() => forgetRequest(sourceTabId))
         .then(() => chrome.tabs.remove(sourceTabId));
     });
@@ -45,7 +51,8 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     findTargetTab(sourceTabId).then((targetTabId) => {
       if (targetTabId === undefined) return;
       return chrome.tabs.sendMessage(targetTabId, message).then(() => {
-        if (Sf6BattlegraphBackgroundPolicy.shouldActivateBucklerTab(message.status)) return chrome.tabs.update(sourceTabId, { active: true });
+        if (Sf6BattlegraphBackgroundPolicy.shouldActivateBucklerTab(message.status))
+          return chrome.tabs.update(sourceTabId, { active: true });
       });
     });
   }

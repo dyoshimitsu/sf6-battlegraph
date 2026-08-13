@@ -1,8 +1,13 @@
-import type { BucklerBundlePreview, BucklerCollectorBundle, BucklerPageResponse, NormalizedMatch } from "../buckler/types";
+import type {
+  BucklerBundlePreview,
+  BucklerCollectorBundle,
+  BucklerPageResponse,
+  NormalizedMatch,
+} from "../buckler/types";
 import { toTokyoDate } from "../statistics/aggregateMatches";
-import { buildQueryChunkGeneration, type QueryChunk } from "./queryChunks";
-import { mergeStoredMatches } from "./mergeStoredMatches";
 import type { StoredManifest } from "./loadStoredMatches";
+import { mergeStoredMatches } from "./mergeStoredMatches";
+import { buildQueryChunkGeneration, type QueryChunk } from "./queryChunks";
 import { buildRawPageWrites } from "./rawPageWrites";
 
 export const STORAGE_SCHEMA_VERSION = 1;
@@ -36,7 +41,11 @@ interface RawPage {
 }
 
 function rawPages(source: unknown): RawPage[] {
-  if (source && typeof source === "object" && (source as Partial<BucklerCollectorBundle>).format === "sf6-battlegraph.collector") {
+  if (
+    source &&
+    typeof source === "object" &&
+    (source as Partial<BucklerCollectorBundle>).format === "sf6-battlegraph.collector"
+  ) {
     return ((source as BucklerCollectorBundle).pages ?? []).map((item, index) => ({
       id: `${item.sourceType}_${String(item.page).padStart(3, "0")}_${index}`,
       sourceType: item.sourceType,
@@ -47,23 +56,29 @@ function rawPages(source: unknown): RawPage[] {
     }));
   }
   const response = source as Partial<BucklerPageResponse>;
-  return [{
-    id: "all_001_0",
-    sourceType: "all",
-    sourcePath: "/battlelog",
-    page: response?.pageProps?.current_page ?? 1,
-    response: source,
-  }];
+  return [
+    {
+      id: "all_001_0",
+      sourceType: "all",
+      sourcePath: "/battlelog",
+      page: response?.pageProps?.current_page ?? 1,
+      response: source,
+    },
+  ];
 }
 
 function playerInfo(preview: BucklerBundlePreview) {
-  const latest = [...preview.matches].sort((left, right) => right.playedAtEpoch - left.playedAtEpoch)[0];
+  const latest = [...preview.matches].sort(
+    (left, right) => right.playedAtEpoch - left.playedAtEpoch,
+  )[0];
   return latest?.subject;
 }
 
 function completeMatch(match: NormalizedMatch, syncId: string): Record<string, unknown> {
-  const subjectCharacterId = match.subject.playing_character_id ?? match.subject.character_id ?? null;
-  const opponentCharacterId = match.opponent.playing_character_id ?? match.opponent.character_id ?? null;
+  const subjectCharacterId =
+    match.subject.playing_character_id ?? match.subject.character_id ?? null;
+  const opponentCharacterId =
+    match.opponent.playing_character_id ?? match.opponent.character_id ?? null;
   return {
     replayId: match.replayId,
     subjectUserCode: String(match.subjectUserCode),
@@ -81,7 +96,8 @@ function completeMatch(match: NormalizedMatch, syncId: string): Record<string, u
     roundsLost: match.roundsLost,
     subjectCharacterId,
     subjectCharacterName: match.subject.playing_character_name ?? match.subject.character_name,
-    subjectCharacterSlug: match.subject.playing_character_tool_name ?? match.subject.character_tool_name ?? "unknown",
+    subjectCharacterSlug:
+      match.subject.playing_character_tool_name ?? match.subject.character_tool_name ?? "unknown",
     subjectInputType: match.subject.battle_input_type,
     subjectLeaguePoint: match.subject.league_point,
     subjectLeagueRank: match.subject.league_rank,
@@ -91,7 +107,8 @@ function completeMatch(match: NormalizedMatch, syncId: string): Record<string, u
     opponentPlatform: match.opponent.player.platform_name,
     opponentCharacterId,
     opponentCharacterName: match.opponent.playing_character_name ?? match.opponent.character_name,
-    opponentCharacterSlug: match.opponent.playing_character_tool_name ?? match.opponent.character_tool_name ?? "unknown",
+    opponentCharacterSlug:
+      match.opponent.playing_character_tool_name ?? match.opponent.character_tool_name ?? "unknown",
     opponentInputType: match.opponent.battle_input_type,
     opponentLeaguePoint: match.opponent.league_point,
     opponentLeagueRank: match.opponent.league_rank,
@@ -104,7 +121,10 @@ function completeMatch(match: NormalizedMatch, syncId: string): Record<string, u
 }
 
 function chunkWrite(userCode: number, chunk: QueryChunk): PlannedWrite {
-  return { path: `players/${userCode}/queryChunks/${chunk.id}`, data: chunk as unknown as Record<string, unknown> };
+  return {
+    path: `players/${userCode}/queryChunks/${chunk.id}`,
+    data: chunk as unknown as Record<string, unknown>,
+  };
 }
 
 export function buildSyncPlan(
@@ -123,10 +143,12 @@ export function buildSyncPlan(
   const chunks = buildQueryChunkGeneration(allMatches, generation);
   const latestPlayer = playerInfo(preview);
   const base = `players/${userCode}`;
-  const obsoleteChunkIds = [...new Set([
-    ...(previousManifest?.obsoleteChunkIds ?? []),
-    ...(previousManifest?.previousGeneration?.chunks.map(chunk => chunk.id) ?? []),
-  ])].filter(id => !chunks.descriptors.some(chunk => chunk.id === id));
+  const obsoleteChunkIds = [
+    ...new Set([
+      ...(previousManifest?.obsoleteChunkIds ?? []),
+      ...(previousManifest?.previousGeneration?.chunks.map((chunk) => chunk.id) ?? []),
+    ]),
+  ].filter((id) => !chunks.descriptors.some((chunk) => chunk.id === id));
 
   const writesBeforeManifest: PlannedWrite[] = [
     { path: "settings/deployment", data: { visibility } },
@@ -152,7 +174,7 @@ export function buildSyncPlan(
         userCode: String(userCode),
         bucklerBuildId: preview.buildId,
         exportedAt: preview.exportedAt,
-        sourceTypes: preview.sources.map(sourceSummary => sourceSummary.sourceType),
+        sourceTypes: preview.sources.map((sourceSummary) => sourceSummary.sourceType),
         pageCount: preview.pageCount,
         matchCount: preview.rawMatchCount,
         schemaVersion: STORAGE_SCHEMA_VERSION,
@@ -163,13 +185,23 @@ export function buildSyncPlan(
         status: "prepared",
       },
     },
-    ...pages.flatMap(page => buildRawPageWrites({
-      path: `${base}/snapshots/${syncId}/pages/${page.id}`,
-      metadata: { sourceType: page.sourceType, sourcePath: page.sourcePath, page: page.page, fetchedAt: page.fetchedAt },
-      raw: page.response,
+    ...pages.flatMap((page) =>
+      buildRawPageWrites({
+        path: `${base}/snapshots/${syncId}/pages/${page.id}`,
+        metadata: {
+          sourceType: page.sourceType,
+          sourcePath: page.sourcePath,
+          page: page.page,
+          fetchedAt: page.fetchedAt,
+        },
+        raw: page.response,
+      }),
+    ),
+    ...preview.matches.map((match) => ({
+      path: `${base}/matches/${match.replayId}`,
+      data: completeMatch(match, syncId),
     })),
-    ...preview.matches.map(match => ({ path: `${base}/matches/${match.replayId}`, data: completeMatch(match, syncId) })),
-    ...chunks.chunks.map(chunk => chunkWrite(userCode, chunk)),
+    ...chunks.chunks.map((chunk) => chunkWrite(userCode, chunk)),
     {
       path: `${base}/syncs/${syncId}`,
       data: {
@@ -196,20 +228,39 @@ export function buildSyncPlan(
       schemaVersion: STORAGE_SCHEMA_VERSION,
       sourceSyncId: syncId,
       syncedAtEpoch: Math.floor(Date.now() / 1000),
-      previousGeneration: previousManifest ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks } : null,
+      previousGeneration: previousManifest
+        ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks }
+        : null,
       obsoleteChunkIds,
     },
   };
-  const deletesAfterManifest = obsoleteChunkIds.map(id => `${base}/queryChunks/${id}`);
-  const cleanupManifest = deletesAfterManifest.length > 0
-    ? { path: `${base}/manifests/matches`, data: { obsoleteChunkIds: [] } }
-    : undefined;
+  const deletesAfterManifest = obsoleteChunkIds.map((id) => `${base}/queryChunks/${id}`);
+  const cleanupManifest =
+    deletesAfterManifest.length > 0
+      ? { path: `${base}/manifests/matches`, data: { obsoleteChunkIds: [] } }
+      : undefined;
   const completionWrites: PlannedWrite[] = [
     { path: `${base}/snapshots/${syncId}`, data: { status: "complete" } },
-    { path: `${base}/syncs/${syncId}`, data: { status: "complete", activatedGeneration: generation } },
+    {
+      path: `${base}/syncs/${syncId}`,
+      data: { status: "complete", activatedGeneration: generation },
+    },
   ];
   return {
-    syncId, generation, userCode, writesBeforeManifest, manifest, deletesAfterManifest, cleanupManifest, completionWrites,
-    writeCount: writesBeforeManifest.length + 1 + completionWrites.length + deletesAfterManifest.length + (cleanupManifest ? 1 : 0), storedMatches: allMatches,
+    syncId,
+    generation,
+    userCode,
+    writesBeforeManifest,
+    manifest,
+    deletesAfterManifest,
+    cleanupManifest,
+    completionWrites,
+    writeCount:
+      writesBeforeManifest.length +
+      1 +
+      completionWrites.length +
+      deletesAfterManifest.length +
+      (cleanupManifest ? 1 : 0),
+    storedMatches: allMatches,
   };
 }

@@ -1,13 +1,13 @@
-import { parseBucklerPage } from "./parseBucklerPage";
 import { inferBattleMode } from "./battleModes";
+import { parseBucklerPage } from "./parseBucklerPage";
 import {
-  BucklerValidationError,
   type BucklerBundlePreview,
   type BucklerCollectorBundle,
   type BucklerCollectorPage,
   type BucklerPageResponse,
   type BucklerReplay,
   type BucklerSourceType,
+  BucklerValidationError,
   type CollectorSourceSummary,
   type MatchResult,
   type NormalizedMatch,
@@ -66,11 +66,28 @@ function parseBundle(input: unknown): BucklerCollectorBundle | null {
   const userCode = requireNumber(input.userCode, "bundle.userCode");
   const buildId = requireString(input.buildId, "bundle.buildId");
   const exportedAt = parseIsoDate(input.exportedAt, "bundle.exportedAt");
-  const stopReason = input.stopReason === undefined ? undefined : requireString(input.stopReason, "bundle.stopReason");
-  if (stopReason !== undefined && stopReason !== "known-replay") throw new BucklerValidationError("bundle.stopReason is unsupported");
-  const stoppedAtKnownReplayId = stopReason === "known-replay" ? requireString(input.stoppedAtKnownReplayId, "bundle.stoppedAtKnownReplayId") : undefined;
-  const knownReplayBoundaryCount = input.knownReplayBoundaryCount === undefined ? 0 : requireNumber(input.knownReplayBoundaryCount, "bundle.knownReplayBoundaryCount");
-  if (!Number.isInteger(knownReplayBoundaryCount) || knownReplayBoundaryCount < 0 || knownReplayBoundaryCount > 20) throw new BucklerValidationError("bundle.knownReplayBoundaryCount must be an integer from 0 to 20");
+  const stopReason =
+    input.stopReason === undefined
+      ? undefined
+      : requireString(input.stopReason, "bundle.stopReason");
+  if (stopReason !== undefined && stopReason !== "known-replay")
+    throw new BucklerValidationError("bundle.stopReason is unsupported");
+  const stoppedAtKnownReplayId =
+    stopReason === "known-replay"
+      ? requireString(input.stoppedAtKnownReplayId, "bundle.stoppedAtKnownReplayId")
+      : undefined;
+  const knownReplayBoundaryCount =
+    input.knownReplayBoundaryCount === undefined
+      ? 0
+      : requireNumber(input.knownReplayBoundaryCount, "bundle.knownReplayBoundaryCount");
+  if (
+    !Number.isInteger(knownReplayBoundaryCount) ||
+    knownReplayBoundaryCount < 0 ||
+    knownReplayBoundaryCount > 20
+  )
+    throw new BucklerValidationError(
+      "bundle.knownReplayBoundaryCount must be an integer from 0 to 20",
+    );
   if (!Array.isArray(input.pages) || input.pages.length === 0) {
     throw new BucklerValidationError("bundle.pages must be a non-empty array");
   }
@@ -80,19 +97,10 @@ function parseBundle(input: unknown): BucklerCollectorBundle | null {
       throw new BucklerValidationError(`bundle.pages[${index}] must be an object`);
     }
     return {
-      sourceType: parseSourceType(
-        value.sourceType,
-        `bundle.pages[${index}].sourceType`,
-      ),
-      sourcePath: requireString(
-        value.sourcePath,
-        `bundle.pages[${index}].sourcePath`,
-      ),
+      sourceType: parseSourceType(value.sourceType, `bundle.pages[${index}].sourceType`),
+      sourcePath: requireString(value.sourcePath, `bundle.pages[${index}].sourcePath`),
       page: requireNumber(value.page, `bundle.pages[${index}].page`),
-      fetchedAt: parseIsoDate(
-        value.fetchedAt,
-        `bundle.pages[${index}].fetchedAt`,
-      ),
+      fetchedAt: parseIsoDate(value.fetchedAt, `bundle.pages[${index}].fetchedAt`),
       response: value.response,
     };
   });
@@ -223,12 +231,7 @@ export function parseCollectorImport(
     pageKeys.add(pageKey);
     warnings.push(...parsed.warnings.map((warning) => `${pageKey}: ${warning}`));
     rawMatchCount += parsed.matchCount;
-    addSourceSummary(
-      sourceSummaries,
-      page.sourceType,
-      parsed.totalPages,
-      parsed.matchCount,
-    );
+    addSourceSummary(sourceSummaries, page.sourceType, parsed.totalPages, parsed.matchCount);
 
     const response = parsed.response as BucklerPageResponse;
     for (const replay of response.pageProps.replay_list) {
@@ -265,7 +268,9 @@ export function parseCollectorImport(
     }
   }
   if (bundle?.stopReason === "known-replay" && !matches.has(bundle.stoppedAtKnownReplayId ?? "")) {
-    throw new BucklerValidationError("bundle stoppedAtKnownReplayId was not found in the fetched pages");
+    throw new BucklerValidationError(
+      "bundle stoppedAtKnownReplayId was not found in the fetched pages",
+    );
   }
   if ((bundle?.knownReplayBoundaryCount ?? 0) > 0 && bundle?.stopReason !== "known-replay") {
     warnings.push("Known replay boundary was not found; all available pages were fetched");

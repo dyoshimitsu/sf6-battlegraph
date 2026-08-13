@@ -37,11 +37,14 @@ npm run dev
 検証コマンド:
 
 ```sh
+npm run check
 npm test
 npm run test:rules
 npm run typecheck
 npm run build
 ```
+
+コード整形には`npm run format`、変更を加えないフォーマット・Lint検査には`npm run check`を使用します。開発規約と変更手順は[Contributing](CONTRIBUTING.md)を参照してください。
 
 管理者ログイン後にChrome拡張から受信したbundleを検証し、既存履歴と`replay_id`で統合して、raw snapshot、完全な試合、全履歴のquery chunk、manifestをFirestoreへ同期します。次回以降は`private`構成では管理者ログイン後、`public`構成ではページ表示時に保存済み戦績を自動表示します。日常の同期にJSONファイルのダウンロードや選択は必要ありません。
 
@@ -155,6 +158,7 @@ GitHub Pages は静的ホスティングであるため、Buckler の取得処�
 - [Data model](docs/data-model.md)
 - [Decisions and validation](docs/decisions.md)
 - [Repository instructions for Codex](AGENTS.md)
+- [Contributing and coding conventions](CONTRIBUTING.md)
 
 ## Visibility and security
 

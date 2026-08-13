@@ -9,31 +9,23 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://www.streetfighter.com/6/buckler/*"
-      ],
+      "matches": ["https://www.streetfighter.com/6/buckler/*"],
       "js": ["auth-watcher.js"],
       "run_at": "document_idle"
     },
     {
-      "matches": [
-        "https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*"
-      ],
+      "matches": ["https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*"],
       "js": ["collector.js"],
       "run_at": "document_idle",
       "world": "MAIN"
     },
     {
-      "matches": [
-        "https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*"
-      ],
+      "matches": ["https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*"],
       "js": ["buckler-bridge.js"],
       "run_at": "document_start"
     },
     {
-      "matches": [
-        "http://localhost/*"
-      ],
+      "matches": ["http://localhost/*"],
       "js": ["app-bridge.js"],
       "run_at": "document_idle"
     }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { translations, type Locale, type TranslationKey } from "./translations";
+import { type Locale, type TranslationKey, translations } from "./translations";
 
 const STORAGE_KEY = "sf6-battlegraph.locale";
 

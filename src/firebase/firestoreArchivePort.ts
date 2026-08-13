@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, type Firestore } from "firebase/firestore/lite";
+import { collection, doc, type Firestore, getDoc, getDocs } from "firebase/firestore/lite";
 import type { ArchiveReadPort } from "../domain/storage/exportArchive";
 
 export function createFirestoreArchivePort(db: Firestore): ArchiveReadPort {
@@ -9,7 +9,10 @@ export function createFirestoreArchivePort(db: Firestore): ArchiveReadPort {
     },
     async listDocuments(path) {
       const snapshot = await getDocs(collection(db, path));
-      return snapshot.docs.map(document => ({ path: `${path}/${document.id}`, data: document.data() }));
+      return snapshot.docs.map((document) => ({
+        path: `${path}/${document.id}`,
+        data: document.data(),
+      }));
     },
   };
 }

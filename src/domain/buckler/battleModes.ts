@@ -13,6 +13,7 @@ export function inferBattleMode(
   if (name.includes("CASUAL")) return "casual";
   if (name.includes("BATTLE HUB")) return "hub";
   if (name.includes("CUSTOM") || name.includes("ROOM MATCH")) return "custom";
-  if (replay.replay_battle_type !== undefined && MODES_BY_TYPE[replay.replay_battle_type]) return MODES_BY_TYPE[replay.replay_battle_type];
+  if (replay.replay_battle_type !== undefined && MODES_BY_TYPE[replay.replay_battle_type])
+    return MODES_BY_TYPE[replay.replay_battle_type];
   return sourceType === "all" ? "unknown" : sourceType;
 }

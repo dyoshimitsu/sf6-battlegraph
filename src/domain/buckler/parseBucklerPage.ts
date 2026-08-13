@@ -1,19 +1,16 @@
 import {
-  BucklerValidationError,
   type BucklerPagePreview,
   type BucklerPageResponse,
   type BucklerPlayerInfo,
   type BucklerReplay,
+  BucklerValidationError,
 } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function requireRecord(
-  value: unknown,
-  path: string,
-): Record<string, unknown> {
+function requireRecord(value: unknown, path: string): Record<string, unknown> {
   if (!isRecord(value)) {
     throw new BucklerValidationError(`${path} must be an object`);
   }
@@ -51,17 +48,11 @@ function parseReplay(value: unknown, index: number): BucklerReplay {
   return replay as unknown as BucklerReplay;
 }
 
-export function parseBucklerPage(
-  input: unknown,
-  expectedUserCode?: number,
-): BucklerPagePreview {
+export function parseBucklerPage(input: unknown, expectedUserCode?: number): BucklerPagePreview {
   const root = requireRecord(input, "response");
   const pageProps = requireRecord(root.pageProps, "pageProps");
   const common = requireRecord(pageProps.common, "pageProps.common");
-  const statusCode = requireNumber(
-    common.statusCode,
-    "pageProps.common.statusCode",
-  );
+  const statusCode = requireNumber(common.statusCode, "pageProps.common.statusCode");
 
   if (statusCode !== 200) {
     throw new BucklerValidationError(
@@ -70,14 +61,8 @@ export function parseBucklerPage(
   }
 
   const userCode = requireNumber(pageProps.sid, "pageProps.sid");
-  const currentPage = requireNumber(
-    pageProps.current_page,
-    "pageProps.current_page",
-  );
-  const totalPages = requireNumber(
-    pageProps.total_page,
-    "pageProps.total_page",
-  );
+  const currentPage = requireNumber(pageProps.current_page, "pageProps.current_page");
+  const totalPages = requireNumber(pageProps.total_page, "pageProps.total_page");
 
   if (expectedUserCode !== undefined && userCode !== expectedUserCode) {
     throw new BucklerValidationError(
@@ -106,9 +91,7 @@ export function parseBucklerPage(
     if (player1IsSubject !== player2IsSubject) {
       subjectMatches += 1;
     } else {
-      warnings.push(
-        `Replay ${replay.replay_id} does not contain exactly one subject player`,
-      );
+      warnings.push(`Replay ${replay.replay_id} does not contain exactly one subject player`);
     }
   }
 
@@ -117,8 +100,7 @@ export function parseBucklerPage(
     new Set(
       replays.map(
         (replay) =>
-          replay.replay_battle_type_name ??
-          `type:${replay.replay_battle_type ?? "unknown"}`,
+          replay.replay_battle_type_name ?? `type:${replay.replay_battle_type ?? "unknown"}`,
       ),
     ),
   );

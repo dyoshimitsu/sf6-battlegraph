@@ -66,8 +66,16 @@ Before committing, inspect the staged diff for secrets and accidental personal d
 
 - Add or update tests for parser, normalization, deduplication, chunking, date-boundary, and aggregation changes.
 - Use representative fixtures with personal identifiers replaced by synthetic values.
+- Run `npm run format` after editing supported source files and `npm run check` before committing.
 - Run the relevant formatter, linter, type checker, tests, and production build before committing when those commands exist.
 - If a verification command cannot run, record the reason in the final handoff.
+
+## Coding conventions
+
+- Follow `CONTRIBUTING.md` and treat `biome.json` as the formatting and linting source of truth.
+- Keep TypeScript strict and avoid introducing `any` to bypass domain modeling.
+- Prefer semantic HTML and explicit button types.
+- Do not broadly disable lint rules. A local suppression requires a concrete explanation of the invariant it protects.
 
 ## Documentation
 

@@ -14,20 +14,24 @@ export const translations = {
     signOut: "ログアウト",
     backupExport: "全データをバックアップ",
     backupExporting: "バックアップ中…",
-    backupConfirm: "完全matchとrawを含む全データをFirestoreから読み取ります。バックアップを開始しますか？",
+    backupConfirm:
+      "完全matchとrawを含む全データをFirestoreから読み取ります。バックアップを開始しますか？",
     backupFailed: "バックアップの作成に失敗しました",
     restoreBackup: "バックアップを復元",
     restoreRunning: "復元中…",
-    restoreConfirm: "検証済みバックアップの{count}ドキュメントをFirestoreへ復元します。既存データは削除せず、同じパスを更新します。続行しますか？",
+    restoreConfirm:
+      "検証済みバックアップの{count}ドキュメントをFirestoreへ復元します。既存データは削除せず、同じパスを更新します。続行しますか？",
     restoreProgress: "バックアップを復元中: {completed} / {total}",
     restoreComplete: "バックアップから{count}ドキュメントを復元しました",
     restoreFailed: "バックアップの復元に失敗しました",
     syncTitle: "Firestoreへ永続化",
     syncDescription: "raw・試合・集計用データを安全に同期します",
-    syncPreview: "同期後 {count}試合（新規 {newCount}・再取得 {refreshedCount}・既存維持 {retainedCount}）",
+    syncPreview:
+      "同期後 {count}試合（新規 {newCount}・再取得 {refreshedCount}・既存維持 {retainedCount}）",
     syncNow: "同期する",
     syncing: "同期中…",
-    syncComplete: "合計{count}試合を保存しました（新規 {newCount}・再取得 {refreshedCount}・既存維持 {retainedCount}）",
+    syncComplete:
+      "合計{count}試合を保存しました（新規 {newCount}・再取得 {refreshedCount}・既存維持 {retainedCount}）",
     syncFailed: "Firestore同期に失敗しました",
     storedData: "保存済みの戦績",
     loadingStored: "Firestoreから保存済み戦績を読み込んでいます…",
@@ -37,8 +41,10 @@ export const translations = {
     connectorDownload: "Chrome拡張をダウンロード",
     connectorGuideTitle: "Chrome拡張の導入・更新",
     connectorGuideExtract: "ダウンロードしたZIPを展開します",
-    connectorGuideOpenExtensions: "chrome://extensions を開き、古いBattlegraph Connectorを削除します",
-    connectorGuideLoad: "デベロッパーモードを有効にし、展開したバージョン付きフォルダを読み込みます",
+    connectorGuideOpenExtensions:
+      "chrome://extensions を開き、古いBattlegraph Connectorを削除します",
+    connectorGuideLoad:
+      "デベロッパーモードを有効にし、展開したバージョン付きフォルダを読み込みます",
     connectorGuideReload: "Battlegraphのページを再読み込みします",
     connectorRequired: "Chrome拡張の導入待ち",
     close: "閉じる",
@@ -46,13 +52,18 @@ export const translations = {
     latestBattle: "最新対戦",
     lastSynced: "最終同期",
     syncReminderTitle: "戦績を同期してください",
-    syncReminderDescription: "最終同期から{days}日経過しています。100試合の取得上限を超える前に同期してください。",
+    syncReminderDescription:
+      "最終同期から{days}日経過しています。100試合の取得上限を超える前に同期してください。",
     collectingFromBuckler: "Bucklerから取得中…",
-    collectorStartTimeout: "Chrome拡張は検出できましたが、Buckler側の収集処理を開始できませんでした。拡張を再読み込みしてもう一度お試しください。",
-    collectorFetchTimeout: "Buckler側の収集は開始しましたが、2分以内に完了しませんでした。Bucklerタブと通信状態を確認してください。",
+    collectorStartTimeout:
+      "Chrome拡張は検出できましたが、Buckler側の収集処理を開始できませんでした。拡張を再読み込みしてもう一度お試しください。",
+    collectorFetchTimeout:
+      "Buckler側の収集は開始しましたが、2分以内に完了しませんでした。Bucklerタブと通信状態を確認してください。",
     collectorFailed: "Bucklerからの取得に失敗しました: {message}",
-    collectorAuthenticationRequired: "Bucklerの認証が切れています。開いたタブでログインすると、取得と同期を自動で再開します。",
-    collectorLoginTimeout: "Bucklerへのログイン待機を終了しました。ログイン後にもう一度取得してください。",
+    collectorAuthenticationRequired:
+      "Bucklerの認証が切れています。開いたタブでログインすると、取得と同期を自動で再開します。",
+    collectorLoginTimeout:
+      "Bucklerへのログイン待機を終了しました。ログイン後にもう一度取得してください。",
     refreshFromBuckler: "Bucklerから再取得・同期",
     collectorTransfer: "Bucklerから直接取得",
     validImport: "VALID IMPORT",
@@ -131,20 +142,24 @@ export const translations = {
     signOut: "Sign out",
     backupExport: "Back up all data",
     backupExporting: "Backing up…",
-    backupConfirm: "This reads all data from Firestore, including complete matches and raw responses. Start the backup?",
+    backupConfirm:
+      "This reads all data from Firestore, including complete matches and raw responses. Start the backup?",
     backupFailed: "Failed to create the backup",
     restoreBackup: "Restore backup",
     restoreRunning: "Restoring…",
-    restoreConfirm: "Restore {count} validated documents to Firestore? Existing data is not deleted; matching paths are updated.",
+    restoreConfirm:
+      "Restore {count} validated documents to Firestore? Existing data is not deleted; matching paths are updated.",
     restoreProgress: "Restoring backup: {completed} / {total}",
     restoreComplete: "Restored {count} documents from the backup",
     restoreFailed: "Failed to restore the backup",
     syncTitle: "Persist to Firestore",
     syncDescription: "Safely sync raw, match, and query data",
-    syncPreview: "After sync: {count} matches (new {newCount}, refreshed {refreshedCount}, retained {retainedCount})",
+    syncPreview:
+      "After sync: {count} matches (new {newCount}, refreshed {refreshedCount}, retained {retainedCount})",
     syncNow: "Sync now",
     syncing: "Syncing…",
-    syncComplete: "Stored {count} matches (new {newCount}, refreshed {refreshedCount}, retained {retainedCount})",
+    syncComplete:
+      "Stored {count} matches (new {newCount}, refreshed {refreshedCount}, retained {retainedCount})",
     syncFailed: "Firestore synchronization failed",
     storedData: "Stored battle records",
     loadingStored: "Loading stored records from Firestore…",
@@ -154,7 +169,8 @@ export const translations = {
     connectorDownload: "Download Chrome connector",
     connectorGuideTitle: "Install or update the Chrome connector",
     connectorGuideExtract: "Extract the downloaded ZIP file",
-    connectorGuideOpenExtensions: "Open chrome://extensions and remove the old Battlegraph Connector",
+    connectorGuideOpenExtensions:
+      "Open chrome://extensions and remove the old Battlegraph Connector",
     connectorGuideLoad: "Enable Developer mode and load the extracted versioned folder",
     connectorGuideReload: "Reload the Battlegraph page",
     connectorRequired: "Chrome connector required",
@@ -163,13 +179,18 @@ export const translations = {
     latestBattle: "Latest battle",
     lastSynced: "Last synced",
     syncReminderTitle: "Sync your battle log",
-    syncReminderDescription: "It has been {days} days since the last sync. Sync before Buckler's 100-match window is exceeded.",
+    syncReminderDescription:
+      "It has been {days} days since the last sync. Sync before Buckler's 100-match window is exceeded.",
     collectingFromBuckler: "Fetching from Buckler…",
-    collectorStartTimeout: "The Chrome connector was detected, but collection did not start on Buckler. Reload the extension and try again.",
-    collectorFetchTimeout: "Collection started on Buckler but did not finish within two minutes. Check the Buckler tab and your connection.",
+    collectorStartTimeout:
+      "The Chrome connector was detected, but collection did not start on Buckler. Reload the extension and try again.",
+    collectorFetchTimeout:
+      "Collection started on Buckler but did not finish within two minutes. Check the Buckler tab and your connection.",
     collectorFailed: "Failed to fetch from Buckler: {message}",
-    collectorAuthenticationRequired: "Your Buckler session has expired. Sign in on the opened tab to resume fetching and synchronization automatically.",
-    collectorLoginTimeout: "Stopped waiting for Buckler sign-in. Try fetching again after signing in.",
+    collectorAuthenticationRequired:
+      "Your Buckler session has expired. Sign in on the opened tab to resume fetching and synchronization automatically.",
+    collectorLoginTimeout:
+      "Stopped waiting for Buckler sign-in. Try fetching again after signing in.",
     refreshFromBuckler: "Fetch & sync from Buckler again",
     collectorTransfer: "Direct transfer from Buckler",
     validImport: "VALID IMPORT",
@@ -231,7 +252,8 @@ export const translations = {
     noRecords: "No matches found",
     noStoredData: "NO DATA",
     noStoredDataTitle: "No battle records stored yet",
-    noStoredDataDescription: "Install the Chrome connector, then fetch and sync your records from Buckler.",
+    noStoredDataDescription:
+      "Install the Chrome connector, then fetch and sync your records from Buckler.",
     unofficial: "Unofficial · Not affiliated with CAPCOM",
     errorUnexpected: "An unexpected error occurred while processing the fetched data.",
   },

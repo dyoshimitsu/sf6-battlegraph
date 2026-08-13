@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { BucklerPlayerInfo, NormalizedMatch } from "./buckler/types";
 import { aggregateMatches, filterMatches } from "./statistics/aggregateMatches";
-import { buildQueryChunkGeneration, DEFAULT_MAX_CHUNK_BYTES, DEFAULT_MAX_MATCHES_PER_CHUNK, serializedUtf8Bytes } from "./storage/queryChunks";
+import {
+  buildQueryChunkGeneration,
+  DEFAULT_MAX_CHUNK_BYTES,
+  DEFAULT_MAX_MATCHES_PER_CHUNK,
+  serializedUtf8Bytes,
+} from "./storage/queryChunks";
 
 const MATCH_COUNT = 10_000;
 const START_EPOCH = 1_735_689_600;
@@ -21,25 +26,30 @@ function player(shortId: number, characterId: number): BucklerPlayerInfo {
 
 function matches(count = MATCH_COUNT): NormalizedMatch[] {
   return Array.from({ length: count }, (_, index) => {
-    const subject = player(1134991793, index % 32 + 1);
-    const opponent = player(2_000_000_000 + index, (index * 7) % 32 + 1);
-    const result = index % 3 === 0 ? "loss" as const : "win" as const;
+    const subject = player(1134991793, (index % 32) + 1);
+    const opponent = player(2_000_000_000 + index, ((index * 7) % 32) + 1);
+    const result = index % 3 === 0 ? ("loss" as const) : ("win" as const);
     return {
       replayId: `REPLAY${String(index).padStart(8, "0")}`,
       subjectUserCode: 1134991793,
       playedAtEpoch: START_EPOCH + index * 3_600,
       battleVersion: 20_004_000,
-      battleType: index % 4 + 1,
+      battleType: (index % 4) + 1,
       battleTypeName: "RANKED MATCH",
       mode: "ranked" as const,
       sourceTypes: ["all" as const, "ranked" as const],
-      subjectSide: index % 2 === 0 ? 1 as const : 2 as const,
+      subjectSide: index % 2 === 0 ? (1 as const) : (2 as const),
       result,
       roundsWon: result === "win" ? 2 : 1,
       roundsLost: result === "win" ? 1 : 2,
       subject,
       opponent,
-      raw: { replay_id: `REPLAY${String(index).padStart(8, "0")}`, uploaded_at: START_EPOCH + index * 3_600, player1_info: subject, player2_info: opponent },
+      raw: {
+        replay_id: `REPLAY${String(index).padStart(8, "0")}`,
+        uploaded_at: START_EPOCH + index * 3_600,
+        player1_info: subject,
+        player2_info: opponent,
+      },
     };
   });
 }
@@ -64,8 +74,12 @@ describe("all-time scalability", () => {
     const elapsed = performance.now() - started;
 
     expect(generation.totalMatches).toBe(MATCH_COUNT);
-    expect(generation.chunks.every(chunk => chunk.count <= DEFAULT_MAX_MATCHES_PER_CHUNK)).toBe(true);
-    expect(generation.chunks.every(chunk => serializedUtf8Bytes(chunk) <= DEFAULT_MAX_CHUNK_BYTES)).toBe(true);
+    expect(generation.chunks.every((chunk) => chunk.count <= DEFAULT_MAX_MATCHES_PER_CHUNK)).toBe(
+      true,
+    );
+    expect(
+      generation.chunks.every((chunk) => serializedUtf8Bytes(chunk) <= DEFAULT_MAX_CHUNK_BYTES),
+    ).toBe(true);
     expect(generation.chunks.length + 1).toBeLessThanOrEqual(50);
     expect(elapsed).toBeLessThan(2_000);
   });

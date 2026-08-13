@@ -1,10 +1,10 @@
+import { compareCharacterSlugs } from "../buckler/characterOrder";
 import type {
   BucklerPlayerInfo,
   BucklerSourceType,
   MatchResult,
   NormalizedMatch,
 } from "../buckler/types";
-import { compareCharacterSlugs } from "../buckler/characterOrder";
 
 export interface MatchFilters {
   fromDate?: string;
@@ -74,11 +74,13 @@ export function filterMatches(
     const date = toTokyoDate(match.playedAtEpoch);
     if (filters.fromDate && date < filters.fromDate) return false;
     if (filters.toDate && date > filters.toDate) return false;
-    if (filters.mode && match.mode !== filters.mode && !match.sourceTypes.includes(filters.mode)) return false;
+    if (filters.mode && match.mode !== filters.mode && !match.sourceTypes.includes(filters.mode))
+      return false;
     if (
       filters.subjectCharacterId !== undefined &&
       characterId(match.subject) !== filters.subjectCharacterId
-    ) return false;
+    )
+      return false;
     return true;
   });
 }
@@ -117,7 +119,9 @@ function groupByCharacter(
     records.set(key, record);
   }
   return Array.from(records.values()).sort(
-    (left, right) => right.matches - left.matches || compareCharacterSlugs(left.characterSlug, right.characterSlug),
+    (left, right) =>
+      right.matches - left.matches ||
+      compareCharacterSlugs(left.characterSlug, right.characterSlug),
   );
 }
 

@@ -1,4 +1,9 @@
-import type { BucklerPlayerInfo, BucklerSourceType, MatchResult, NormalizedMatch } from "../buckler/types";
+import type {
+  BucklerPlayerInfo,
+  BucklerSourceType,
+  MatchResult,
+  NormalizedMatch,
+} from "../buckler/types";
 import { toTokyoDate } from "../statistics/aggregateMatches";
 
 export const DEFAULT_MAX_MATCHES_PER_CHUNK = 250;
@@ -107,7 +112,12 @@ export function serializedUtf8Bytes(value: unknown): number {
   return new TextEncoder().encode(JSON.stringify(value)).byteLength;
 }
 
-function createChunk(generation: string, yearMonth: string, sequence: number, matches: QueryMatch[]): QueryChunk {
+function createChunk(
+  generation: string,
+  yearMonth: string,
+  sequence: number,
+  matches: QueryMatch[],
+): QueryChunk {
   return {
     id: `${generation}_${yearMonth}_${String(sequence).padStart(3, "0")}`,
     generation,
@@ -121,7 +131,15 @@ function createChunk(generation: string, yearMonth: string, sequence: number, ma
   };
 }
 
-function estimatedChunkBytes(generation: string, yearMonth: string, sequence: number, first: QueryMatch, last: QueryMatch, count: number, matchBytes: number): number {
+function estimatedChunkBytes(
+  generation: string,
+  yearMonth: string,
+  sequence: number,
+  first: QueryMatch,
+  last: QueryMatch,
+  count: number,
+  matchBytes: number,
+): number {
   const shell: QueryChunk = {
     id: `${generation}_${yearMonth}_${String(sequence).padStart(3, "0")}`,
     generation,
@@ -147,7 +165,10 @@ export function buildQueryChunkGeneration(
   if (maxMatches < 1 || maxBytes < 1) throw new Error("chunk limits must be positive");
 
   const grouped = new Map<string, QueryMatch[]>();
-  for (const match of [...matches].sort((left, right) => left.playedAtEpoch - right.playedAtEpoch || left.replayId.localeCompare(right.replayId))) {
+  for (const match of [...matches].sort(
+    (left, right) =>
+      left.playedAtEpoch - right.playedAtEpoch || left.replayId.localeCompare(right.replayId),
+  )) {
     const yearMonth = toTokyoDate(match.playedAtEpoch).slice(0, 7);
     grouped.set(yearMonth, [...(grouped.get(yearMonth) ?? []), toQueryMatch(match)]);
   }
@@ -160,7 +181,15 @@ export function buildQueryChunkGeneration(
     for (const match of monthMatches) {
       const matchBytes = serializedUtf8Bytes(match);
       const candidateCount = pending.length + 1;
-      const candidateBytes = estimatedChunkBytes(generation, yearMonth, sequence, pending[0] ?? match, match, candidateCount, pendingMatchBytes + matchBytes);
+      const candidateBytes = estimatedChunkBytes(
+        generation,
+        yearMonth,
+        sequence,
+        pending[0] ?? match,
+        match,
+        candidateCount,
+        pendingMatchBytes + matchBytes,
+      );
       if (pending.length > 0 && (candidateCount > maxMatches || candidateBytes > maxBytes)) {
         chunks.push(createChunk(generation, yearMonth, sequence, pending));
         sequence += 1;
@@ -170,14 +199,30 @@ export function buildQueryChunkGeneration(
         pending.push(match);
         pendingMatchBytes += matchBytes;
       }
-      if (estimatedChunkBytes(generation, yearMonth, sequence, pending[0], match, pending.length, pendingMatchBytes) > maxBytes) {
+      if (
+        estimatedChunkBytes(
+          generation,
+          yearMonth,
+          sequence,
+          pending[0],
+          match,
+          pending.length,
+          pendingMatchBytes,
+        ) > maxBytes
+      ) {
         throw new Error(`match ${match.id} exceeds the query chunk byte limit`);
       }
     }
     if (pending.length > 0) chunks.push(createChunk(generation, yearMonth, sequence, pending));
   }
 
-  const descriptors = chunks.map(({ id, yearMonth, from, to, count }) => ({ id, yearMonth, from, to, count }));
+  const descriptors = chunks.map(({ id, yearMonth, from, to, count }) => ({
+    id,
+    yearMonth,
+    from,
+    to,
+    count,
+  }));
   return {
     generation,
     chunks,

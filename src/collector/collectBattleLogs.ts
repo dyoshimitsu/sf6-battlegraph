@@ -1,10 +1,10 @@
+import { parseBucklerPage } from "../domain/buckler/parseBucklerPage";
 import type {
   BucklerCollectorBundle,
   BucklerCollectorPage,
   BucklerPageResponse,
   BucklerSourceType,
 } from "../domain/buckler/types";
-import { parseBucklerPage } from "../domain/buckler/parseBucklerPage";
 
 export interface CollectorSource {
   sourceType: BucklerSourceType;
@@ -80,10 +80,7 @@ function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => globalThis.setTimeout(resolve, milliseconds));
 }
 
-async function fetchPage(
-  url: string,
-  fetcher: typeof fetch,
-): Promise<unknown> {
+async function fetchPage(url: string, fetcher: typeof fetch): Promise<unknown> {
   const response = await fetcher(url, {
     credentials: "same-origin",
     headers: { accept: "application/json" },
@@ -139,7 +136,9 @@ export async function collectBattleLogs(
         fetchedAt: now().toISOString(),
         response: response as BucklerPageResponse,
       });
-      stoppedAtKnownReplayId = preview.response.pageProps.replay_list.find(replay => knownReplayIds.has(replay.replay_id))?.replay_id;
+      stoppedAtKnownReplayId = preview.response.pageProps.replay_list.find((replay) =>
+        knownReplayIds.has(replay.replay_id),
+      )?.replay_id;
       if (stoppedAtKnownReplayId) break;
       pageNumber += 1;
       if (pageNumber <= totalPages && delayMs > 0) {
@@ -156,6 +155,8 @@ export async function collectBattleLogs(
     exportedAt: now().toISOString(),
     pages,
     knownReplayBoundaryCount: knownReplayIds.size,
-    ...(stoppedAtKnownReplayId ? { stopReason: "known-replay" as const, stoppedAtKnownReplayId } : {}),
+    ...(stoppedAtKnownReplayId
+      ? { stopReason: "known-replay" as const, stoppedAtKnownReplayId }
+      : {}),
   };
 }

@@ -1,5 +1,5 @@
-import type { BucklerPlayerInfo, BucklerReplay, NormalizedMatch } from "../buckler/types";
 import { inferBattleMode } from "../buckler/battleModes";
+import type { BucklerPlayerInfo, BucklerReplay, NormalizedMatch } from "../buckler/types";
 import type { QueryChunk, QueryChunkDescriptor, QueryMatch, QueryPlayer } from "./queryChunks";
 
 export interface StoredManifest {
@@ -27,7 +27,11 @@ export interface StoredMatches {
 
 function toPlayer(player: QueryPlayer): BucklerPlayerInfo {
   return {
-    player: { short_id: player.userCode, fighter_id: player.fighterId, platform_name: player.platform },
+    player: {
+      short_id: player.userCode,
+      fighter_id: player.fighterId,
+      platform_name: player.platform,
+    },
     character_id: player.characterId ?? undefined,
     character_name: player.characterName,
     character_tool_name: player.characterSlug,
@@ -43,7 +47,8 @@ function toPlayer(player: QueryPlayer): BucklerPlayerInfo {
 }
 
 export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
-  const subject = toPlayer(match.subject), opponent = toPlayer(match.opponent);
+  const subject = toPlayer(match.subject),
+    opponent = toPlayer(match.opponent);
   const raw: BucklerReplay = {
     replay_id: match.id,
     uploaded_at: match.at,
@@ -74,15 +79,34 @@ export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
   };
 }
 
-export async function loadStoredMatches(port: StoredMatchReadPort, userCode: number): Promise<StoredMatches | null> {
+export async function loadStoredMatches(
+  port: StoredMatchReadPort,
+  userCode: number,
+): Promise<StoredMatches | null> {
   const manifest = await port.getManifest(userCode);
   if (!manifest) return null;
-  const chunks = await port.getChunks(userCode, manifest.chunks.map(chunk => chunk.id));
-  const expected = new Set(manifest.chunks.map(chunk => chunk.id));
-  if (chunks.some(chunk => chunk.generation !== manifest.activeGeneration || !expected.has(chunk.id))) throw new Error("Stored query chunk does not belong to the active manifest");
-  if (chunks.length !== expected.size) throw new Error("Stored query chunk generation is incomplete");
-  const matches = chunks.flatMap(chunk => chunk.matches).map(queryMatchToNormalized).sort((left, right) => right.playedAtEpoch - left.playedAtEpoch || left.replayId.localeCompare(right.replayId));
-  const unique = new Map(matches.map(match => [match.replayId, match]));
-  if (unique.size !== manifest.totalMatches) throw new Error("Stored match count does not match the active manifest");
+  const chunks = await port.getChunks(
+    userCode,
+    manifest.chunks.map((chunk) => chunk.id),
+  );
+  const expected = new Set(manifest.chunks.map((chunk) => chunk.id));
+  if (
+    chunks.some(
+      (chunk) => chunk.generation !== manifest.activeGeneration || !expected.has(chunk.id),
+    )
+  )
+    throw new Error("Stored query chunk does not belong to the active manifest");
+  if (chunks.length !== expected.size)
+    throw new Error("Stored query chunk generation is incomplete");
+  const matches = chunks
+    .flatMap((chunk) => chunk.matches)
+    .map(queryMatchToNormalized)
+    .sort(
+      (left, right) =>
+        right.playedAtEpoch - left.playedAtEpoch || left.replayId.localeCompare(right.replayId),
+    );
+  const unique = new Map(matches.map((match) => [match.replayId, match]));
+  if (unique.size !== manifest.totalMatches)
+    throw new Error("Stored match count does not match the active manifest");
   return { manifest, matches: [...unique.values()], reads: 1 + chunks.length };
 }

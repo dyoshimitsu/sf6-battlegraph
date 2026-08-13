@@ -17,10 +17,15 @@ describe("getCharacterName", () => {
   });
 
   it("preserves an unknown character instead of dropping it", () => {
-    expect(getCharacterName({
-      player: { short_id: 1000000001 },
-      character_name: "新キャラクター",
-      character_tool_name: "newfighter",
-    }, "en")).toBe("新キャラクター");
+    expect(
+      getCharacterName(
+        {
+          player: { short_id: 1000000001 },
+          character_name: "新キャラクター",
+          character_tool_name: "newfighter",
+        },
+        "en",
+      ),
+    ).toBe("新キャラクター");
   });
 });

@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { initializeFirestore, type Firestore } from "firebase/firestore/lite";
-import { parseDeploymentConfig, type DeploymentConfig } from "./config";
+import { type Auth, getAuth } from "firebase/auth";
+import { type Firestore, initializeFirestore } from "firebase/firestore/lite";
+import { type DeploymentConfig, parseDeploymentConfig } from "./config";
 
 export interface FirebaseServices {
   auth: Auth;
@@ -36,7 +36,10 @@ function createFirebaseRuntime(): FirebaseRuntime {
       },
     };
   } catch (cause) {
-    return { status: "error", message: cause instanceof Error ? cause.message : "Firebase initialization failed" };
+    return {
+      status: "error",
+      message: cause instanceof Error ? cause.message : "Firebase initialization failed",
+    };
   }
 }
 

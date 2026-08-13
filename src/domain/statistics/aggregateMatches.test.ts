@@ -57,13 +57,13 @@ describe("filterMatches", () => {
   ];
 
   it("filters inclusive Tokyo calendar dates", () => {
-    expect(filterMatches(matches, { fromDate: "2026-08-13", toDate: "2026-08-13" }))
-      .toHaveLength(1);
+    expect(filterMatches(matches, { fromDate: "2026-08-13", toDate: "2026-08-13" })).toHaveLength(
+      1,
+    );
   });
 
   it("combines mode and character filters", () => {
-    expect(filterMatches(matches, { mode: "casual", subjectCharacterId: 1 }))
-      .toEqual([matches[1]]);
+    expect(filterMatches(matches, { mode: "casual", subjectCharacterId: 1 })).toEqual([matches[1]]);
   });
 
   it("filters by the inferred mode when the acquisition source was all", () => {
@@ -108,7 +108,7 @@ describe("aggregateMatches", () => {
       match("B", "loss", Date.parse("2026-08-13T15:00:00Z") / 1000, 21, 1),
       match("A", "win", Date.parse("2026-08-12T15:00:00Z") / 1000, 21, 1),
     ]);
-    expect(statistics.byDay.map(day => [day.date, day.matches, day.winRate])).toEqual([
+    expect(statistics.byDay.map((day) => [day.date, day.matches, day.winRate])).toEqual([
       ["2026-08-13", 1, 100],
       ["2026-08-14", 1, 0],
     ]);

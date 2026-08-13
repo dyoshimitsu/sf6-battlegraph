@@ -1,6 +1,12 @@
-import { arrayUnion, doc, serverTimestamp, writeBatch, type Firestore } from "firebase/firestore/lite";
-import type { PlannedWrite } from "../domain/storage/syncPlan";
+import {
+  arrayUnion,
+  doc,
+  type Firestore,
+  serverTimestamp,
+  writeBatch,
+} from "firebase/firestore/lite";
 import type { SyncWritePort } from "../domain/storage/executeSyncPlan";
+import type { PlannedWrite } from "../domain/storage/syncPlan";
 
 function withServerMetadata(write: PlannedWrite): Record<string, unknown> {
   const data = { ...write.data };
@@ -22,7 +28,8 @@ export function createFirestoreSyncPort(db: Firestore): SyncWritePort {
   return {
     async commit(writes) {
       const batch = writeBatch(db);
-      for (const write of writes) batch.set(doc(db, write.path), withServerMetadata(write), { merge: true });
+      for (const write of writes)
+        batch.set(doc(db, write.path), withServerMetadata(write), { merge: true });
       await batch.commit();
     },
     async remove(paths) {

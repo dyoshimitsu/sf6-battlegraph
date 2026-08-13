@@ -31,36 +31,49 @@ function match(id: string, at: number): NormalizedMatch {
 
 describe("buildQueryChunkGeneration", () => {
   it("groups by Tokyo year-month and sorts matches chronologically", () => {
-    const result = buildQueryChunkGeneration([
-      match("feb", 1738335600),
-      match("jan", 1738335599),
-    ], "gen-1");
-    expect(result.chunks.map(chunk => chunk.yearMonth)).toEqual(["2025-01", "2025-02"]);
-    expect(result.descriptors.map(chunk => chunk.id)).toEqual([
+    const result = buildQueryChunkGeneration(
+      [match("feb", 1738335600), match("jan", 1738335599)],
+      "gen-1",
+    );
+    expect(result.chunks.map((chunk) => chunk.yearMonth)).toEqual(["2025-01", "2025-02"]);
+    expect(result.descriptors.map((chunk) => chunk.id)).toEqual([
       "gen-1_2025-01_001",
       "gen-1_2025-02_001",
     ]);
   });
 
   it("splits a month at the configured match limit", () => {
-    const result = buildQueryChunkGeneration([
-      match("3", 1738368003), match("1", 1738368001), match("2", 1738368002),
-    ], "gen-2", { maxMatches: 2 });
-    expect(result.chunks.map(chunk => chunk.matches.map(item => item.id))).toEqual([["1", "2"], ["3"]]);
-    expect(result.chunks.map(chunk => chunk.count)).toEqual([2, 1]);
+    const result = buildQueryChunkGeneration(
+      [match("3", 1738368003), match("1", 1738368001), match("2", 1738368002)],
+      "gen-2",
+      { maxMatches: 2 },
+    );
+    expect(result.chunks.map((chunk) => chunk.matches.map((item) => item.id))).toEqual([
+      ["1", "2"],
+      ["3"],
+    ]);
+    expect(result.chunks.map((chunk) => chunk.count)).toEqual([2, 1]);
   });
 
   it("measures UTF-8 bytes and splits before the byte limit", () => {
     const one = buildQueryChunkGeneration([match("one", 1738368001)], "gen-3").chunks[0];
-    const two = buildQueryChunkGeneration([match("one", 1738368001), match("two", 1738368002)], "gen-3").chunks[0];
+    const two = buildQueryChunkGeneration(
+      [match("one", 1738368001), match("two", 1738368002)],
+      "gen-3",
+    ).chunks[0];
     const limit = Math.floor((serializedUtf8Bytes(one) + serializedUtf8Bytes(two)) / 2);
-    const result = buildQueryChunkGeneration([match("one", 1738368001), match("two", 1738368002)], "gen-3", { maxBytes: limit });
+    const result = buildQueryChunkGeneration(
+      [match("one", 1738368001), match("two", 1738368002)],
+      "gen-3",
+      { maxBytes: limit },
+    );
     expect(result.chunks).toHaveLength(2);
-    expect(result.chunks.every(chunk => serializedUtf8Bytes(chunk) <= limit)).toBe(true);
+    expect(result.chunks.every((chunk) => serializedUtf8Bytes(chunk) <= limit)).toBe(true);
   });
 
   it("retains fields needed by the current client views", () => {
-    const queryMatch = buildQueryChunkGeneration([match("one", 1738368001)], "gen-4").chunks[0].matches[0];
+    const queryMatch = buildQueryChunkGeneration([match("one", 1738368001)], "gen-4").chunks[0]
+      .matches[0];
     expect(queryMatch).toMatchObject({
       id: "one",
       result: "win",

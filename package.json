@@ -9,6 +9,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --config vite.extension.config.ts && node scripts/package-extension.mjs",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:rules:unit": "vitest run --config vitest.rules.config.ts",
@@ -21,6 +25,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
     "@firebase/rules-unit-testing": "^5.0.1",
     "@types/node": "^26.2.0",
     "@types/react": "19.2.18",

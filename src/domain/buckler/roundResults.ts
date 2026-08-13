@@ -24,24 +24,30 @@ export function getRoundDetails(
   opponentResults: number[] = [],
   locale: "ja" | "en",
 ): RoundDetail[] {
-  return Array.from({ length: Math.max(subjectResults.length, opponentResults.length) }, (_, index) => {
-    const subjectCode = subjectResults[index] ?? 0;
-    const opponentCode = opponentResults[index] ?? 0;
-    const code = subjectCode || opponentCode;
-    const outcome: RoundOutcome = subjectCode === 4 || opponentCode === 4
-      ? "draw"
-      : subjectCode > 0 && opponentCode === 0
-        ? "win"
-        : opponentCode > 0 && subjectCode === 0
-          ? "loss"
-          : "unknown";
-    const definition = METHODS[code];
-    return {
-      round: index + 1,
-      outcome,
-      code,
-      method: definition?.method ?? `#${code}`,
-      description: definition?.[locale] ?? (locale === "ja" ? `不明な結果コード ${code}` : `Unknown result code ${code}`),
-    };
-  });
+  return Array.from(
+    { length: Math.max(subjectResults.length, opponentResults.length) },
+    (_, index) => {
+      const subjectCode = subjectResults[index] ?? 0;
+      const opponentCode = opponentResults[index] ?? 0;
+      const code = subjectCode || opponentCode;
+      const outcome: RoundOutcome =
+        subjectCode === 4 || opponentCode === 4
+          ? "draw"
+          : subjectCode > 0 && opponentCode === 0
+            ? "win"
+            : opponentCode > 0 && subjectCode === 0
+              ? "loss"
+              : "unknown";
+      const definition = METHODS[code];
+      return {
+        round: index + 1,
+        outcome,
+        code,
+        method: definition?.method ?? `#${code}`,
+        description:
+          definition?.[locale] ??
+          (locale === "ja" ? `不明な結果コード ${code}` : `Unknown result code ${code}`),
+      };
+    },
+  );
 }

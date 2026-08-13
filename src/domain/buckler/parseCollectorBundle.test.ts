@@ -79,10 +79,11 @@ describe("parseCollectorImport", () => {
 
   it("normalizes the subject to the same shape from either side", () => {
     const input = bundle([
-      bundlePage("ranked", 1, page(1, 1, [
-        replay("PLAYER001", 1, 1_700_000_000),
-        replay("PLAYER002", 2, 1_699_999_900),
-      ])),
+      bundlePage(
+        "ranked",
+        1,
+        page(1, 1, [replay("PLAYER001", 1, 1_700_000_000), replay("PLAYER002", 2, 1_699_999_900)]),
+      ),
     ]);
 
     const result = parseCollectorImport(input, SUBJECT);
@@ -94,20 +95,35 @@ describe("parseCollectorImport", () => {
 
   it("derives each match mode from a combined battle log", () => {
     const ranked = replay("RANKED001", 1, 1_700_000_000);
-    const casual = { ...replay("CASUAL001", 1, 1_699_999_900), replay_battle_type: 2, replay_battle_type_name: "CASUAL MATCH" };
-    const custom = { ...replay("CUSTOM001", 1, 1_699_999_800), replay_battle_type: 3, replay_battle_type_name: "CUSTOM ROOM" };
-    const hub = { ...replay("HUB000001", 1, 1_699_999_700), replay_battle_type: 4, replay_battle_type_name: "BATTLE HUB" };
+    const casual = {
+      ...replay("CASUAL001", 1, 1_699_999_900),
+      replay_battle_type: 2,
+      replay_battle_type_name: "CASUAL MATCH",
+    };
+    const custom = {
+      ...replay("CUSTOM001", 1, 1_699_999_800),
+      replay_battle_type: 3,
+      replay_battle_type_name: "CUSTOM ROOM",
+    };
+    const hub = {
+      ...replay("HUB000001", 1, 1_699_999_700),
+      replay_battle_type: 4,
+      replay_battle_type_name: "BATTLE HUB",
+    };
 
-    const result = parseCollectorImport(bundle([
-      bundlePage("all", 1, page(1, 1, [ranked, casual, custom, hub])),
-    ]), SUBJECT);
+    const result = parseCollectorImport(
+      bundle([bundlePage("all", 1, page(1, 1, [ranked, casual, custom, hub]))]),
+      SUBJECT,
+    );
 
-    expect(Object.fromEntries(result.matches.map(match => [match.replayId, match.mode]))).toEqual({
-      RANKED001: "ranked",
-      CASUAL001: "casual",
-      CUSTOM001: "custom",
-      HUB000001: "hub",
-    });
+    expect(Object.fromEntries(result.matches.map((match) => [match.replayId, match.mode]))).toEqual(
+      {
+        RANKED001: "ranked",
+        CASUAL001: "casual",
+        CUSTOM001: "custom",
+        HUB000001: "hub",
+      },
+    );
   });
 
   it("warns about an incomplete source", () => {
@@ -127,7 +143,9 @@ describe("parseCollectorImport", () => {
       stoppedAtKnownReplayId: "KNOWN001",
     };
 
-    expect(parseCollectorImport(input, SUBJECT).warnings).not.toContain("all: imported 1 of 3 pages");
+    expect(parseCollectorImport(input, SUBJECT).warnings).not.toContain(
+      "all: imported 1 of 3 pages",
+    );
   });
 
   it("warns when requested known boundaries have fallen outside the available history", () => {
@@ -136,7 +154,9 @@ describe("parseCollectorImport", () => {
       knownReplayBoundaryCount: 20,
     };
 
-    expect(parseCollectorImport(input, SUBJECT).warnings).toContain("Known replay boundary was not found; all available pages were fetched");
+    expect(parseCollectorImport(input, SUBJECT).warnings).toContain(
+      "Known replay boundary was not found; all available pages were fetched",
+    );
   });
 
   it("continues to accept a single raw page", () => {

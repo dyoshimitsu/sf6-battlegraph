@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  buildBattleLogDataUrl,
+  type CollectorSource,
+  collectBattleLogs,
   DEFAULT_COLLECTOR_SOURCES,
   MODE_SPECIFIC_COLLECTOR_SOURCES,
-  buildBattleLogDataUrl,
-  collectBattleLogs,
-  type CollectorSource,
 } from "./collectBattleLogs";
 
 const USER_CODE = 1000000001;
@@ -92,8 +92,8 @@ describe("collectBattleLogs", () => {
   });
 
   it("stops without returning a partial bundle when a request fails", async () => {
-    const fetcher = vi.fn(async () =>
-      new Response(JSON.stringify({ error: true }), { status: 403 }),
+    const fetcher = vi.fn(
+      async () => new Response(JSON.stringify({ error: true }), { status: 403 }),
     );
 
     await expect(
@@ -111,7 +111,9 @@ describe("collectBattleLogs", () => {
 
   it("stops after preserving the page containing a known replay", async () => {
     const responses = [page(1, 3, "NEW00001"), page(2, 3, "KNOWN001"), page(3, 3, "OLD00001")];
-    const fetcher = vi.fn(async () => new Response(JSON.stringify(responses.shift()), { status: 200 }));
+    const fetcher = vi.fn(
+      async () => new Response(JSON.stringify(responses.shift()), { status: 200 }),
+    );
     const bundle = await collectBattleLogs({
       buildId: "build_123",
       locale: "ja-jp",
@@ -123,7 +125,11 @@ describe("collectBattleLogs", () => {
     });
 
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(bundle.pages.map(item => item.page)).toEqual([1, 2]);
-    expect(bundle).toMatchObject({ stopReason: "known-replay", stoppedAtKnownReplayId: "KNOWN001", knownReplayBoundaryCount: 1 });
+    expect(bundle.pages.map((item) => item.page)).toEqual([1, 2]);
+    expect(bundle).toMatchObject({
+      stopReason: "known-replay",
+      stoppedAtKnownReplayId: "KNOWN001",
+      knownReplayBoundaryCount: 1,
+    });
   });
 });

@@ -3,11 +3,7 @@ import { compareCharacterSlugs } from "./characterOrder";
 
 describe("compareCharacterSlugs", () => {
   it("uses the configured roster order", () => {
-    expect(["ryu", "luke", "jamie"].sort(compareCharacterSlugs)).toEqual([
-      "luke",
-      "jamie",
-      "ryu",
-    ]);
+    expect(["ryu", "luke", "jamie"].sort(compareCharacterSlugs)).toEqual(["luke", "jamie", "ryu"]);
   });
 
   it("places future characters immediately before random", () => {

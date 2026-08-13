@@ -1,9 +1,11 @@
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
 
-const connectorManifest = JSON.parse(readFileSync("extension/manifest.json", "utf8")) as { version: string };
+const connectorManifest = JSON.parse(readFileSync("extension/manifest.json", "utf8")) as {
+  version: string;
+};
 
 export default defineConfig({
   base: "./",
@@ -13,7 +15,12 @@ export default defineConfig({
       name: "serve-connector-package",
       configureServer(server) {
         server.middlewares.use((request, response, next) => {
-          if (!/^\/sf6-battlegraph-connector-v\d+\.\d+\.\d+\.zip$/.test(request.url?.split("?", 1)[0] ?? "")) return next();
+          if (
+            !/^\/sf6-battlegraph-connector-v\d+\.\d+\.\d+\.zip$/.test(
+              request.url?.split("?", 1)[0] ?? "",
+            )
+          )
+            return next();
           try {
             const fileName = `sf6-battlegraph-connector-v${connectorManifest.version}.zip`;
             const archive = readFileSync(resolve("dist", fileName));

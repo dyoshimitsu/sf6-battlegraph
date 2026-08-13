@@ -8,8 +8,12 @@ interface BackgroundPolicy {
 
 function loadPolicy(): BackgroundPolicy {
   const context: { Sf6BattlegraphBackgroundPolicy?: BackgroundPolicy } = {};
-  runInNewContext(readFileSync(new URL("../../extension/background-policy.js", import.meta.url), "utf8"), context);
-  if (!context.Sf6BattlegraphBackgroundPolicy) throw new Error("Background policy was not registered");
+  runInNewContext(
+    readFileSync(new URL("../../extension/background-policy.js", import.meta.url), "utf8"),
+    context,
+  );
+  if (!context.Sf6BattlegraphBackgroundPolicy)
+    throw new Error("Background policy was not registered");
   return context.Sf6BattlegraphBackgroundPolicy;
 }
 

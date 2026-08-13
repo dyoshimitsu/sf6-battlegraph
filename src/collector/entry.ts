@@ -1,5 +1,12 @@
+import {
+  createCollectorAuthenticationRequiredMessage,
+  createCollectorErrorMessage,
+  createCollectorResultMessage,
+  createCollectorStartedMessage,
+  readBattlegraphTargetOrigin,
+  readKnownReplayIds,
+} from "./bridge";
 import { collectBattleLogs } from "./collectBattleLogs";
-import { createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin, readKnownReplayIds } from "./bridge";
 
 interface NextData {
   buildId?: string;
@@ -19,9 +26,7 @@ function readNextData(): NextData {
 function resolveUserCode(nextData: NextData): number {
   const fromProps = nextData.props?.pageProps?.sid;
   const fromQuery = Number(nextData.query?.sid);
-  const fromPath = Number(
-    window.location.pathname.match(/\/profile\/(\d+)/)?.[1],
-  );
+  const fromPath = Number(window.location.pathname.match(/\/profile\/(\d+)/)?.[1]);
   const userCode = fromProps ?? (fromQuery || fromPath);
   if (!Number.isSafeInteger(userCode) || userCode <= 0) {
     throw new Error("Could not determine the profile user code");
@@ -72,5 +77,8 @@ void run().catch((error: unknown) => {
     window.postMessage(createCollectorAuthenticationRequiredMessage(), window.location.origin);
     return;
   }
-  window.postMessage(createCollectorErrorMessage(error instanceof Error ? error.message : String(error)), window.location.origin);
+  window.postMessage(
+    createCollectorErrorMessage(error instanceof Error ? error.message : String(error)),
+    window.location.origin,
+  );
 });

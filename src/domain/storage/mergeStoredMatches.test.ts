@@ -5,12 +5,32 @@ import { mergeStoredMatches, summarizeStoredMerge } from "./mergeStoredMatches";
 function match(replayId: string, playedAtEpoch: number, fighterId = replayId): NormalizedMatch {
   const subject = { player: { short_id: 100, fighter_id: fighterId }, round_results: [1, 1] };
   const opponent = { player: { short_id: 200 }, round_results: [0, 0] };
-  return { replayId, playedAtEpoch, subjectUserCode: 100, mode: "ranked", sourceTypes: ["all"], subjectSide: 1, result: "win", roundsWon: 2, roundsLost: 0, subject, opponent, raw: { replay_id: replayId, uploaded_at: playedAtEpoch, player1_info: subject, player2_info: opponent } };
+  return {
+    replayId,
+    playedAtEpoch,
+    subjectUserCode: 100,
+    mode: "ranked",
+    sourceTypes: ["all"],
+    subjectSide: 1,
+    result: "win",
+    roundsWon: 2,
+    roundsLost: 0,
+    subject,
+    opponent,
+    raw: {
+      replay_id: replayId,
+      uploaded_at: playedAtEpoch,
+      player1_info: subject,
+      player2_info: opponent,
+    },
+  };
 }
 
 describe("mergeStoredMatches", () => {
   it("retains archived matches and sorts the result newest first", () => {
-    expect(mergeStoredMatches([match("old", 1)], [match("new", 2)]).map(item => item.replayId)).toEqual(["new", "old"]);
+    expect(
+      mergeStoredMatches([match("old", 1)], [match("new", 2)]).map((item) => item.replayId),
+    ).toEqual(["new", "old"]);
   });
 
   it("uses the newly imported replay while preserving all known source types", () => {
@@ -22,9 +42,11 @@ describe("mergeStoredMatches", () => {
   });
 
   it("reports new, refreshed, retained, and total matches without double-counting ids", () => {
-    expect(summarizeStoredMerge(
-      [match("old", 1), match("same", 2)],
-      [match("same", 2), match("new", 3), match("new", 3)],
-    )).toEqual({ newMatches: 1, refreshedMatches: 1, retainedMatches: 1, totalMatches: 3 });
+    expect(
+      summarizeStoredMerge(
+        [match("old", 1), match("same", 2)],
+        [match("same", 2), match("new", 3), match("new", 3)],
+      ),
+    ).toEqual({ newMatches: 1, refreshedMatches: 1, retainedMatches: 1, totalMatches: 3 });
   });
 });
