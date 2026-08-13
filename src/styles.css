@@ -669,7 +669,7 @@ h3 {
 }
 .record-banner {
   display: grid;
-  grid-template-columns: 1.4fr repeat(3, 1fr);
+  grid-template-columns: 1.35fr repeat(5, 1fr);
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -688,6 +688,14 @@ h3 {
 }
 .record-banner article:first-child strong {
   color: var(--accent);
+}
+.record-banner small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font:
+    400 9px "DM Mono",
+    monospace;
 }
 .character-sections {
   display: grid;
@@ -1150,6 +1158,25 @@ th {
     600 7px "DM Mono",
     monospace;
 }
+.side-badge {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 2px 5px;
+  color: #0a0c0e;
+  background: var(--accent);
+  border-radius: 3px;
+  font:
+    700 8px "DM Mono",
+    monospace;
+}
+.side-badge.side-2 {
+  color: #f0eaff;
+  background: #7459a8;
+}
+.side-badge.side-unknown {
+  color: var(--muted);
+  background: #252930;
+}
 .secondary-detail {
   margin-left: 8px;
   color: var(--muted);
@@ -1326,6 +1353,7 @@ table,
     grid-template-columns: repeat(2, 1fr);
   }
   .record-banner article:nth-child(3),
+  .record-banner article:nth-child(5),
   .metrics article:nth-child(3) {
     border-left: 0;
   }

@@ -8,7 +8,7 @@ import { toTokyoDate } from "../statistics/aggregateMatches";
 
 export const DEFAULT_MAX_MATCHES_PER_CHUNK = 250;
 export const DEFAULT_MAX_CHUNK_BYTES = 700 * 1024;
-export const QUERY_CHUNK_SCHEMA_VERSION = 1;
+export const QUERY_CHUNK_SCHEMA_VERSION = 2;
 
 export interface QueryPlayer {
   userCode: number;
@@ -33,6 +33,7 @@ export interface QueryMatch {
   battleTypeName?: string;
   mode: BucklerSourceType;
   sourceTypes: BucklerSourceType[];
+  subjectSide?: 1 | 2;
   result: MatchResult;
   roundsWon: number;
   roundsLost: number;
@@ -100,6 +101,7 @@ export function toQueryMatch(match: NormalizedMatch): QueryMatch {
     battleTypeName: match.battleTypeName,
     mode: match.mode,
     sourceTypes: [...match.sourceTypes],
+    subjectSide: match.subjectSide ?? undefined,
     result: match.result,
     roundsWon: match.roundsWon,
     roundsLost: match.roundsLost,

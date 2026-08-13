@@ -32,11 +32,16 @@ export interface DailyRecord extends RecordSummary {
   date: string;
 }
 
+export interface SideRecord extends RecordSummary {
+  side: 1 | 2;
+}
+
 export interface MatchStatistics {
   overall: RecordSummary;
   bySubjectCharacter: CharacterRecord[];
   byOpponentCharacter: CharacterRecord[];
   byDay: DailyRecord[];
+  bySide: [SideRecord, SideRecord];
 }
 
 const TOKYO_DATE = new Intl.DateTimeFormat("en-CA", {
@@ -127,9 +132,14 @@ function groupByCharacter(
 
 export function aggregateMatches(matches: NormalizedMatch[]): MatchStatistics {
   const overall = emptySummary();
+  const bySide: [SideRecord, SideRecord] = [
+    { ...emptySummary(), side: 1 },
+    { ...emptySummary(), side: 2 },
+  ];
   const days = new Map<string, DailyRecord>();
   for (const match of matches) {
     addResult(overall, match.result);
+    if (match.subjectSide !== null) addResult(bySide[match.subjectSide - 1], match.result);
     const date = toTokyoDate(match.playedAtEpoch);
     const day = days.get(date) ?? { ...emptySummary(), date };
     addResult(day, match.result);
@@ -140,5 +150,6 @@ export function aggregateMatches(matches: NormalizedMatch[]): MatchStatistics {
     bySubjectCharacter: groupByCharacter(matches, (match) => match.subject),
     byOpponentCharacter: groupByCharacter(matches, (match) => match.opponent),
     byDay: [...days.values()].sort((left, right) => left.date.localeCompare(right.date)),
+    bySide,
   };
 }

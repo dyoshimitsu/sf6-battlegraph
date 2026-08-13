@@ -77,6 +77,7 @@ describe("buildQueryChunkGeneration", () => {
     expect(queryMatch).toMatchObject({
       id: "one",
       result: "win",
+      subjectSide: 1,
       subject: { characterSlug: "jamie", leaguePoint: 19000, roundResults: [1, 6] },
       opponent: { userCode: 200, fighterId: "Player 200", platform: "Steam" },
     });

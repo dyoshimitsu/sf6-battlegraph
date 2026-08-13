@@ -49,6 +49,7 @@ function toPlayer(player: QueryPlayer): BucklerPlayerInfo {
 export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
   const subject = toPlayer(match.subject),
     opponent = toPlayer(match.opponent);
+  const subjectSide = match.subjectSide ?? null;
   const raw: BucklerReplay = {
     replay_id: match.id,
     uploaded_at: match.at,
@@ -56,8 +57,8 @@ export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
     replay_battle_type: match.battleType,
     replay_battle_sub_type: match.battleSubType,
     replay_battle_type_name: match.battleTypeName,
-    player1_info: subject,
-    player2_info: opponent,
+    player1_info: subjectSide === 2 ? opponent : subject,
+    player2_info: subjectSide === 2 ? subject : opponent,
   };
   return {
     replayId: match.id,
@@ -69,7 +70,7 @@ export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
     battleTypeName: match.battleTypeName,
     mode: inferBattleMode(raw, match.mode),
     sourceTypes: [...match.sourceTypes],
-    subjectSide: 1,
+    subjectSide,
     result: match.result,
     roundsWon: match.roundsWon,
     roundsLost: match.roundsLost,

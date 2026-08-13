@@ -66,6 +66,15 @@ describe("loadStoredMatches", () => {
     expect(result?.matches.map((match) => match.replayId)).toEqual(["new", "old"]);
     expect(result?.matches[0].subject.player.fighter_id).toBe("P100");
     expect(result?.reads).toBe(3);
+    expect(result?.matches[0].subjectSide).toBeNull();
+  });
+
+  it("restores the subject side from current query chunks", async () => {
+    const { port, chunks } = fixture();
+    chunks[1].matches[0].subjectSide = 2;
+    const result = await loadStoredMatches(port, 100);
+    expect(result?.matches[0].subjectSide).toBe(2);
+    expect(result?.matches[0].raw.player2_info.player.short_id).toBe(100);
   });
 
   it("repairs legacy all-mode query matches from their battle metadata", async () => {
