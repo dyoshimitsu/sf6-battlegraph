@@ -122,8 +122,6 @@ export function App() {
       : adminAuth.state.status === "signedOut" ? t("firebaseSignedOut")
         : adminAuth.state.status === "admin" ? t("syncReady")
           : adminAuth.state.status === "notAdmin" ? t("notAdmin") : t("firebaseError");
-  const latestMatch = imported?.preview.matches[0];
-  const playerName = latestMatch?.subject.player.fighter_id ?? t("unknownPlayer");
 
   useEffect(() => {
     if (firebaseRuntime.status !== "ready" || (deploymentConfig.visibility !== "public" && adminAuth.state.status !== "admin") || imported !== null) return;
@@ -281,7 +279,7 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <div className="header-leading"><a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>{imported && <div className="player-context"><strong>{playerName}</strong><span>{INITIAL_USER_CODE} · {t("latestBattle")} {formatTimestamp(imported.preview.newestPlayedAt)}</span></div>}</div>
+        <div className="header-leading"><a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>{imported && <div className="player-context"><span>{INITIAL_USER_CODE} · {t("latestBattle")} {formatTimestamp(imported.preview.newestPlayedAt)}</span></div>}</div>
         <div className="header-actions">
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
