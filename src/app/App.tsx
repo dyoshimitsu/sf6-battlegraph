@@ -43,6 +43,7 @@ import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 import { useAdminAuth } from "../firebase/useAdminAuth";
 import { useI18n } from "../i18n/useI18n";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
+import { dateFilterToIso, formatDateFilterInput } from "./dateFilter";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -139,8 +140,8 @@ export function App() {
   const filteredMatches = useMemo(
     () =>
       filterMatches(imported?.preview.matches ?? [], {
-        fromDate: fromDate || undefined,
-        toDate: toDate || undefined,
+        fromDate: dateFilterToIso(fromDate),
+        toDate: dateFilterToIso(toDate),
         mode: mode ? (mode as BucklerBundlePreview["matches"][number]["mode"]) : undefined,
         subjectCharacterId: subjectCharacterId ? Number(subjectCharacterId) : undefined,
       }),
@@ -840,14 +841,24 @@ export function App() {
                   <label>
                     <span>{t("fromDate")}</span>
                     <input
-                      type="date"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="yyyy/mm/dd"
+                      maxLength={10}
                       value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
+                      onChange={(e) => setFromDate(formatDateFilterInput(e.target.value))}
                     />
                   </label>
                   <label>
                     <span>{t("toDate")}</span>
-                    <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="yyyy/mm/dd"
+                      maxLength={10}
+                      value={toDate}
+                      onChange={(e) => setToDate(formatDateFilterInput(e.target.value))}
+                    />
                   </label>
                   <label>
                     <span>{t("mode")}</span>
