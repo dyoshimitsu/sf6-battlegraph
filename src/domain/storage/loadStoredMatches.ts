@@ -9,6 +9,8 @@ export interface StoredManifest {
   newestPlayedAtEpoch?: number;
   previousGeneration?: { generation: string; chunks: QueryChunkDescriptor[] } | null;
   obsoleteChunkIds?: string[];
+  sourceSyncId?: string;
+  syncedAtEpoch?: number;
 }
 
 export interface StoredMatchReadPort {

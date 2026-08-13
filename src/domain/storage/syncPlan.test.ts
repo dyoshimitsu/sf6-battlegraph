@@ -47,6 +47,7 @@ describe("buildSyncPlan", () => {
     const plan = buildSyncPlan({}, preview(), "sync-3", "generation-3");
     expect(plan.writesBeforeManifest.some(write => write.path.includes("/manifests/"))).toBe(false);
     expect(plan.manifest.data).toMatchObject({ activeGeneration: "generation-3", sourceSyncId: "sync-3" });
+    expect(plan.manifest.data.syncedAtEpoch).toEqual(expect.any(Number));
   });
 
   it("retains archived matches in the new query generation without rewriting their complete documents", () => {

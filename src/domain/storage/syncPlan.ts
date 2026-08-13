@@ -192,6 +192,7 @@ export function buildSyncPlan(
       newestPlayedAtEpoch: chunks.newestPlayedAt,
       schemaVersion: STORAGE_SCHEMA_VERSION,
       sourceSyncId: syncId,
+      syncedAtEpoch: Math.floor(Date.now() / 1000),
       previousGeneration: previousManifest ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks } : null,
       obsoleteChunkIds,
     },

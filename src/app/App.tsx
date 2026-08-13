@@ -24,6 +24,7 @@ import { completeOpponentRoster } from "../domain/statistics/completeOpponentRos
 import { buildBucklerLaunchUrl, CONNECTOR_PING_MESSAGE_TYPE, createCollectorStartMessage, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "../collector/bridge";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
 import { buildDailyWindow } from "../domain/statistics/dailyWindow";
+import { getSyncFreshness, readLastSyncedAtEpoch } from "../domain/storage/syncFreshness";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -116,6 +117,8 @@ export function App() {
   const allStatistics = useMemo(() => aggregateMatches(imported?.preview.matches ?? []), [imported]);
   const opponentRecords = useMemo(() => completeOpponentRoster(statistics.byOpponentCharacter, slug => getCharacterNameBySlug(slug, locale)), [locale, statistics.byOpponentCharacter]);
   const hasActiveFilters = Boolean(fromDate || toDate || mode || subjectCharacterId);
+  const lastSyncedAtEpoch = readLastSyncedAtEpoch(storedManifest);
+  const syncFreshness = getSyncFreshness(lastSyncedAtEpoch);
   const pendingMerge = useMemo(() => imported?.canSync && archivedMatches !== null
     ? summarizeStoredMerge(archivedMatches, imported.preview.matches)
     : null, [archivedMatches, imported]);
@@ -281,7 +284,7 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <div className="header-leading"><a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>{imported && <div className="player-context"><span>{INITIAL_USER_CODE} · {t("latestBattle")} {formatTimestamp(imported.preview.newestPlayedAt)}</span></div>}</div>
+        <div className="header-leading"><a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>{imported && <div className="player-context"><span>{INITIAL_USER_CODE} · {t("latestBattle")} {formatTimestamp(imported.preview.newestPlayedAt)}</span>{lastSyncedAtEpoch !== undefined && <span>{t("lastSynced")} {formatTimestamp(lastSyncedAtEpoch)}</span>}</div>}</div>
         <div className="header-actions">
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
@@ -298,7 +301,7 @@ export function App() {
 
       <main id="top">
         <section className="workspace">
-          <div className="notification-stack" aria-live="polite">{isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}{imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}{syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}{restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}{error && <div className="message error" role="alert">{error}</div>}</div>
+          <div className="notification-stack" aria-live="polite">{syncFreshness && syncFreshness.level !== "fresh" && adminAuth.state.status === "admin" && <div className={`message sync-reminder ${syncFreshness.level}`} role="status"><strong>{t("syncReminderTitle")}</strong><span>{t("syncReminderDescription", { days: syncFreshness.days })}</span></div>}{isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}{imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}{syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}{restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}{error && <div className="message error" role="alert">{error}</div>}</div>
 
           {imported && <>
             {imported.canSync && <section className="preview">
