@@ -28,7 +28,26 @@ npm run typecheck
 npm run build
 ```
 
-現段階では Firebase への書き込みは行いません。ローカル画面に読み込んだ JSON はブラウザ内だけで検証されます。
+現段階では Firebase Authentication の接続と管理者判定まで実装しています。Firestoreへの書き込みはまだ行いません。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
+
+Firebaseを接続する場合は`.env.example`を`.env.local`へコピーし、Firebase Consoleで登録したWebアプリの設定と対象ユーザーコードを入力します。
+
+```sh
+cp .env.example .env.local
+```
+
+Google認証をFirebase Consoleで有効にし、Authenticationの承認済みドメインへローカル開発用の`localhost`と、デプロイ先の`<account>.github.io`を登録してください。管理者として利用するAuthentication UIDと同じIDで、Firestoreに`admins/{uid}`ドキュメントをFirebase Consoleから作成します。管理者ドキュメントをアプリ自身が新規作成する機能はありません。
+
+設定項目:
+
+- `VITE_PLAYER_USER_CODE`: 保存対象のSF6ユーザーコード
+- `VITE_DEPLOYMENT_VISIBILITY`: `private`または`public`
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_APP_ID`
+
+Firebase Web設定はブラウザへ配信される公開設定です。サービスアカウント鍵や秘密鍵は使用しないでください。
 
 `npm run build` はWebアプリに加えて、Buckler上で実行するstandaloneな `dist/collector.js` も生成します。現段階の実行手順は[Collector export format](docs/collector-format.md#running-the-collector)を参照してください。
 

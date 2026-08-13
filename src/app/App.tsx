@@ -6,8 +6,10 @@ import { getRoundDetails } from "../domain/buckler/roundResults";
 import { BucklerValidationError, type BucklerBundlePreview } from "../domain/buckler/types";
 import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import { useI18n } from "../i18n/useI18n";
+import { deploymentConfig, firebaseRuntime } from "../firebase/client";
+import { useAdminAuth } from "../firebase/useAdminAuth";
 
-const INITIAL_USER_CODE = 1134991793;
+const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
 interface ImportedBundle {
   fileName: string;
@@ -41,6 +43,7 @@ function getInputType(inputType: number | undefined): string {
 
 export function App() {
   const { locale, setLocale, t } = useI18n();
+  const adminAuth = useAdminAuth(firebaseRuntime);
   const inputRef = useRef<HTMLInputElement>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +74,11 @@ export function App() {
   }), [fromDate, imported, mode, opponentCharacterId, subjectCharacterId, toDate]);
   const statistics = useMemo(() => aggregateMatches(filteredMatches), [filteredMatches]);
   const allStatistics = useMemo(() => aggregateMatches(imported?.preview.matches ?? []), [imported]);
+  const authLabel = adminAuth.state.status === "disabled" ? t("localPreview")
+    : adminAuth.state.status === "loading" ? t("firebaseConnecting")
+      : adminAuth.state.status === "signedOut" ? t("firebaseSignedOut")
+        : adminAuth.state.status === "admin" ? t("syncReady")
+          : adminAuth.state.status === "notAdmin" ? t("notAdmin") : t("firebaseError");
 
   async function importFile(file?: File) {
     if (!file) return;
@@ -100,7 +108,9 @@ export function App() {
       <header className="site-header">
         <a className="brand" href="#top"><span className="brand-mark">B</span><span><strong>{t("appName")}</strong><small>{t("appTagline")}</small></span></a>
         <div className="header-actions">
-          <span className="status-pill"><i /> {t("localPreview")}</span>
+          <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
+          {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
+          {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <button className="auth-button" type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button>}
           <div className="language-switch" aria-label="Language">
             <button className={locale === "ja" ? "active" : ""} onClick={() => setLocale("ja")}>JP</button>
             <button className={locale === "en" ? "active" : ""} onClick={() => setLocale("en")}>EN</button>
