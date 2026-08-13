@@ -1,6 +1,6 @@
 # Collector export format
 
-The Buckler collector exports one JSON bundle containing every fetched source page. Version 1 has the following envelope:
+The Buckler collector exports one JSON bundle containing every fetched combined-history page. Version 1 has the following envelope:
 
 ```json
 {
@@ -11,8 +11,8 @@ The Buckler collector exports one JSON bundle containing every fetched source pa
   "exportedAt": "2026-08-13T00:00:00.000Z",
   "pages": [
     {
-      "sourceType": "ranked",
-      "sourcePath": "/battlelog/rank",
+      "sourceType": "all",
+      "sourcePath": "/battlelog",
       "page": 1,
       "fetchedAt": "2026-08-13T00:00:00.000Z",
       "response": { "pageProps": {} }
@@ -32,7 +32,7 @@ The Buckler collector exports one JSON bundle containing every fetched source pa
 
 Each page contains:
 
-- `sourceType`: `all`, `ranked`, `casual`, `custom`, `hub`, or `unknown`
+- `sourceType`: normally `all`; other values remain accepted for compatibility and investigation
 - `sourcePath`: Buckler page path used to derive the JSON request
 - `page`: requested page number
 - `fetchedAt`: ISO 8601 acquisition time
@@ -60,7 +60,7 @@ During development:
 
 The collector reads the current `buildId`, locale, and profile user code from the page. It sends same-origin requests so the browser supplies the existing Buckler session cookie; the cookie is never read into or written to the bundle.
 
-The exact mode endpoint paths remain subject to verification against live Buckler. A failed mode or page aborts the collection instead of creating a bundle that looks complete.
+The default collector requests only the combined `/battlelog` history. A failed page aborts the collection instead of creating a bundle that looks complete.
 
 ## Versioning
 

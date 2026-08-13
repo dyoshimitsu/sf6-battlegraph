@@ -32,6 +32,9 @@ export interface CollectorProgress {
 
 export const DEFAULT_COLLECTOR_SOURCES: CollectorSource[] = [
   { sourceType: "all", sourcePath: "/battlelog", routeSuffix: "" },
+];
+
+export const MODE_SPECIFIC_COLLECTOR_SOURCES: CollectorSource[] = [
   { sourceType: "ranked", sourcePath: "/battlelog/rank", routeSuffix: "/rank" },
   { sourceType: "casual", sourcePath: "/battlelog/casual", routeSuffix: "/casual" },
   { sourceType: "custom", sourcePath: "/battlelog/custom", routeSuffix: "/custom" },

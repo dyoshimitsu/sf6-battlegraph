@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  DEFAULT_COLLECTOR_SOURCES,
+  MODE_SPECIFIC_COLLECTOR_SOURCES,
   buildBattleLogDataUrl,
   collectBattleLogs,
   type CollectorSource,
@@ -27,6 +29,13 @@ function page(currentPage: number, totalPage: number, replayId: string) {
 }
 
 describe("buildBattleLogDataUrl", () => {
+  it("collects only the combined battle log by default", () => {
+    expect(DEFAULT_COLLECTOR_SOURCES).toEqual([
+      { sourceType: "all", sourcePath: "/battlelog", routeSuffix: "" },
+    ]);
+    expect(MODE_SPECIFIC_COLLECTOR_SOURCES).toHaveLength(4);
+  });
+
   it("builds a locale and mode-specific Next.js data URL", () => {
     const url = buildBattleLogDataUrl(
       "https://www.streetfighter.com",

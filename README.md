@@ -56,7 +56,7 @@ GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにす�
 Buckler's Boot Camp
   └─ bookmarklet / collector
        ├─ 現在の Next.js buildId を取得
-       ├─ 全対戦モード・全ページを取得
+       ├─ 全モード合算履歴の全ページを取得
        └─ JSON ファイルとして出力
                     │
                     ▼
@@ -114,7 +114,7 @@ Buckler の raw レスポンスには Cookie やアクセストークンを含�
 
 Buckler は Next.js の JSON エンドポイントを使用しています。URL に含まれる `buildId` はデプロイごとに変わる可能性があるため固定せず、Buckler ページの `__NEXT_DATA__.buildId` から取得します。
 
-総合履歴だけでは特定モードの古い試合が直近 100 試合から押し出される可能性があるため、全対戦モードのページを取得し、`replay_id` で重複排除します。モード別エンドポイントの正確なパスとレスポンスは実装時に検証します。
+Bucklerの総合履歴は全対戦モードを合算した直近100試合を返すものとして扱い、コレクターは総合履歴の全ページだけを取得します。各試合のモードはレスポンス内のbattle typeから判定します。
 
 ## Aggregation policy
 

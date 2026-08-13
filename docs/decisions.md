@@ -12,9 +12,9 @@ Vite / React / TypeScript の静的 SPA と Buckler import parser を実装し�
 - parser は React と Firebase に依存しない純粋な TypeScript として実装する
 - bundle 内の複数モード・複数ページを検証し、`replay_id` で重複排除する
 - 対象ユーザーが player 1 / player 2 のどちらでも `subject` と `opponent` に正規化する
-- 同じ replay が総合・モード別履歴の双方にある場合は全 `sourceTypes` を保持する
+- 互換性・調査目的で複数sourceを読み込んだ場合は、同じreplayの全`sourceTypes`を保持する
 
-Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページから build ID、locale、ユーザーコードを解決し、全モードをページングして、完了後に bundle をダウンロードする。途中の HTTP・認証・形式エラーでは不完全な bundle を出力しない。
+Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページからbuild ID、locale、ユーザーコードを解決し、全モード合算の総合履歴をページングして、完了後にbundleをダウンロードする。途中のHTTP・認証・形式エラーでは不完全なbundleを出力しない。
 
 正規化済み試合に対するクライアント集計も実装した。
 
@@ -24,7 +24,7 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 - 勝率の母数は勝敗を判定できた試合とし、draw / unknown は別に表示する
 - 直近10試合を正規化済みデータから表示する
 
-次の段階では、実際の Buckler に対してモード別 endpoint と round result の意味を検証する。勝敗は現時点では、提供されたサンプルから観察した「各 `round_results` の非ゼロ値がそのプレイヤーのラウンド勝利を表す」という規則に基づく推定である。
+次の段階では、実際のBucklerに対してbattle typeとround resultの意味を検証する。勝敗は現時点では、提供されたサンプルから観察した「各`round_results`の非ゼロ値がそのプレイヤーのラウンド勝利を表す」という規則に基づく推定である。
 
 GitHub Pages の検証・デプロイ workflow を実装した。`master`へのpushと手動実行で、テスト・型検査・Webアプリとstandalone collectorのビルドがすべて成功した場合だけPages artifactをデプロイする。Pull Requestでは検証だけを実行する。
 
@@ -44,7 +44,8 @@ GitHub Pages の検証・デプロイ workflow を実装した。`master`へのp
 - Next.js の JSON エンドポイントを使用し、HTML scraping は行わない
 - build ID は固定せず `__NEXT_DATA__.buildId` から取得する
 - ランク、カジュアル、ルーム、バトルハブを含む全対戦モードを保存する
-- 総合履歴とモード別履歴を取得し、`replay_id` で統合する
+- 総合履歴は全モード合算の直近100試合を返すものとして扱い、通常は総合履歴だけを取得する
+- モード別endpointは通常の収集では使用しない
 - Buckler Cookie、CAPCOM ID のパスワード、Firebase Admin 鍵は保存しない
 
 ### Storage
@@ -89,8 +90,7 @@ GitHub Pages の検証・デプロイ workflow を実装した。`master`へのp
 
 - 総合、ランク、カジュアル、ルーム、バトルハブの正確な JSON endpoint path
 - 各 endpoint の query parameters
-- モード別の `total_page` 上限
-- 総合とモード別で replay payload が同一か
+- 総合履歴が常に全モード合算100試合であるか
 
 ### Battle semantics
 
@@ -121,7 +121,7 @@ GitHub Pages の検証・デプロイ workflow を実装した。`master`へのp
 
 ## Operational constraints
 
-Buckler の履歴上限を越えてから同期すると、その間の replay を復元できない可能性がある。全対戦モードを漏れなく蓄積するには、各モードで 100 試合を越える前に同期する必要がある。
+Bucklerの総合履歴上限を越えてから同期すると、その間のreplayを復元できない可能性がある。全対戦モードを漏れなく蓄積するには、合算で100試合を越える前に同期する必要がある。
 
 初期版は手動同期とする。GitHub Actions に Buckler Cookie を保存する自動同期は、セッション失効、秘密情報管理、アクセス制御、運用安定性を別途評価してから追加する。
 
