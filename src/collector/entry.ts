@@ -42,6 +42,7 @@ async function run() {
   if (window.location.hostname !== "www.streetfighter.com") {
     throw new Error("Run this collector on www.streetfighter.com");
   }
+  if (!readBattlegraphTargetOrigin(window.location.hash)) return;
   const nextData = readNextData();
   if (!nextData.buildId) throw new Error("Buckler buildId was not found");
   const userCode = resolveUserCode(nextData);

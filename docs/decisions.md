@@ -18,6 +18,8 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 
 日常のバトルログ取得ではJSONファイルを介さない。BattlegraphからBucklerを開いてwindow参照を確立し、collector protocol version 1のmessageを受信する。受信側はBuckler originを固定検証し、既存parserでユーザーコードと全raw responseを再検証する。Firestoreへの書き込みはFirebase認証を保持するBattlegraph側だけが行う。
 
+取得操作はManifest V3 Chrome拡張で自動化する。content scriptのmatch patternをBuckler Battle Logだけに限定し、Battlegraphの接続fragmentがある場合だけmain worldでcollectorを開始する。通常閲覧では動作しない。導入後はBattlegraphのボタン一回でページ表示、取得、返送まで行う。
+
 正規化済み試合に対するクライアント集計も実装した。
 
 - 期間は `Asia/Tokyo` の暦日で両端を含めて絞り込む

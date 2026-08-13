@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "SF6 Battlegraph Connector",
+  "version": "0.1.0",
+  "description": "Transfers your Buckler battle log directly to SF6 Battlegraph.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*"
+      ],
+      "js": ["collector.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ]
+}

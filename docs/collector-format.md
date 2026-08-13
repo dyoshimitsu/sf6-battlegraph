@@ -48,15 +48,15 @@ A single raw Buckler page remains accepted for development and recovery. It is a
 
 ## Running the collector
 
-`npm run build` produces a standalone `dist/collector.js`. It contains no credentials and must be executed only while viewing a logged-in Buckler profile page.
+`npm run build` produces `dist/extension`, `dist/sf6-battlegraph-extension.zip`, and a legacy standalone `dist/collector.js`. None contain credentials.
 
 During development:
 
 1. build the project
-2. open `dist/collector.js` and copy its complete contents
-3. sign in to Buckler and open the target profile's Battle Log
-4. open the browser developer console, paste the script, and run it
-5. wait for all progress messages; the bundle is returned directly to the Battlegraph window that opened Buckler
+2. load `dist/extension` as an unpacked Chrome extension
+3. sign in to Buckler
+4. press “Fetch from Buckler” in Battlegraph
+5. wait while the extension opens the Battle Log, fetches every page, and returns the bundle
 
 The collector reads the current `buildId`, locale, and profile user code from the page. It sends same-origin requests so the browser supplies the existing Buckler session cookie; the cookie is never read into or written to the bundle.
 

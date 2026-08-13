@@ -54,7 +54,7 @@ Google認証をFirebase Consoleで有効にし、Authenticationの承認済み�
 
 Firebase Web設定はブラウザへ配信される公開設定です。サービスアカウント鍵や秘密鍵は使用しないでください。
 
-`npm run build` はWebアプリに加えて、Buckler上で実行するstandaloneな `dist/collector.js` も生成します。現段階の実行手順は[Collector export format](docs/collector-format.md#running-the-collector)を参照してください。
+`npm run build` はWebアプリに加えて、Buckler上で自動実行する`dist/extension`と配布用`dist/sf6-battlegraph-extension.zip`を生成します。導入手順は[Chrome connector](docs/chrome-extension.md)を参照してください。
 
 ## GitHub Pages deployment
 
@@ -94,7 +94,7 @@ GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにす�
 
 ```text
 Buckler's Boot Camp
-  └─ bookmarklet / collector
+  └─ Chrome connector
        ├─ 現在の Next.js buildId を取得
        ├─ 全モード合算履歴の全ページを取得
        └─ bundleをBattlegraphへ直接送信
@@ -132,6 +132,7 @@ GitHub Pages は静的ホスティングであるため、Buckler の取得処�
 詳細は以下を参照してください。
 
 - [Architecture](docs/architecture.md)
+- [Chrome connector](docs/chrome-extension.md)
 - [Collector export format](docs/collector-format.md)
 - [Data model](docs/data-model.md)
 - [Decisions and validation](docs/decisions.md)

@@ -79,6 +79,7 @@ export function App() {
   const { locale, setLocale, t } = useI18n();
   const adminAuth = useAdminAuth(firebaseRuntime);
   const restoreInputRef = useRef<HTMLInputElement>(null);
+  const collectorTimeoutRef = useRef<number | null>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState("");
@@ -94,6 +95,7 @@ export function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState<string | null>(null);
+  const [isCollecting, setIsCollecting] = useState(false);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -144,6 +146,9 @@ export function App() {
     function receiveCollectorResult(event: MessageEvent) {
       const message = readCollectorResultMessage(event.origin, event.data);
       if (!message) return;
+      if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
+      collectorTimeoutRef.current = null;
+      setIsCollecting(false);
       setError(null);
       try {
         const preview = parseCollectorImport(message.bundle, INITIAL_USER_CODE);
@@ -154,12 +159,27 @@ export function App() {
       }
     }
     window.addEventListener("message", receiveCollectorResult);
-    return () => window.removeEventListener("message", receiveCollectorResult);
+    return () => {
+      window.removeEventListener("message", receiveCollectorResult);
+      if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
+    };
   }, [t]);
 
   function openBuckler() {
     const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin);
-    window.open(url, "sf6-battlegraph-buckler");
+    const bucklerWindow = window.open(url, "sf6-battlegraph-buckler");
+    if (!bucklerWindow) {
+      setError(t("collectorPopupBlocked"));
+      return;
+    }
+    setError(null);
+    setIsCollecting(true);
+    if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
+    collectorTimeoutRef.current = window.setTimeout(() => {
+      collectorTimeoutRef.current = null;
+      setIsCollecting(false);
+      setError(t("collectorTimeout"));
+    }, 30_000);
   }
 
   function resetFilters() {
@@ -245,13 +265,13 @@ export function App() {
           {!imported ? <div className="workspace-grid">
             <div className="drop-zone">
               <div className="drop-symbol"><span>↗</span></div><h3>{t("openBucklerTitle")}</h3><p>{t("openBucklerDescription")}</p>
-              <button className="primary-button" type="button" onClick={openBuckler}>{t("openBuckler")}</button>
-              <a className={`collector-link ${import.meta.env.DEV ? "is-disabled" : ""}`} href={import.meta.env.DEV ? undefined : "./collector.js"} download={!import.meta.env.DEV} onClick={(e) => { if (import.meta.env.DEV) { e.preventDefault(); window.alert(t("collectorDevAlert")); } }}>{t(import.meta.env.DEV ? "collectorDevelopment" : "collectorProduction")}</a>
+              <button className="primary-button" type="button" disabled={isCollecting} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : "openBuckler")}</button>
+              <a className={`collector-link ${import.meta.env.DEV ? "is-disabled" : ""}`} href={import.meta.env.DEV ? undefined : "./sf6-battlegraph-extension.zip"} download={!import.meta.env.DEV} onClick={(e) => { if (import.meta.env.DEV) { e.preventDefault(); window.alert(t("collectorDevAlert")); } }}>{t(import.meta.env.DEV ? "collectorDevelopment" : "connectorDownload")}</a>
             </div>
             <aside className="roadmap-card"><p className="eyebrow">{t("steps")}</p><ol>{readiness.map((item, index) => <li className={item.done ? "done" : ""} key={item.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.label}</b><i /></li>)}</ol></aside>
           </div> : <div className="loaded-file-bar">
             <div><p className="eyebrow">{imported.canSync ? t("validImport") : t("firestoreData")}</p><strong>{imported.fileName}</strong><span>{imported.canSync ? `${formatBytes(imported.fileSize)} · ` : ""}{imported.preview.uniqueMatchCount} {t("uniqueMatches")}</span></div>
-            <button className="primary-button" type="button" onClick={openBuckler}>{t("refreshFromBuckler")}</button>
+            <button className="primary-button" type="button" disabled={isCollecting} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : "refreshFromBuckler")}</button>
           </div>}
           {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
           {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}

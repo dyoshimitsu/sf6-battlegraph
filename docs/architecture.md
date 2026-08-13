@@ -17,7 +17,7 @@ sf6-battlegraph は、常時稼働するバックエンドを持たず、GitHub 
 
 ### Buckler collector
 
-ログイン済みの Buckler ページ上で実行する。初期版はブックマークレットを予定している。
+ログイン済みの Buckler Battle Logページ上でManifest V3 Chrome拡張により自動実行する。
 
 責務:
 
