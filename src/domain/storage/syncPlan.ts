@@ -105,6 +105,7 @@ export function buildSyncPlan(
   preview: BucklerBundlePreview,
   syncId: string,
   generation: string,
+  visibility: "private" | "public" = "private",
 ): SyncPlan {
   if (!syncId.trim()) throw new Error("syncId must not be empty");
   const userCode = preview.userCode;
@@ -114,6 +115,7 @@ export function buildSyncPlan(
   const base = `players/${userCode}`;
 
   const writesBeforeManifest: PlannedWrite[] = [
+    { path: "settings/deployment", data: { visibility } },
     {
       path: base,
       data: {

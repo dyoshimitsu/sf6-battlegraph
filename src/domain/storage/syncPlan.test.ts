@@ -18,6 +18,7 @@ describe("buildSyncPlan", () => {
     const source = { format: "sf6-battlegraph.collector", version: 1, userCode: 100, buildId: "build", exportedAt: "2025-02-01T00:00:00Z", pages: [{ sourceType: "all", sourcePath: "/battlelog", page: 1, fetchedAt: "2025-02-01T00:00:00Z", response: { pageProps: {} } }] };
     const plan = buildSyncPlan(source, preview(), "sync-1", "generation-1");
     expect(plan.writesBeforeManifest.map(write => write.path)).toEqual([
+      "settings/deployment",
       "players/100",
       "players/100/snapshots/sync-1",
       "players/100/snapshots/sync-1/pages/all_001_0",
@@ -26,7 +27,7 @@ describe("buildSyncPlan", () => {
       "players/100/syncs/sync-1",
     ]);
     expect(plan.manifest.path).toBe("players/100/manifests/matches");
-    expect(plan.writeCount).toBe(7);
+    expect(plan.writeCount).toBe(8);
   });
 
   it("keeps the complete replay object in the match document", () => {

@@ -8,12 +8,16 @@ import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateM
 import { useI18n } from "../i18n/useI18n";
 import { deploymentConfig, firebaseRuntime } from "../firebase/client";
 import { useAdminAuth } from "../firebase/useAdminAuth";
+import { buildSyncPlan } from "../domain/storage/syncPlan";
+import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
+import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
 interface ImportedBundle {
   fileName: string;
   fileSize: number;
+  source: unknown;
   preview: BucklerBundlePreview;
 }
 
@@ -53,6 +57,9 @@ export function App() {
   const [mode, setMode] = useState("");
   const [subjectCharacterId, setSubjectCharacterId] = useState("");
   const [opponentCharacterId, setOpponentCharacterId] = useState("");
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -84,8 +91,9 @@ export function App() {
     if (!file) return;
     setError(null);
     try {
-      const preview = parseCollectorImport(JSON.parse(await file.text()) as unknown, INITIAL_USER_CODE);
-      setImported({ fileName: file.name, fileSize: file.size, preview });
+      const source = JSON.parse(await file.text()) as unknown;
+      const preview = parseCollectorImport(source, INITIAL_USER_CODE);
+      setImported({ fileName: file.name, fileSize: file.size, source, preview });
     } catch (cause) {
       setImported(null);
       if (cause instanceof SyntaxError) setError(t("errorInvalidJson"));
@@ -101,6 +109,19 @@ export function App() {
 
   function resetFilters() {
     setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId(""); setOpponentCharacterId("");
+  }
+
+  async function synchronize() {
+    if (!imported || firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin") return;
+    setIsSyncing(true); setSyncMessage(null); setSyncProgress(null);
+    try {
+      const id = `${Date.now()}-${crypto.randomUUID()}`;
+      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility);
+      await executeSyncPlan(createFirestoreSyncPort(firebaseRuntime.services.db), plan, setSyncProgress);
+      setSyncMessage(t("syncComplete", { count: imported.preview.uniqueMatchCount }));
+    } catch (cause) {
+      setSyncMessage(cause instanceof Error ? cause.message : t("syncFailed"));
+    } finally { setIsSyncing(false); }
   }
 
   return (
@@ -134,6 +155,8 @@ export function App() {
             <button className="primary-button" type="button" onClick={() => inputRef.current?.click()}>{t("replaceFile")}</button>
             <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
           </div>}
+          {imported && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
+          {syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}
           {error && <div className="message error" role="alert">{error}</div>}
 
           {imported && <>

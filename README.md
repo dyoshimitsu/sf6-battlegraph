@@ -29,7 +29,7 @@ npm run typecheck
 npm run build
 ```
 
-現段階では Firebase Authentication の接続と管理者判定まで実装しています。Firestoreへの書き込みはまだ行いません。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
+Firebase Authenticationの管理者判定とFirestore同期を実装しています。管理者ログイン後にcollector JSONを読み込むと、raw snapshot、完全な試合、query chunk、manifestをFirestoreへ同期できます。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
 
 Firebaseを接続する場合は`.env.example`を`.env.local`へコピーし、Firebase Consoleで登録したWebアプリの設定と対象ユーザーコードを入力します。
 

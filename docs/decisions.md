@@ -38,6 +38,8 @@ privateリポジトリでPagesを利用できない期間は、Repository Variab
 
 Firestore同期前に純粋なTypeScriptでwrite planを生成する。player metadata、raw snapshot/page、完全match、query chunk、sync記録はmanifestより先に書き、全書き込み成功後にmanifestのactive generationを切り替える。raw pageとcomplete matchには元レスポンス・replay objectを保持する。
 
+Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのcommit後にmanifestを単独commitする。matchの`sourceSyncIds`は`arrayUnion`で追記し、同期時刻はFirestore server timestampを使用する。同期UIは管理者にだけ表示し、進捗と成功・失敗を通知する。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions
