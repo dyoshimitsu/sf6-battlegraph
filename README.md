@@ -1,5 +1,11 @@
 # sf6-battlegraph
 
+[![Deploy](https://github.com/dyoshimitsu/sf6-battlegraph/actions/workflows/pages.yml/badge.svg)](https://github.com/dyoshimitsu/sf6-battlegraph/actions/workflows/pages.yml)
+
+**[Live demo](https://dyoshimitsu.github.io/sf6-battlegraph/)**
+
+![SF6 Battlegraph](docs/social-preview.svg)
+
 Street Fighter 6 の Buckler's Boot Camp から自分のバトルログを取得し、長期間保存してグラフや集計として閲覧するためのセルフホスト型 Web アプリケーションです。
 
 Buckler で参照できる対戦履歴には件数上限があるため、定期的に履歴を取り込み、過去の試合を失わずに蓄積することを目的としています。

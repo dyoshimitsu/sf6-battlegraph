@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title description">
+  <title id="title">SF6 Battlegraph</title>
+  <desc id="description">Street Fighter 6 battle history visualization</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171b20" />
+      <stop offset="1" stop-color="#090a0c" />
+    </linearGradient>
+    <linearGradient id="chart" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#789d27" />
+      <stop offset="1" stop-color="#c7ff4a" />
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#background)" />
+  <circle cx="1110" cy="80" r="260" fill="#c7ff4a" opacity=".035" />
+  <circle cx="1170" cy="580" r="330" fill="#b79cff" opacity=".025" />
+  <g transform="translate(90 86)">
+    <rect width="86" height="86" rx="22" fill="#c7ff4a" />
+    <path fill="#090a0c" d="M22 13h25c12 0 19 6 19 16 0 6-3 10-8 13 7 2 10 7 10 14 0 11-8 17-21 17H22V13Zm13 11v12h11c5 0 7-2 7-6s-2-6-7-6H35Zm0 23v15h12c6 0 8-3 8-8s-2-7-8-7H35Z" />
+  </g>
+  <text x="202" y="125" fill="#f1f3f5" font-family="Arial, sans-serif" font-size="46" font-weight="700">SF6 Battlegraph</text>
+  <text x="204" y="165" fill="#7f858e" font-family="monospace" font-size="18" letter-spacing="4">BATTLE HISTORY ANALYTICS</text>
+  <text x="90" y="274" fill="#f1f3f5" font-family="Arial, sans-serif" font-size="58" font-weight="700">Your matches.</text>
+  <text x="90" y="340" fill="#c7ff4a" font-family="Arial, sans-serif" font-size="58" font-weight="700">Your progress.</text>
+  <text x="93" y="392" fill="#969ca5" font-family="Arial, sans-serif" font-size="24">Preserve and visualize your Street Fighter 6 battle history.</text>
+  <g transform="translate(720 210)">
+    <rect width="470" height="310" rx="24" fill="#111419" stroke="#292e36" stroke-width="2" />
+    <text x="32" y="52" fill="#c7ff4a" font-family="monospace" font-size="15" letter-spacing="3">LP / MR HISTORY</text>
+    <text x="32" y="93" fill="#f1f3f5" font-family="Arial, sans-serif" font-size="29" font-weight="700">Ranked progression</text>
+    <g stroke="#29302a" stroke-width="1">
+      <path d="M32 146h406M32 198h406M32 250h406" />
+    </g>
+    <path d="M32 251 78 238 124 242 170 210 216 220 262 176 308 185 354 132 400 148 438 103" fill="none" stroke="url(#chart)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <g fill="#111419" stroke="#c7ff4a" stroke-width="4">
+      <circle cx="32" cy="251" r="6" /><circle cx="170" cy="210" r="6" /><circle cx="308" cy="185" r="6" /><circle cx="438" cy="103" r="6" />
+    </g>
+  </g>
+  <text x="93" y="553" fill="#666d76" font-family="monospace" font-size="16">SELF-HOSTED · FIRESTORE · GITHUB PAGES</text>
+</svg>
