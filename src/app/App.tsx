@@ -130,7 +130,7 @@ export function App() {
                 <button type="button" onClick={resetFilters}>{t("reset")}</button>
               </div>
               <div className="record-banner"><article><span>{t("winRate")}</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article><article><span>{t("wins")}</span><strong>{statistics.overall.wins}</strong></article><article><span>{t("losses")}</span><strong>{statistics.overall.losses}</strong></article><article><span>{t("undecided")}</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article></div>
-              <LpChart matches={filteredMatches} locale={locale} labels={{ eyebrow: t("lpHistory"), title: t("lpChartTitle"), current: t("currentLp"), highest: t("highestLp"), lowest: t("lowestLp"), change: t("lpChange"), empty: t("noLpRecords") }} />
+              <RatingChart matches={filteredMatches} locale={locale} labels={{ eyebrow: t("ratingHistory"), title: t("ratingChartTitle"), latest: t("latestRating"), highest: t("highestRating"), lowest: t("lowestRating"), change: t("ratingChange"), noData: t("noRatingData") }} />
               <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={statistics.byOpponentCharacter} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div>
               <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestHundred")}</span></div><div className="table-wrap"><table><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourCharacter")}</th><th>{t("opponent")}</th><th>{t("mode")}</th><th>{t("rating")}</th></tr></thead><tbody>{filteredMatches.slice(0, 100).map(match => <tr key={match.replayId}><td>{formatTimestamp(match.playedAtEpoch)}</td><td><span className={`result-badge ${match.result}`}>{match.result}</span></td><td>{getCharacterName(match.subject, locale)}</td><td>{getCharacterName(match.opponent, locale)}</td><td>{match.battleTypeName ?? match.mode}</td><td>{match.subject.master_rating || match.subject.league_point || "—"}</td></tr>)}{filteredMatches.length === 0 && <tr><td className="empty-cell" colSpan={6}>{t("noRecords")}</td></tr>}</tbody></table></div></article>
             </section>
@@ -142,27 +142,21 @@ export function App() {
   );
 }
 
-function LpChart({ matches, locale, labels }: { matches: BucklerBundlePreview["matches"]; locale: "ja" | "en"; labels: Record<"eyebrow" | "title" | "current" | "highest" | "lowest" | "change" | "empty", string> }) {
-  const points = [...matches].filter(match => (match.subject.league_point ?? 0) > 0).sort((a, b) => a.playedAtEpoch - b.playedAtEpoch);
-  const values = points.map(match => match.subject.league_point as number);
+function RatingChart({ matches, locale, labels }: { matches: BucklerBundlePreview["matches"]; locale: "ja" | "en"; labels: Record<"eyebrow" | "title" | "latest" | "highest" | "lowest" | "change" | "noData", string> }) {
+  const ordered = [...matches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch);
   const number = new Intl.NumberFormat(locale === "ja" ? "ja-JP" : "en-US");
-  if (values.length === 0) return <article className="lp-card"><div><p className="eyebrow">{labels.eyebrow}</p><h3>{labels.title}</h3></div><p className="lp-empty">{labels.empty}</p></article>;
-  const latest = values.at(-1) as number;
-  const highest = Math.max(...values);
-  const lowest = Math.min(...values);
-  const change = latest - values[0];
   const width = 1000, height = 230, padX = 22, padY = 18;
-  const range = Math.max(highest - lowest, 100);
-  const chartMin = lowest - range * .12;
-  const chartMax = highest + range * .12;
-  const coordinates = values.map((value, index) => ({
-    x: padX + (values.length === 1 ? (width - padX * 2) / 2 : index * (width - padX * 2) / (values.length - 1)),
-    y: padY + (chartMax - value) * (height - padY * 2) / (chartMax - chartMin),
-    value,
-  }));
-  const line = coordinates.map(point => `${point.x},${point.y}`).join(" ");
-  const area = `${padX},${height - padY} ${line} ${width - padX},${height - padY}`;
-  return <article className="lp-card"><div className="lp-heading"><div><p className="eyebrow">{labels.eyebrow}</p><h3>{labels.title}</h3></div><div className="lp-metrics"><span>{labels.current}<strong>{number.format(latest)}</strong></span><span>{labels.highest}<strong>{number.format(highest)}</strong></span><span>{labels.lowest}<strong>{number.format(lowest)}</strong></span><span>{labels.change}<strong className={change >= 0 ? "positive" : "negative"}>{change >= 0 ? "+" : ""}{number.format(change)}</strong></span></div></div><div className="lp-chart"><span className="lp-axis maximum">{number.format(highest)}</span><span className="lp-axis minimum">{number.format(lowest)}</span><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={labels.title} preserveAspectRatio="none"><defs><linearGradient id="lp-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c7ff4a" stopOpacity=".3"/><stop offset="1" stopColor="#c7ff4a" stopOpacity="0"/></linearGradient></defs><line x1={padX} y1={padY} x2={width - padX} y2={padY} className="grid-line"/><line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} className="grid-line"/><polygon points={area} fill="url(#lp-area)"/><polyline points={line} className="lp-line"/>{coordinates.map((point, index) => <circle key={`${points[index].replayId}-${index}`} cx={point.x} cy={point.y} r="3"><title>{number.format(point.value)} LP</title></circle>)}</svg></div></article>;
+  const firstTime = ordered[0]?.playedAtEpoch ?? 0, lastTime = ordered.at(-1)?.playedAtEpoch ?? firstTime;
+  function series(kind: "lp" | "mr") {
+    const points = ordered.map(match => ({ match, value: kind === "lp" ? match.subject.league_point : match.subject.master_rating })).filter((point): point is { match: typeof ordered[number]; value: number } => (point.value ?? 0) > 0);
+    if (!points.length) return null;
+    const values = points.map(point => point.value), highest = Math.max(...values), lowest = Math.min(...values), range = Math.max(highest - lowest, kind === "lp" ? 100 : 10), min = lowest - range * .12, max = highest + range * .12;
+    const coordinates = points.map(point => ({ x: padX + (lastTime === firstTime ? (width - padX * 2) / 2 : (point.match.playedAtEpoch - firstTime) * (width - padX * 2) / (lastTime - firstTime)), y: padY + (max - point.value) * (height - padY * 2) / (max - min), value: point.value, replayId: point.match.replayId }));
+    return { kind, coordinates, line: coordinates.map(point => `${point.x},${point.y}`).join(" "), latest: values.at(-1) as number, highest, lowest, change: (values.at(-1) as number) - values[0] };
+  }
+  const lp = series("lp"), mr = series("mr"), seriesList = [lp, mr].filter((item): item is NonNullable<typeof item> => item !== null);
+  if (!seriesList.length) return <article className="lp-card"><div><p className="eyebrow">{labels.eyebrow}</p><h3>{labels.title}</h3></div><p className="lp-empty">{labels.noData}</p></article>;
+  return <article className="lp-card"><div className="lp-heading"><div><p className="eyebrow">{labels.eyebrow}</p><h3>{labels.title}</h3></div><div className="rating-metrics">{([lp, mr] as const).map((item, index) => <div className={`rating-summary ${index ? "mr" : "lp"}`} key={index ? "mr" : "lp"}><b>{index ? "MR" : "LP"}</b>{item ? <><span>{labels.latest}<strong>{number.format(item.latest)}</strong></span><small>{labels.highest} {number.format(item.highest)} · {labels.lowest} {number.format(item.lowest)} · {labels.change} <em className={item.change >= 0 ? "positive" : "negative"}>{item.change >= 0 ? "+" : ""}{number.format(item.change)}</em></small></> : <small>{labels.noData}</small>}</div>)}</div></div><div className="lp-chart">{lp && <><span className="lp-axis maximum">{number.format(lp.highest)} LP</span><span className="lp-axis minimum">{number.format(lp.lowest)} LP</span></>}{mr && <><span className="lp-axis maximum right">{number.format(mr.highest)} MR</span><span className="lp-axis minimum right">{number.format(mr.lowest)} MR</span></>}<svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={labels.title} preserveAspectRatio="none"><line x1={padX} y1={padY} x2={width - padX} y2={padY} className="grid-line"/><line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} className="grid-line"/>{seriesList.map(item => <g className={`rating-series ${item.kind}`} key={item.kind}><polyline points={item.line}/>{item.coordinates.map(point => <circle key={`${point.replayId}-${item.kind}`} cx={point.x} cy={point.y} r="3"><title>{number.format(point.value)} {item.kind.toUpperCase()}</title></circle>)}</g>)}</svg></div></article>;
 }
 
 type CharacterRecord = ReturnType<typeof aggregateMatches>["bySubjectCharacter"][number];
