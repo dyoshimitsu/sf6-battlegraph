@@ -125,9 +125,12 @@ mark synchronization complete
 1. 新しい世代 ID で chunk を作成する
 2. 全 chunk の保存を確認する
 3. manifest の active generation を切り替える
-4. 古い世代は後から安全に削除可能にする
+4. 直前のactive generationをロールバック用としてmanifestに残す
+5. 2世代以上前のchunkを削除する
+6. 削除成功後にmanifestの削除予定リストを空にする
 
 同期が途中で失敗した場合、通常画面は以前の active generation を継続して読む。
+manifest切替後の整理に失敗した場合、新世代はそのまま利用でき、削除予定IDは次回同期で再試行する。
 
 ## Read path
 

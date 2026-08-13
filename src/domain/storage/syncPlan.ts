@@ -2,6 +2,7 @@ import type { BucklerBundlePreview, BucklerCollectorBundle, BucklerPageResponse,
 import { toTokyoDate } from "../statistics/aggregateMatches";
 import { buildQueryChunkGeneration, type QueryChunk } from "./queryChunks";
 import { mergeStoredMatches } from "./mergeStoredMatches";
+import type { StoredManifest } from "./loadStoredMatches";
 
 export const STORAGE_SCHEMA_VERSION = 1;
 export const PARSER_VERSION = 1;
@@ -17,6 +18,8 @@ export interface SyncPlan {
   userCode: number;
   writesBeforeManifest: PlannedWrite[];
   manifest: PlannedWrite;
+  deletesAfterManifest: string[];
+  cleanupManifest?: PlannedWrite;
   writeCount: number;
   storedMatches: NormalizedMatch[];
 }
@@ -109,6 +112,7 @@ export function buildSyncPlan(
   generation: string,
   visibility: "private" | "public" = "private",
   archivedMatches: NormalizedMatch[] = [],
+  previousManifest?: StoredManifest,
 ): SyncPlan {
   if (!syncId.trim()) throw new Error("syncId must not be empty");
   const userCode = preview.userCode;
@@ -117,6 +121,10 @@ export function buildSyncPlan(
   const chunks = buildQueryChunkGeneration(allMatches, generation);
   const latestPlayer = playerInfo(preview);
   const base = `players/${userCode}`;
+  const obsoleteChunkIds = [...new Set([
+    ...(previousManifest?.obsoleteChunkIds ?? []),
+    ...(previousManifest?.previousGeneration?.chunks.map(chunk => chunk.id) ?? []),
+  ])].filter(id => !chunks.descriptors.some(chunk => chunk.id === id));
 
   const writesBeforeManifest: PlannedWrite[] = [
     { path: "settings/deployment", data: { visibility } },
@@ -181,7 +189,16 @@ export function buildSyncPlan(
       newestPlayedAtEpoch: chunks.newestPlayedAt,
       schemaVersion: STORAGE_SCHEMA_VERSION,
       sourceSyncId: syncId,
+      previousGeneration: previousManifest ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks } : null,
+      obsoleteChunkIds,
     },
   };
-  return { syncId, generation, userCode, writesBeforeManifest, manifest, writeCount: writesBeforeManifest.length + 1, storedMatches: allMatches };
+  const deletesAfterManifest = obsoleteChunkIds.map(id => `${base}/queryChunks/${id}`);
+  const cleanupManifest = deletesAfterManifest.length > 0
+    ? { path: `${base}/manifests/matches`, data: { obsoleteChunkIds: [] } }
+    : undefined;
+  return {
+    syncId, generation, userCode, writesBeforeManifest, manifest, deletesAfterManifest, cleanupManifest,
+    writeCount: writesBeforeManifest.length + 1 + deletesAfterManifest.length + (cleanupManifest ? 1 : 0), storedMatches: allMatches,
+  };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BucklerBundlePreview, NormalizedMatch } from "../buckler/types";
 import { buildSyncPlan } from "./syncPlan";
+import type { StoredManifest } from "./loadStoredMatches";
 
 function normalizedMatch(): NormalizedMatch {
   const subject = { player: { short_id: 100, fighter_id: "Subject", platform_name: "Steam" }, character_id: 21, character_name: "ジェイミー", character_tool_name: "jamie", league_point: 19000, master_rating: 0, round_results: [1, 6] };
@@ -50,6 +51,26 @@ describe("buildSyncPlan", () => {
     expect(chunkMatches).toEqual(["ARCHIVED", "REPLAY1"]);
     expect(plan.writesBeforeManifest.some(write => write.path.endsWith("/matches/ARCHIVED"))).toBe(false);
     expect(plan.manifest.data.totalMatches).toBe(2);
+  });
+
+  it("keeps the active generation for rollback and schedules only older chunks for deletion", () => {
+    const previous: StoredManifest = {
+      activeGeneration: "current",
+      chunks: [{ id: "current_2025-02_001", yearMonth: "2025-02", from: 1, to: 2, count: 2 }],
+      previousGeneration: { generation: "previous", chunks: [{ id: "previous_2025-01_001", yearMonth: "2025-01", from: 1, to: 1, count: 1 }] },
+      obsoleteChunkIds: ["orphan_2024-12_001"],
+      totalMatches: 2,
+    };
+    const plan = buildSyncPlan({}, preview(), "sync-gc", "generation-gc", "private", [], previous);
+    expect(plan.manifest.data).toMatchObject({
+      previousGeneration: { generation: "current", chunks: previous.chunks },
+      obsoleteChunkIds: ["orphan_2024-12_001", "previous_2025-01_001"],
+    });
+    expect(plan.deletesAfterManifest).toEqual([
+      "players/100/queryChunks/orphan_2024-12_001",
+      "players/100/queryChunks/previous_2025-01_001",
+    ]);
+    expect(plan.cleanupManifest?.data).toEqual({ obsoleteChunkIds: [] });
   });
 
   it("rejects an empty sync identifier", () => {

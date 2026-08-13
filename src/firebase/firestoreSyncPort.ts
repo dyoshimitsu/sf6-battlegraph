@@ -22,5 +22,10 @@ export function createFirestoreSyncPort(db: Firestore): SyncWritePort {
       for (const write of writes) batch.set(doc(db, write.path), withServerMetadata(write), { merge: true });
       await batch.commit();
     },
+    async remove(paths) {
+      const batch = writeBatch(db);
+      for (const path of paths) batch.delete(doc(db, path));
+      await batch.commit();
+    },
   };
 }

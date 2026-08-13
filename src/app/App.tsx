@@ -11,7 +11,7 @@ import { useAdminAuth } from "../firebase/useAdminAuth";
 import { buildSyncPlan } from "../domain/storage/syncPlan";
 import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
-import { loadStoredMatches } from "../domain/storage/loadStoredMatches";
+import { loadStoredMatches, type StoredManifest } from "../domain/storage/loadStoredMatches";
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
 import { createSyncId } from "../domain/storage/createSyncId";
@@ -85,6 +85,7 @@ export function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingStored, setIsLoadingStored] = useState(false);
   const [archivedMatches, setArchivedMatches] = useState<NormalizedMatch[] | null>(null);
+  const [storedManifest, setStoredManifest] = useState<StoredManifest | null>(null);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -123,6 +124,7 @@ export function App() {
     void loadStoredMatches(createFirestoreReadPort(db), INITIAL_USER_CODE).then(stored => {
       if (!active) return;
       setArchivedMatches(stored?.matches ?? []);
+      setStoredManifest(stored?.manifest ?? null);
       if (!stored) return;
       setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(stored.matches, stored.manifest.chunks.length) });
     }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : t("storedLoadFailed")); })
@@ -159,11 +161,14 @@ export function App() {
     setIsSyncing(true); setSyncMessage(null); setSyncProgress(null);
     try {
       const id = createSyncId();
-      const existing = archivedMatches ?? (await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE))?.matches ?? [];
+      const loaded = archivedMatches === null ? await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE) : null;
+      const existing = archivedMatches ?? loaded?.matches ?? [];
+      const previousManifest = storedManifest ?? loaded?.manifest;
       const summary = summarizeStoredMerge(existing, imported.preview.matches);
-      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, existing);
+      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, existing, previousManifest);
       await executeSyncPlan(createFirestoreSyncPort(firebaseRuntime.services.db), plan, setSyncProgress);
       setArchivedMatches(plan.storedMatches);
+      setStoredManifest({ ...(plan.manifest.data as unknown as StoredManifest), obsoleteChunkIds: [] });
       setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(plan.storedMatches, (plan.manifest.data.chunks as unknown[]).length) });
       setSyncMessage(t("syncComplete", { count: summary.totalMatches, newCount: summary.newMatches, refreshedCount: summary.refreshedMatches, retainedCount: summary.retainedMatches }));
     } catch (cause) {

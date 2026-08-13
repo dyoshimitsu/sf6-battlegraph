@@ -202,14 +202,21 @@ chunk は月単位を基本とし、以下のいずれかに達する前に分�
     }
   ],
   "totalMatches": 250,
-  "oldestPlayedAt": "Timestamp",
-  "newestPlayedAt": "Timestamp",
+  "oldestPlayedAtEpoch": 1785529200,
+  "newestPlayedAtEpoch": 1788207599,
+  "previousGeneration": {
+    "generation": "previous-generation-id",
+    "chunks": []
+  },
+  "obsoleteChunkIds": [],
   "schemaVersion": 1,
   "updatedAt": "Timestamp"
 }
 ```
 
 初期版のクライアントはmanifestに列挙されたactive generationのchunkを一括取得する。将来、期間を読み込み前に指定できるUIを追加する場合は、`from` / `to`を比較して必要なchunkだけ取得できる。
+
+`previousGeneration`は直前1世代のロールバック情報を保持する。`obsoleteChunkIds`には2世代以上前で削除対象となるchunkを記録し、削除完了後に空配列へ更新する。これにより整理処理が途中で失敗しても孤立chunkを追跡できる。
 
 ## Client-side aggregations
 
