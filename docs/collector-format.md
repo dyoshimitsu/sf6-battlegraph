@@ -48,7 +48,7 @@ A single raw Buckler page remains accepted for development and recovery. It is a
 
 ## Running the collector
 
-`npm run build` produces `dist/extension` and `dist/sf6-battlegraph-extension.zip`. Neither contains credentials.
+`npm run build` produces `dist/extension` and `dist/sf6-battlegraph-extension.zip`. The ZIP contains one versioned `sf6-battlegraph-connector-v<version>` directory. Neither output contains credentials.
 
 During development:
 

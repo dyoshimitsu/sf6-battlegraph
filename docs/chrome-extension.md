@@ -12,9 +12,15 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 4. 「パッケージ化されていない拡張機能を読み込む」を選択する
 5. このリポジトリの`dist/extension`を指定する
 
-本番ビルドでは`dist/sf6-battlegraph-extension.zip`も生成する。zipを展開し、同じ方法で展開先を読み込める。
+本番ビルドでは`dist/sf6-battlegraph-extension.zip`も生成する。Battlegraphからダウンロードする際は、バージョンとUTC日時を含む重複しないファイル名になる。ZIPを展開すると`sf6-battlegraph-connector-v<version>`フォルダが1つ作られるため、そのフォルダをChromeへ読み込む。
 
-Battlegraphは導入済み拡張のversionを検出する。未導入またはアプリの期待versionと異なる場合だけ、管理者ヘッダーへ「Chrome拡張を導入／更新」を表示する。更新時はzipを展開済みフォルダへ上書きし、`chrome://extensions`で拡張を再読み込みした後、Battlegraphも再読み込みする。
+Battlegraphは導入済み拡張のversionを検出する。未導入またはアプリの期待versionと異なる場合だけ、管理者ヘッダーへ「Chrome拡張を導入／更新」を表示する。リンクを押すと画面内にも次の手順を表示する。
+
+1. ダウンロードしたZIPを展開する
+2. `chrome://extensions`で古いBattlegraph Connectorを削除する
+3. デベロッパーモードを有効にし、新しいバージョン付きフォルダを読み込む
+
+拡張は永続データを持たないため、削除してもFirestoreの戦績やBucklerの認証情報は失われない。導入後にBattlegraphを再読み込みする。
 
 cloneした利用者は`.env.local`またはGitHub Repository Variablesの`VITE_CONNECTOR_ORIGINS`へ配信originをカンマ区切りで設定する。例: `http://localhost:5173,https://alice.github.io`。ビルド時にChromeのmatch patternへ変換し、パス付きURLや未対応protocolは拒否する。
 

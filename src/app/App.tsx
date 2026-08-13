@@ -101,6 +101,7 @@ export function App() {
   const [isCollecting, setIsCollecting] = useState(false);
   const [autoSyncPending, setAutoSyncPending] = useState(false);
   const [connectorVersion, setConnectorVersion] = useState<string | null | undefined>(undefined);
+  const [showConnectorGuide, setShowConnectorGuide] = useState(false);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -221,6 +222,7 @@ export function App() {
   const connectorDownloadUrl = import.meta.env.DEV
     ? `${window.location.protocol}//${window.location.hostname}:4173/sf6-battlegraph-extension.zip`
     : "./sf6-battlegraph-extension.zip";
+  const connectorDownloadName = `sf6-battlegraph-connector-v${__CONNECTOR_VERSION__}-${new Date().toISOString().replace(/\D/g, "").slice(0, 14)}.zip`;
 
   function resetFilters() {
     setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId("");
@@ -288,7 +290,7 @@ export function App() {
         <div className="header-actions">
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
-          {adminAuth.state.status === "admin" && connectorVersion !== undefined && connectorVersion !== __CONNECTOR_VERSION__ && <a className="auth-button connector-update" href={connectorDownloadUrl} download>{t(connectorVersion === null ? "connectorInstall" : "connectorUpdate")}</a>}
+          {adminAuth.state.status === "admin" && connectorVersion !== undefined && connectorVersion !== __CONNECTOR_VERSION__ && <a className="auth-button connector-update" href={connectorDownloadUrl} download={connectorDownloadName} onClick={() => setShowConnectorGuide(true)}>{t(connectorVersion === null ? "connectorInstall" : "connectorUpdate")}</a>}
           {adminAuth.state.status === "admin" && <button className="auth-button header-sync-button" type="button" disabled={isCollecting || isSyncing || connectorVersion !== __CONNECTOR_VERSION__} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>}
           {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <details className="admin-menu"><summary aria-label={t("managementMenu")}>•••</summary><div><span>{t("managementMenu")}</span>{adminAuth.state.status === "admin" && <button type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}{adminAuth.state.status === "admin" && <button type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}<button type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button></div></details>}
           <input ref={restoreInputRef} type="file" accept="application/json,.json" hidden onChange={event => { void restoreBackup(event.target.files?.[0]); event.target.value = ""; }} />
@@ -301,7 +303,7 @@ export function App() {
 
       <main id="top">
         <section className="workspace">
-          <div className="notification-stack" aria-live="polite">{syncFreshness && syncFreshness.level !== "fresh" && adminAuth.state.status === "admin" && <div className={`message sync-reminder ${syncFreshness.level}`} role="status"><strong>{t("syncReminderTitle")}</strong><span>{t("syncReminderDescription", { days: syncFreshness.days })}</span></div>}{isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}{imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}{syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}{restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}{error && <div className="message error" role="alert">{error}</div>}</div>
+          <div className="notification-stack" aria-live="polite">{showConnectorGuide && <div className="message connector-guide" role="status"><button type="button" aria-label={t("close")} onClick={() => setShowConnectorGuide(false)}>×</button><strong>{t("connectorGuideTitle")}</strong><ol><li>{t("connectorGuideExtract")}</li><li>{t("connectorGuideOpenExtensions")}</li><li>{t("connectorGuideLoad")}</li></ol></div>}{syncFreshness && syncFreshness.level !== "fresh" && adminAuth.state.status === "admin" && <div className={`message sync-reminder ${syncFreshness.level}`} role="status"><strong>{t("syncReminderTitle")}</strong><span>{t("syncReminderDescription", { days: syncFreshness.days })}</span></div>}{isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}{imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}{syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}{restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}{error && <div className="message error" role="alert">{error}</div>}</div>
 
           {imported && <>
             {imported.canSync && <section className="preview">

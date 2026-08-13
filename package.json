@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && vite build --config vite.extension.config.ts && cd dist/extension && zip -q -FS -r ../sf6-battlegraph-extension.zip .",
+    "build": "tsc -b && vite build && vite build --config vite.extension.config.ts && node scripts/package-extension.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "test:rules:unit": "vitest run --config vitest.rules.config.ts",
