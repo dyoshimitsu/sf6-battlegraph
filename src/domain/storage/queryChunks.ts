@@ -121,6 +121,21 @@ function createChunk(generation: string, yearMonth: string, sequence: number, ma
   };
 }
 
+function estimatedChunkBytes(generation: string, yearMonth: string, sequence: number, first: QueryMatch, last: QueryMatch, count: number, matchBytes: number): number {
+  const shell: QueryChunk = {
+    id: `${generation}_${yearMonth}_${String(sequence).padStart(3, "0")}`,
+    generation,
+    yearMonth,
+    sequence,
+    from: first.at,
+    to: last.at,
+    count,
+    matches: [],
+    schemaVersion: QUERY_CHUNK_SCHEMA_VERSION,
+  };
+  return serializedUtf8Bytes(shell) - 2 + matchBytes + Math.max(0, count - 1);
+}
+
 export function buildQueryChunkGeneration(
   matches: NormalizedMatch[],
   generation: string,
@@ -141,16 +156,21 @@ export function buildQueryChunkGeneration(
   for (const [yearMonth, monthMatches] of grouped) {
     let sequence = 1;
     let pending: QueryMatch[] = [];
+    let pendingMatchBytes = 0;
     for (const match of monthMatches) {
-      const candidate = createChunk(generation, yearMonth, sequence, [...pending, match]);
-      if (pending.length > 0 && (candidate.count > maxMatches || serializedUtf8Bytes(candidate) > maxBytes)) {
+      const matchBytes = serializedUtf8Bytes(match);
+      const candidateCount = pending.length + 1;
+      const candidateBytes = estimatedChunkBytes(generation, yearMonth, sequence, pending[0] ?? match, match, candidateCount, pendingMatchBytes + matchBytes);
+      if (pending.length > 0 && (candidateCount > maxMatches || candidateBytes > maxBytes)) {
         chunks.push(createChunk(generation, yearMonth, sequence, pending));
         sequence += 1;
         pending = [match];
+        pendingMatchBytes = matchBytes;
       } else {
         pending.push(match);
+        pendingMatchBytes += matchBytes;
       }
-      if (serializedUtf8Bytes(createChunk(generation, yearMonth, sequence, pending)) > maxBytes) {
+      if (estimatedChunkBytes(generation, yearMonth, sequence, pending[0], match, pending.length, pendingMatchBytes) > maxBytes) {
         throw new Error(`match ${match.id} exceeds the query chunk byte limit`);
       }
     }
