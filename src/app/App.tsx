@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { parseBucklerPage } from "../domain/buckler/parseBucklerPage";
+import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
 import {
   BucklerValidationError,
-  type BucklerPagePreview,
+  type BucklerBundlePreview,
 } from "../domain/buckler/types";
 
 const INITIAL_USER_CODE = 1134991793;
@@ -12,10 +12,10 @@ const TOKYO_DATE_TIME = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
 });
 
-interface ImportedPage {
+interface ImportedBundle {
   fileName: string;
   fileSize: number;
-  preview: BucklerPagePreview;
+  preview: BucklerBundlePreview;
 }
 
 function formatBytes(bytes: number): string {
@@ -32,14 +32,14 @@ function formatTimestamp(timestamp?: number): string {
 
 export function App() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [imported, setImported] = useState<ImportedPage | null>(null);
+  const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const readiness = useMemo(
     () => [
       { label: "Buckler JSONの検証", done: imported !== null },
-      { label: "全モード収集", done: false },
+      { label: "複数ページの統合", done: imported !== null && !imported.preview.isSinglePage },
       { label: "Firestore同期", done: false },
       { label: "グラフ表示", done: false },
     ],
@@ -53,7 +53,7 @@ export function App() {
     try {
       const text = await file.text();
       const json: unknown = JSON.parse(text);
-      const preview = parseBucklerPage(json, INITIAL_USER_CODE);
+      const preview = parseCollectorImport(json, INITIAL_USER_CODE);
       setImported({ fileName: file.name, fileSize: file.size, preview });
     } catch (cause) {
       setImported(null);
@@ -110,7 +110,7 @@ export function App() {
           <div className="section-heading">
             <div>
               <p className="eyebrow">FIRST SLICE</p>
-              <h2>Buckler JSONを確認する</h2>
+              <h2>収集データを確認する</h2>
             </div>
             <p>ユーザーコード <strong>{INITIAL_USER_CODE}</strong></p>
           </div>
@@ -124,8 +124,8 @@ export function App() {
               onDrop={handleDrop}
             >
               <div className="drop-icon">JSON</div>
-              <h3>Bucklerレスポンスをドロップ</h3>
-              <p>現在は1ページ分の生JSONを検証できます。データはブラウザ内だけで処理されます。</p>
+              <h3>Collector JSONをドロップ</h3>
+              <p>複数モード・複数ページのbundleと、従来の1ページ分の生JSONを検証できます。データはブラウザ内だけで処理されます。</p>
               <button type="button" onClick={() => inputRef.current?.click()}>
                 ファイルを選択
               </button>
@@ -157,24 +157,35 @@ export function App() {
             <section className="preview" aria-live="polite">
               <div className="preview-title">
                 <div>
-                  <p className="eyebrow">VALID RESPONSE</p>
+                  <p className="eyebrow">VALID IMPORT</p>
                   <h2>同期前プレビュー</h2>
                 </div>
                 <span>{imported.fileName} · {formatBytes(imported.fileSize)}</span>
               </div>
 
               <div className="metrics">
-                <article><span>ページ</span><strong>{imported.preview.currentPage}<small> / {imported.preview.totalPages}</small></strong></article>
-                <article><span>このページの試合</span><strong>{imported.preview.matchCount}</strong></article>
-                <article><span>対象を確認できた試合</span><strong>{imported.preview.subjectMatches}</strong></article>
+                <article><span>取得ページ</span><strong>{imported.preview.pageCount}</strong></article>
+                <article><span>取得試合</span><strong>{imported.preview.rawMatchCount}</strong></article>
+                <article><span>ユニーク試合</span><strong>{imported.preview.uniqueMatchCount}</strong></article>
                 <article><span>警告</span><strong>{imported.preview.warnings.length}</strong></article>
               </div>
 
               <dl className="preview-details">
                 <div><dt>最新</dt><dd>{formatTimestamp(imported.preview.newestPlayedAt)}</dd></div>
                 <div><dt>最古</dt><dd>{formatTimestamp(imported.preview.oldestPlayedAt)}</dd></div>
-                <div><dt>対戦タイプ</dt><dd>{imported.preview.battleTypes.join(", ") || "—"}</dd></div>
+                <div><dt>重複</dt><dd>{imported.preview.duplicateCount} 試合を replay_id で統合</dd></div>
+                <div><dt>Build ID</dt><dd>{imported.preview.buildId ?? "単一ページのため不明"}</dd></div>
               </dl>
+
+              <div className="source-grid">
+                {imported.preview.sources.map((source) => (
+                  <article key={source.sourceType}>
+                    <span>{source.sourceType}</span>
+                    <strong>{source.pages}<small> / {source.expectedPages} pages</small></strong>
+                    <p>{source.rawMatches} raw matches</p>
+                  </article>
+                ))}
+              </div>
 
               {imported.preview.warnings.length > 0 && (
                 <ul className="warning-list">

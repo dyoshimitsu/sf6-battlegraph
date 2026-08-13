@@ -67,6 +67,75 @@ export interface BucklerPagePreview {
   response: BucklerPageResponse;
 }
 
+export type BucklerSourceType =
+  | "all"
+  | "ranked"
+  | "casual"
+  | "custom"
+  | "hub"
+  | "unknown";
+
+export interface BucklerCollectorPage {
+  sourceType: BucklerSourceType;
+  sourcePath: string;
+  page: number;
+  fetchedAt: string;
+  response: unknown;
+}
+
+export interface BucklerCollectorBundle {
+  format: "sf6-battlegraph.collector";
+  version: 1;
+  userCode: number;
+  buildId: string;
+  exportedAt: string;
+  pages: BucklerCollectorPage[];
+}
+
+export type MatchResult = "win" | "loss" | "draw" | "unknown";
+
+export interface NormalizedMatch {
+  replayId: string;
+  subjectUserCode: number;
+  playedAtEpoch: number;
+  battleVersion?: number;
+  battleType?: number;
+  battleSubType?: number;
+  battleTypeName?: string;
+  mode: BucklerSourceType;
+  sourceTypes: BucklerSourceType[];
+  subjectSide: 1 | 2;
+  result: MatchResult;
+  roundsWon: number;
+  roundsLost: number;
+  subject: BucklerPlayerInfo;
+  opponent: BucklerPlayerInfo;
+  raw: BucklerReplay;
+}
+
+export interface CollectorSourceSummary {
+  sourceType: BucklerSourceType;
+  pages: number;
+  expectedPages: number;
+  rawMatches: number;
+}
+
+export interface BucklerBundlePreview {
+  userCode: number;
+  buildId?: string;
+  exportedAt?: string;
+  pageCount: number;
+  rawMatchCount: number;
+  uniqueMatchCount: number;
+  duplicateCount: number;
+  oldestPlayedAt?: number;
+  newestPlayedAt?: number;
+  matches: NormalizedMatch[];
+  sources: CollectorSourceSummary[];
+  warnings: string[];
+  isSinglePage: boolean;
+}
+
 export class BucklerValidationError extends Error {
   constructor(message: string) {
     super(message);

@@ -160,6 +160,12 @@ h1 em { color: transparent; -webkit-text-stroke: 1px var(--orange); font-style: 
 .preview-details div { display: grid; grid-template-columns: 120px 1fr; padding: 16px 0; border-bottom: 1px solid #29292e; }
 .preview-details dt { color: var(--muted); font-size: 12px; }
 .preview-details dd { margin: 0; font-size: 13px; }
+.source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 22px; }
+.source-grid article { padding: 18px; background: #101012; border: 1px solid #29292e; }
+.source-grid span { display: block; margin-bottom: 7px; color: var(--orange); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.source-grid strong { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 27px; text-transform: uppercase; }
+.source-grid small { margin-left: 4px; color: var(--muted); font-size: 13px; }
+.source-grid p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
 .warning-list { margin: 20px 0 0; padding: 16px 16px 16px 36px; color: #ffe5a0; background: rgba(255,201,40,.07); font-size: 12px; line-height: 1.8; }
 
 footer { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 24px 0 36px; display: flex; justify-content: space-between; color: #66646a; border-top: 1px solid var(--line); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }

@@ -9,7 +9,7 @@ Buckler で参照できる対戦履歴には件数上限があるため、定期
 
 ## Status
 
-現在は初期実装段階です。Buckler の 1 ページ分の raw JSONをブラウザへ読み込み、構造、認証状態、対象ユーザーを検証して同期前プレビューを表示できます。対象プレイヤーとしてユーザーコード `1134991793` を使って実装を進めますが、将来的には clone した利用者が自身のユーザーコードと Firebase プロジェクトを設定してセルフホストできる構成にします。
+現在は初期実装段階です。複数モード・複数ページを含む collector bundle または Buckler の 1 ページ分の raw JSON をブラウザへ読み込み、検証、`replay_id` による重複排除、対象プレイヤー基準の正規化、同期前プレビューができます。対象プレイヤーとしてユーザーコード `1134991793` を使って実装を進めますが、将来的には clone した利用者が自身のユーザーコードと Firebase プロジェクトを設定してセルフホストできる構成にします。
 
 ## Development
 
@@ -84,6 +84,7 @@ GitHub Pages は静的ホスティングであるため、Buckler の取得処�
 詳細は以下を参照してください。
 
 - [Architecture](docs/architecture.md)
+- [Collector export format](docs/collector-format.md)
 - [Data model](docs/data-model.md)
 - [Decisions and validation](docs/decisions.md)
 - [Repository instructions for Codex](AGENTS.md)
