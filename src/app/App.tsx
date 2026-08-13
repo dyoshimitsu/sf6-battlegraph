@@ -4,6 +4,7 @@ import { getCharacterName, getCharacterNameBySlug } from "../domain/buckler/char
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
 import { getRoundDetails } from "../domain/buckler/roundResults";
 import { BucklerValidationError, type BucklerBundlePreview, type NormalizedMatch } from "../domain/buckler/types";
+import { ratingMatches } from "../domain/statistics/ratingMatches";
 import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import { useI18n } from "../i18n/useI18n";
 import { deploymentConfig, firebaseRuntime } from "../firebase/client";
@@ -382,7 +383,7 @@ function DailyTrend({ records, locale, labels }: { records: DailyRecord[]; local
 function RatingChart({ matches, locale, labels }: { matches: BucklerBundlePreview["matches"]; locale: "ja" | "en"; labels: Record<"eyebrow" | "title" | "character" | "latest" | "highest" | "lowest" | "change" | "noData" | "firstMatch" | "latestMatch", string> }) {
   const [selectedCharacter, setSelectedCharacter] = useState("");
   const characterGroups = new Map<string, BucklerBundlePreview["matches"]>();
-  for (const match of matches) {
+  for (const match of ratingMatches(matches)) {
     const id = match.subject.playing_character_id ?? match.subject.character_id;
     const slug = match.subject.playing_character_tool_name ?? match.subject.character_tool_name ?? "unknown";
     const key = id === undefined ? `slug:${slug}` : `id:${id}`;
