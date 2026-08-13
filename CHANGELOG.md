@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-14
+
 ### Added
 
 - 直近の試合への1P・2P表示
@@ -17,6 +19,10 @@
 - 開発・CIのNode.js要件を26以降へ更新
 - query chunk schemaをv2へ更新し、追跡対象の`subjectSide`を永続化
 - 管理者同期時に旧query chunkで欠落した1P・2P情報を完全matchから一度だけ復元
+
+### Fixed
+
+- ブラウザ標準の日付ピッカーを利用する形式へ戻し、環境によるカレンダー表示の不整合を解消
 
 ## [1.0.0] - 2026-08-14
 
@@ -55,3 +61,4 @@
 - bundleのorigin、protocol、ユーザーコード、レスポンス状態、schemaを保存前に検証
 
 [1.0.0]: https://github.com/dyoshimitsu/sf6-battlegraph/releases/tag/v1.0.0
+[1.1.0]: https://github.com/dyoshimitsu/sf6-battlegraph/releases/tag/v1.1.0
