@@ -24,7 +24,7 @@ Buckler 上で bundle を生成する standalone collector も実装した。現
 - 勝率の母数は勝敗を判定できた試合とし、draw / unknown は別に表示する
 - 直近100試合を正規化済みデータから表示し、各ラウンドの勝敗と決着方法を併記する
 
-`round_results` は Buckler 公式表示が参照する `icon_result{code}_{side}.png` を確認し、`0=敗者側`、`1=KO`、`2=C（削り）`、`3=T（タイムオーバー）`、`4=D（ドロー）`、`5=OD`、`6=SA`、`7=CA`、`8=P（パーフェクト）` として表示する。未知のコードは捨てずに `#<code>` と表示する。
+`round_results` は Buckler 公式表示が参照する `icon_result{code}_{side}.png` を確認し、`0=敗者側`、`1=V（通常KO）`、`2=C（削り）`、`3=T（タイムオーバー）`、`4=D（ドロー）`、`5=OD`、`6=SA`、`7=CA`、`8=P（パーフェクト）` として表示する。未知のコードは捨てずに `#<code>` と表示する。
 
 GitHub Pages の検証・デプロイ workflow を実装した。`master`へのpushと手動実行で、テスト・型検査・Webアプリとstandalone collectorのビルドがすべて成功した場合だけPages artifactをデプロイする。Pull Requestでは検証だけを実行する。
 

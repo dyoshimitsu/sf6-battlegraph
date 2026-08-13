@@ -10,6 +10,10 @@ describe("getRoundDetails", () => {
     ]);
   });
 
+  it("labels a normal knockout as V", () => {
+    expect(getRoundDetails([1], [0], "ja")[0]).toMatchObject({ method: "V", description: "通常KO" });
+  });
+
   it("preserves an unknown future result code", () => {
     expect(getRoundDetails([9], [0], "en")[0]).toMatchObject({
       outcome: "win",

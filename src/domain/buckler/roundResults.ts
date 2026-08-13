@@ -9,7 +9,7 @@ export interface RoundDetail {
 }
 
 const METHODS: Record<number, { method: string; ja: string; en: string }> = {
-  1: { method: "KO", ja: "通常KO", en: "Knockout" },
+  1: { method: "V", ja: "通常KO", en: "Knockout" },
   2: { method: "C", ja: "削りKO", en: "Chip knockout" },
   3: { method: "T", ja: "タイムオーバー", en: "Time over" },
   4: { method: "D", ja: "ドロー", en: "Draw" },
