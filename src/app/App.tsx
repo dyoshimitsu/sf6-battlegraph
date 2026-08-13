@@ -13,6 +13,7 @@ import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyn
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 import { loadStoredMatches } from "../domain/storage/loadStoredMatches";
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
+import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -152,10 +153,11 @@ export function App() {
     try {
       const id = `${Date.now()}-${crypto.randomUUID()}`;
       const stored = await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE);
+      const summary = summarizeStoredMerge(stored?.matches ?? [], imported.preview.matches);
       const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, stored?.matches ?? []);
       await executeSyncPlan(createFirestoreSyncPort(firebaseRuntime.services.db), plan, setSyncProgress);
       setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(plan.storedMatches, (plan.manifest.data.chunks as unknown[]).length) });
-      setSyncMessage(t("syncComplete", { count: plan.storedMatches.length }));
+      setSyncMessage(t("syncComplete", { count: summary.totalMatches, newCount: summary.newMatches, refreshedCount: summary.refreshedMatches, retainedCount: summary.retainedMatches }));
     } catch (cause) {
       setSyncMessage(cause instanceof Error ? cause.message : t("syncFailed"));
     } finally { setIsSyncing(false); }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NormalizedMatch } from "../buckler/types";
-import { mergeStoredMatches } from "./mergeStoredMatches";
+import { mergeStoredMatches, summarizeStoredMerge } from "./mergeStoredMatches";
 
 function match(replayId: string, playedAtEpoch: number, fighterId = replayId): NormalizedMatch {
   const subject = { player: { short_id: 100, fighter_id: fighterId }, round_results: [1, 1] };
@@ -19,5 +19,12 @@ describe("mergeStoredMatches", () => {
     const [merged] = mergeStoredMatches([existing], [incoming]);
     expect(merged.subject.player.fighter_id).toBe("new");
     expect(merged.sourceTypes).toEqual(["ranked", "all"]);
+  });
+
+  it("reports new, refreshed, retained, and total matches without double-counting ids", () => {
+    expect(summarizeStoredMerge(
+      [match("old", 1), match("same", 2)],
+      [match("same", 2), match("new", 3), match("new", 3)],
+    )).toEqual({ newMatches: 1, refreshedMatches: 1, retainedMatches: 1, totalMatches: 3 });
   });
 });

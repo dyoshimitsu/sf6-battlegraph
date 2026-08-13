@@ -44,6 +44,8 @@ Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのc
 
 再同期時はactive generationのquery chunkと今回取得した試合を`replay_id`で統合し、全履歴を含む新generationを作る。重複した試合は今回の完全なreplayを優先し、既知のsource typeは和集合で保持する。既存のcomplete matchをquery chunk由来の縮小データで上書きしない。
 
+同期完了時は、今回初めて保存した試合、既存と重複して再取得した試合、今回のBuckler履歴には含まれないが保存を維持した過去試合、保存後の合計件数をそれぞれ表示する。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions
