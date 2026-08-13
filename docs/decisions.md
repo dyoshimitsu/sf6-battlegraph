@@ -8,7 +8,7 @@ Vite / React / TypeScript の静的 SPA と Buckler import parser を実装し�
 - `common.statusCode`、`sid`、ページ情報、replay の必須識別情報を検証する
 - 対象ユーザーが各 replay の player 1 / player 2 の一方に存在することを確認する
 - ページ数、試合数、期間、battle type、warning を同期前に表示する
-- 現段階ではファイルを外部へ送信せず、Firestore への書き込みも行わない
+- Firebase未設定時はファイルを外部へ送信せず、ブラウザ内だけで処理する
 - parser は React と Firebase に依存しない純粋な TypeScript として実装する
 - bundle 内の複数モード・複数ページを検証し、`replay_id` で重複排除する
 - 対象ユーザーが player 1 / player 2 のどちらでも `subject` と `opponent` に正規化する
@@ -41,6 +41,8 @@ Firestore同期前に純粋なTypeScriptでwrite planを生成する。player me
 Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのcommit後にmanifestを単独commitする。matchの`sourceSyncIds`は`arrayUnion`で追記し、同期時刻はFirestore server timestampを使用する。同期UIは管理者にだけ表示し、進捗と成功・失敗を通知する。
 
 保存済み戦績の表示では、最初にmanifestを1 document読み、そのactive generationに列挙されたquery chunkだけを読む。generation、chunk数、試合数がmanifestと一致しない不完全な世代は表示しない。`private`では管理者ログイン後、`public`では認証なしで自動読込し、raw snapshotやcomplete matchは通常表示では読まない。
+
+再同期時はactive generationのquery chunkと今回取得した試合を`replay_id`で統合し、全履歴を含む新generationを作る。重複した試合は今回の完全なreplayを優先し、既知のsource typeは和集合で保持する。既存のcomplete matchをquery chunk由来の縮小データで上書きしない。
 
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 

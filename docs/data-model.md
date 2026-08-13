@@ -32,8 +32,8 @@ players/{userCode}/syncs/{syncId}
   "platform": "Steam",
   "latestLeaguePoint": 19046,
   "latestMasterRating": 0,
-  "oldestPlayedAt": "Timestamp",
-  "newestPlayedAt": "Timestamp",
+  "oldestPlayedAtEpoch": 1785529200,
+  "newestPlayedAtEpoch": 1788207599,
   "totalMatches": 100,
   "schemaVersion": 1,
   "parserVersion": 1,
@@ -209,7 +209,7 @@ chunk は月単位を基本とし、以下のいずれかに達する前に分�
 }
 ```
 
-クライアントは期間と各 chunk の `from` / `to` を比較し、必要な chunk だけ取得する。
+初期版のクライアントはmanifestに列挙されたactive generationのchunkを一括取得する。将来、期間を読み込み前に指定できるUIを追加する場合は、`from` / `to`を比較して必要なchunkだけ取得できる。
 
 ## Client-side aggregations
 

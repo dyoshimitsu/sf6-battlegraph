@@ -1,6 +1,7 @@
 import type { BucklerBundlePreview, BucklerCollectorBundle, BucklerPageResponse, NormalizedMatch } from "../buckler/types";
 import { toTokyoDate } from "../statistics/aggregateMatches";
 import { buildQueryChunkGeneration, type QueryChunk } from "./queryChunks";
+import { mergeStoredMatches } from "./mergeStoredMatches";
 
 export const STORAGE_SCHEMA_VERSION = 1;
 export const PARSER_VERSION = 1;
@@ -17,6 +18,7 @@ export interface SyncPlan {
   writesBeforeManifest: PlannedWrite[];
   manifest: PlannedWrite;
   writeCount: number;
+  storedMatches: NormalizedMatch[];
 }
 
 interface RawPage {
@@ -106,11 +108,13 @@ export function buildSyncPlan(
   syncId: string,
   generation: string,
   visibility: "private" | "public" = "private",
+  archivedMatches: NormalizedMatch[] = [],
 ): SyncPlan {
   if (!syncId.trim()) throw new Error("syncId must not be empty");
   const userCode = preview.userCode;
   const pages = rawPages(source);
-  const chunks = buildQueryChunkGeneration(preview.matches, generation);
+  const allMatches = mergeStoredMatches(archivedMatches, preview.matches);
+  const chunks = buildQueryChunkGeneration(allMatches, generation);
   const latestPlayer = playerInfo(preview);
   const base = `players/${userCode}`;
 
@@ -124,9 +128,9 @@ export function buildSyncPlan(
         platform: latestPlayer?.player.platform_name,
         latestLeaguePoint: latestPlayer?.league_point,
         latestMasterRating: latestPlayer?.master_rating,
-        oldestPlayedAtEpoch: preview.oldestPlayedAt,
-        newestPlayedAtEpoch: preview.newestPlayedAt,
-        importedMatches: preview.uniqueMatchCount,
+        oldestPlayedAtEpoch: chunks.oldestPlayedAt,
+        newestPlayedAtEpoch: chunks.newestPlayedAt,
+        importedMatches: chunks.totalMatches,
         schemaVersion: STORAGE_SCHEMA_VERSION,
         parserVersion: PARSER_VERSION,
       },
@@ -161,6 +165,7 @@ export function buildSyncPlan(
         pageCount: preview.pageCount,
         rawMatchCount: preview.rawMatchCount,
         uniqueMatchCount: preview.uniqueMatchCount,
+        totalStoredMatches: chunks.totalMatches,
         chunkCount: chunks.chunks.length,
         schemaVersion: STORAGE_SCHEMA_VERSION,
       },
@@ -178,5 +183,5 @@ export function buildSyncPlan(
       sourceSyncId: syncId,
     },
   };
-  return { syncId, generation, userCode, writesBeforeManifest, manifest, writeCount: writesBeforeManifest.length + 1 };
+  return { syncId, generation, userCode, writesBeforeManifest, manifest, writeCount: writesBeforeManifest.length + 1, storedMatches: allMatches };
 }

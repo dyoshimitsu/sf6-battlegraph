@@ -29,7 +29,7 @@ npm run typecheck
 npm run build
 ```
 
-Firebase Authenticationの管理者判定とFirestore同期を実装しています。管理者ログイン後にcollector JSONを読み込むと、raw snapshot、完全な試合、query chunk、manifestをFirestoreへ同期できます。次回以降は`private`構成では管理者ログイン後、`public`構成ではページ表示時に保存済み戦績を自動で表示します。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
+Firebase Authenticationの管理者判定とFirestore同期を実装しています。管理者ログイン後にcollector JSONを読み込むと、既存履歴と`replay_id`で統合し、raw snapshot、完全な試合、全履歴のquery chunk、manifestをFirestoreへ同期できます。次回以降は`private`構成では管理者ログイン後、`public`構成ではページ表示時に保存済み戦績を自動で表示します。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
 
 Firebaseを接続する場合は`.env.example`を`.env.local`へコピーし、Firebase Consoleで登録したWebアプリの設定と対象ユーザーコードを入力します。
 

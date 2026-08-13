@@ -43,6 +43,15 @@ describe("buildSyncPlan", () => {
     expect(plan.manifest.data).toMatchObject({ activeGeneration: "generation-3", sourceSyncId: "sync-3" });
   });
 
+  it("retains archived matches in the new query generation without rewriting their complete documents", () => {
+    const archived = { ...normalizedMatch(), replayId: "ARCHIVED", playedAtEpoch: 1730000000, raw: { ...normalizedMatch().raw, replay_id: "ARCHIVED", uploaded_at: 1730000000 } };
+    const plan = buildSyncPlan({}, preview(), "sync-archive", "generation-archive", "private", [archived]);
+    const chunkMatches = plan.writesBeforeManifest.filter(write => write.path.includes("/queryChunks/")).flatMap(write => (write.data.matches as Array<{ id: string }>).map(match => match.id));
+    expect(chunkMatches).toEqual(["ARCHIVED", "REPLAY1"]);
+    expect(plan.writesBeforeManifest.some(write => write.path.endsWith("/matches/ARCHIVED"))).toBe(false);
+    expect(plan.manifest.data.totalMatches).toBe(2);
+  });
+
   it("rejects an empty sync identifier", () => {
     expect(() => buildSyncPlan({}, preview(), "", "generation-4")).toThrow(/syncId/);
   });

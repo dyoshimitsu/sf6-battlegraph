@@ -133,11 +133,12 @@ mark synchronization complete
 
 通常の表示では次の順序で読み取る。
 
-1. player metadata
-2. active manifest
-3. 選択期間に該当する query chunks
-4. JavaScript でフィルタ・集計
-5. 詳細表示時だけ完全な match document
+1. active manifest
+2. manifestに列挙されたactive generationのquery chunks
+3. JavaScript でフィルタ・集計
+4. 詳細表示時だけ完全な match document
+
+初期版は全期間のグラフと集計を復元するためactive generationを一括で読む。履歴量と実際のread数を測定した後、期間指定時に該当chunkだけ読む最適化を検討する。
 
 raw snapshots は再解析、障害調査、エクスポート時にのみ読む。
 

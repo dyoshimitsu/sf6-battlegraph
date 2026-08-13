@@ -4,7 +4,7 @@ import type { PlannedWrite, SyncPlan } from "./syncPlan";
 
 function plan(dataWriteCount: number): SyncPlan {
   const writesBeforeManifest = Array.from({ length: dataWriteCount }, (_, index): PlannedWrite => ({ path: `data/${index}`, data: { index } }));
-  return { syncId: "sync", generation: "generation", userCode: 100, writesBeforeManifest, manifest: { path: "manifest/active", data: {} }, writeCount: dataWriteCount + 1 };
+  return { syncId: "sync", generation: "generation", userCode: 100, writesBeforeManifest, manifest: { path: "manifest/active", data: {} }, writeCount: dataWriteCount + 1, storedMatches: [] };
 }
 
 describe("executeSyncPlan", () => {

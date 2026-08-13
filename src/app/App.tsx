@@ -3,7 +3,7 @@ import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
 import { getCharacterName } from "../domain/buckler/characterNames";
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
 import { getRoundDetails } from "../domain/buckler/roundResults";
-import { BucklerValidationError, type BucklerBundlePreview } from "../domain/buckler/types";
+import { BucklerValidationError, type BucklerBundlePreview, type NormalizedMatch } from "../domain/buckler/types";
 import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import { useI18n } from "../i18n/useI18n";
 import { deploymentConfig, firebaseRuntime } from "../firebase/client";
@@ -46,6 +46,24 @@ function getInputType(inputType: number | undefined): string {
   if (inputType === 1) return "M";
   if (inputType === 2) return "D";
   return "—";
+}
+
+function storedPreview(matches: NormalizedMatch[], chunkCount: number): BucklerBundlePreview {
+  const ordered = [...matches].sort((left, right) => right.playedAtEpoch - left.playedAtEpoch || left.replayId.localeCompare(right.replayId));
+  const modes = [...new Set(ordered.map(match => match.mode))];
+  return {
+    userCode: INITIAL_USER_CODE,
+    pageCount: chunkCount,
+    rawMatchCount: ordered.length,
+    uniqueMatchCount: ordered.length,
+    duplicateCount: 0,
+    oldestPlayedAt: ordered.at(-1)?.playedAtEpoch,
+    newestPlayedAt: ordered[0]?.playedAtEpoch,
+    matches: ordered,
+    sources: modes.map(sourceType => ({ sourceType, pages: 0, expectedPages: 0, rawMatches: ordered.filter(match => match.mode === sourceType).length })),
+    warnings: [],
+    isSinglePage: false,
+  };
 }
 
 export function App() {
@@ -92,24 +110,17 @@ export function App() {
           : adminAuth.state.status === "notAdmin" ? t("notAdmin") : t("firebaseError");
 
   useEffect(() => {
-    if (firebaseRuntime.status !== "ready" || (deploymentConfig.visibility !== "public" && adminAuth.state.status !== "admin") || imported?.canSync) return;
+    if (firebaseRuntime.status !== "ready" || (deploymentConfig.visibility !== "public" && adminAuth.state.status !== "admin") || imported !== null) return;
     const db = firebaseRuntime.services.db;
     let active = true;
     setIsLoadingStored(true);
     void loadStoredMatches(createFirestoreReadPort(db), INITIAL_USER_CODE).then(stored => {
       if (!active || !stored) return;
-      const modes = [...new Set(stored.matches.map(match => match.mode))];
-      setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: {
-        userCode: INITIAL_USER_CODE, pageCount: stored.manifest.chunks.length, rawMatchCount: stored.matches.length,
-        uniqueMatchCount: stored.matches.length, duplicateCount: 0, oldestPlayedAt: stored.manifest.oldestPlayedAtEpoch,
-        newestPlayedAt: stored.manifest.newestPlayedAtEpoch, matches: stored.matches,
-        sources: modes.map(sourceType => ({ sourceType, pages: 0, expectedPages: 0, rawMatches: stored.matches.filter(match => match.mode === sourceType).length })),
-        warnings: [], isSinglePage: false,
-      } });
+      setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(stored.matches, stored.manifest.chunks.length) });
     }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : t("storedLoadFailed")); })
       .finally(() => { if (active) setIsLoadingStored(false); });
     return () => { active = false; };
-  }, [adminAuth.state.status, imported?.canSync, t]);
+  }, [adminAuth.state.status, imported !== null, t]);
 
   async function importFile(file?: File) {
     if (!file) return;
@@ -140,9 +151,11 @@ export function App() {
     setIsSyncing(true); setSyncMessage(null); setSyncProgress(null);
     try {
       const id = `${Date.now()}-${crypto.randomUUID()}`;
-      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility);
+      const stored = await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE);
+      const plan = buildSyncPlan(imported.source, imported.preview, id, id, deploymentConfig.visibility, stored?.matches ?? []);
       await executeSyncPlan(createFirestoreSyncPort(firebaseRuntime.services.db), plan, setSyncProgress);
-      setSyncMessage(t("syncComplete", { count: imported.preview.uniqueMatchCount }));
+      setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(plan.storedMatches, (plan.manifest.data.chunks as unknown[]).length) });
+      setSyncMessage(t("syncComplete", { count: plan.storedMatches.length }));
     } catch (cause) {
       setSyncMessage(cause instanceof Error ? cause.message : t("syncFailed"));
     } finally { setIsSyncing(false); }
