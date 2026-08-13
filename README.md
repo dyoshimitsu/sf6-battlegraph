@@ -62,6 +62,19 @@ Firebase Web設定はブラウザへ配信される公開設定です。サー�
 
 `ENABLE_PAGES_DEPLOY`が未設定の間は検証だけを実行し、Pages jobはスキップします。privateリポジトリでPagesを利用できない期間もCIを成功状態に保てます。
 
+Pagesを有効にする前に、同じRepository Variables画面へ以下も設定します。これらはFirebase Webクライアントへ配信される公開設定であり、Secretsへ入れる必要はありません。
+
+```text
+VITE_PLAYER_USER_CODE
+VITE_DEPLOYMENT_VISIBILITY
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_APP_ID
+```
+
+`ENABLE_PAGES_DEPLOY=true`なのに必須変数が不足している場合、workflowはFirebase未接続のartifactを公開せず、検証jobを失敗させます。
+
 Pull Requestでは検証だけを行い、Pagesへのデプロイは行いません。Actions画面から手動実行することもできます。
 
 GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにする必要があります。privateのままPagesを利用できるかはGitHubの契約プランに依存します。
@@ -70,7 +83,7 @@ GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにす�
 
 - ランク、カジュアル、ルーム、バトルハブを含む全対戦モードを保存する
 - Buckler の取得レスポンスを欠損なく保存する
-- 1 試合単位の検索・詳細表示を可能にする
+- 1試合単位の履歴を欠損なく保存する
 - 日付、使用キャラクター、相手キャラクター、モードなどで絞り込む
 - 日本語と英語を切り替えて利用できる
 - LP / MR 推移、勝率、キャラクター別戦績などをブラウザで集計する
@@ -103,15 +116,13 @@ Cloud Firestore
   └─ manifests
 ```
 
-予定している技術構成は次のとおりです。
+現在の技術構成は次のとおりです。
 
 - React
 - TypeScript
 - Vite
-- React Router (`HashRouter`)
 - Firebase Authentication
 - Cloud Firestore
-- Recharts
 - Vitest
 - GitHub Pages
 - GitHub Actions
