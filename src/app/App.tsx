@@ -82,6 +82,7 @@ export function App() {
   const { locale, setLocale, t } = useI18n();
   const adminAuth = useAdminAuth(firebaseRuntime);
   const restoreInputRef = useRef<HTMLInputElement>(null);
+  const adminMenuRef = useRef<HTMLDetailsElement>(null);
   const collectorTimeoutRef = useRef<number | null>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -213,6 +214,24 @@ export function App() {
     return () => window.clearTimeout(timeout);
   }, [isRestoring, restoreProgress]);
 
+  useEffect(() => {
+    function closeAdminMenu(event: PointerEvent | KeyboardEvent) {
+      const menu = adminMenuRef.current;
+      if (!menu?.open) return;
+      if (event instanceof KeyboardEvent) {
+        if (event.key === "Escape") menu.open = false;
+        return;
+      }
+      if (event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    }
+    document.addEventListener("pointerdown", closeAdminMenu);
+    document.addEventListener("keydown", closeAdminMenu);
+    return () => {
+      document.removeEventListener("pointerdown", closeAdminMenu);
+      document.removeEventListener("keydown", closeAdminMenu);
+    };
+  }, []);
+
   function openBuckler() {
     const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin);
     window.postMessage(createCollectorStartMessage(url), window.location.origin);
@@ -297,7 +316,7 @@ export function App() {
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
           {adminAuth.state.status === "admin" && connectorVersion !== undefined && connectorVersion !== __CONNECTOR_VERSION__ && <a className="auth-button connector-update" href={connectorDownloadUrl} download={connectorDownloadName} onClick={() => setShowConnectorGuide(true)}>{t(connectorVersion === null ? "connectorInstall" : "connectorUpdate")}</a>}
           {adminAuth.state.status === "admin" && <button className={`auth-button header-sync-button ${isCollecting || isSyncing ? "is-busy" : ""}`} type="button" disabled={isCollecting || isSyncing || !connectorReady} title={!connectorReady ? t("connectorRequired") : undefined} onClick={openBuckler}>{t(!connectorReady ? "connectorRequired" : isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>}
-          {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <details className="admin-menu"><summary aria-label={t("managementMenu")}>•••</summary><div><span>{t("managementMenu")}</span>{adminAuth.state.status === "admin" && <a href={connectorDownloadUrl} download={connectorDownloadName} onClick={() => setShowConnectorGuide(true)}>{t("connectorDownload")}</a>}{adminAuth.state.status === "admin" && <button type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}{adminAuth.state.status === "admin" && <button type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}<button type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button></div></details>}
+          {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <details ref={adminMenuRef} className="admin-menu"><summary aria-label={t("managementMenu")}>•••</summary><div><span>{t("managementMenu")}</span>{adminAuth.state.status === "admin" && <a href={connectorDownloadUrl} download={connectorDownloadName} onClick={() => setShowConnectorGuide(true)}>{t("connectorDownload")}</a>}{adminAuth.state.status === "admin" && <button type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}{adminAuth.state.status === "admin" && <button type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}<button type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button></div></details>}
           <input ref={restoreInputRef} type="file" accept="application/json,.json" hidden onChange={event => { void restoreBackup(event.target.files?.[0]); event.target.value = ""; }} />
           <div className="language-switch" aria-label="Language">
             <button className={locale === "ja" ? "active" : ""} onClick={() => setLocale("ja")}>JP</button>
