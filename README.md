@@ -97,13 +97,13 @@ Buckler's Boot Camp
   └─ bookmarklet / collector
        ├─ 現在の Next.js buildId を取得
        ├─ 全モード合算履歴の全ページを取得
-       └─ JSON ファイルとして出力
+       └─ bundleをBattlegraphへ直接送信
                     │
                     ▼
 GitHub Pages
   └─ React SPA
        ├─ Firebase Authentication
-       ├─ インポートと検証
+       ├─ origin検証とbundle検証
        ├─ 試合データの正規化
        ├─ Firestore への同期
        └─ JavaScript による集計とグラフ表示
@@ -127,7 +127,7 @@ Cloud Firestore
 - GitHub Pages
 - GitHub Actions
 
-GitHub Pages は静的ホスティングであるため、Buckler の取得処理をサーバーとして配置しません。ログイン済みの Buckler ページ上でコレクターを実行し、出力されたデータを GitHub Pages の同期画面から取り込みます。Buckler の Cookie や CAPCOM ID の認証情報はアプリ、Firestore、GitHub Secretsへ保存しません。
+GitHub Pages は静的ホスティングであるため、Buckler の取得処理をサーバーとして配置しません。Battlegraphから開いたログイン済みBucklerページ上でコレクターを実行し、取得bundleをファイルを介さず起点の画面へ返します。Buckler の Cookie や CAPCOM ID の認証情報はアプリ、Firestore、GitHub Secretsへ保存しません。
 
 詳細は以下を参照してください。
 

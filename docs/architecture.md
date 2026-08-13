@@ -26,9 +26,9 @@ sf6-battlegraph は、常時稼働するバックエンドを持たず、GitHub 
 - 全対戦モードを合算した総合履歴の全ページを取得する
 - HTTP ステータスとレスポンス形式を検証する
 - 取得元、ページ番号、取得日時などのメタデータを付加する
-- raw レスポンスを変更せず JSON ファイルとして出力する
+- raw レスポンスを変更せず、`postMessage` で起点のBattlegraph画面へ返す
 
-コレクターは Firestore に直接書き込まない。これにより、Buckler と Firebase の認証を分離し、取得結果を確認してから再利用可能な形でインポートできる。
+コレクターは Firestore に直接書き込まない。Buckler Cookieは公式origin内、Firebase認証はBattlegraph origin内に分離する。Battlegraphは送信originとprotocol versionを確認し、受信bundleを従来と同じparserで検証してから同期する。
 
 ### Static web application
 
@@ -47,7 +47,7 @@ React、TypeScript、Vite で構築し、GitHub Pages に配信する。GitHub P
 責務:
 
 - Firebase Authentication による管理者ログイン
-- コレクター出力の読み込みと事前検証
+- Bucklerからのコレクター出力の受信と事前検証
 - 同期前プレビュー
 - raw snapshot の保存
 - replay の正規化と upsert
@@ -77,7 +77,7 @@ Firestore は分析データベースとして使用せず、集計は原則と�
 ## Import pipeline
 
 ```text
-collector JSON
+collector bundle (`postMessage`)
   ↓
 file/schema validation
   ↓
@@ -115,7 +115,7 @@ mark synchronization complete
 
 - match document ID は `replay_id` とする
 - raw page はレスポンスの SHA-256 を記録する
-- 同一ファイルを再インポートしても論理的な重複を作らない
+- 同じbundleを再取得しても論理的な重複を作らない
 - `firstSeenAt` は維持し、再取得時に `lastSeenAt` を更新する
 
 ### Chunk generations

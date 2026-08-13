@@ -4,7 +4,7 @@
 
 Vite / React / TypeScript の静的 SPA と Buckler import parser を実装した。
 
-- collector bundle または単一ページの raw JSON をブラウザで選択またはドロップできる
+- collector bundleをBucklerからorigin検証済み`postMessage`で直接受信できる
 - `common.statusCode`、`sid`、ページ情報、replay の必須識別情報を検証する
 - 対象ユーザーが各 replay の player 1 / player 2 の一方に存在することを確認する
 - ページ数、試合数、期間、battle type、warning を同期前に表示する
@@ -14,7 +14,9 @@ Vite / React / TypeScript の静的 SPA と Buckler import parser を実装し�
 - 対象ユーザーが player 1 / player 2 のどちらでも `subject` と `opponent` に正規化する
 - 互換性・調査目的で複数sourceを読み込んだ場合は、同じreplayの全`sourceTypes`を保持する
 
-Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページからbuild ID、locale、ユーザーコードを解決し、全モード合算の総合履歴をページングして、完了後にbundleをダウンロードする。途中のHTTP・認証・形式エラーでは不完全なbundleを出力しない。
+Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページからbuild ID、locale、ユーザーコードを解決し、全モード合算の総合履歴をページングして、完了後に起点のBattlegraph画面へbundleを直接返す。途中のHTTP・認証・形式エラーでは不完全なbundleを送信しない。
+
+日常のバトルログ取得ではJSONファイルを介さない。BattlegraphからBucklerを開いてwindow参照を確立し、collector protocol version 1のmessageを受信する。受信側はBuckler originを固定検証し、既存parserでユーザーコードと全raw responseを再検証する。Firestoreへの書き込みはFirebase認証を保持するBattlegraph側だけが行う。
 
 正規化済み試合に対するクライアント集計も実装した。
 

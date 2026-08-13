@@ -1,0 +1,44 @@
+import type { BucklerCollectorBundle } from "../domain/buckler/types";
+
+export const COLLECTOR_MESSAGE_TYPE = "sf6-battlegraph.collector-result";
+export const COLLECTOR_MESSAGE_VERSION = 1;
+export const BUCKLER_ORIGIN = "https://www.streetfighter.com";
+export const BATTLEGRAPH_ORIGIN_PARAMETER = "sf6-battlegraph-origin";
+
+export interface CollectorResultMessage {
+  type: typeof COLLECTOR_MESSAGE_TYPE;
+  version: typeof COLLECTOR_MESSAGE_VERSION;
+  bundle: BucklerCollectorBundle;
+}
+
+export function createCollectorResultMessage(bundle: BucklerCollectorBundle): CollectorResultMessage {
+  return { type: COLLECTOR_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, bundle };
+}
+
+export function readCollectorResultMessage(origin: string, value: unknown): CollectorResultMessage | null {
+  if (origin !== BUCKLER_ORIGIN || typeof value !== "object" || value === null) return null;
+  const candidate = value as Partial<CollectorResultMessage>;
+  if (candidate.type !== COLLECTOR_MESSAGE_TYPE || candidate.version !== COLLECTOR_MESSAGE_VERSION || !candidate.bundle) return null;
+  return candidate as CollectorResultMessage;
+}
+
+export function buildBucklerLaunchUrl(userCode: number, battlegraphOrigin: string): string {
+  const url = new URL(`/6/buckler/ja-jp/profile/${userCode}/battlelog`, BUCKLER_ORIGIN);
+  url.hash = new URLSearchParams({ [BATTLEGRAPH_ORIGIN_PARAMETER]: battlegraphOrigin }).toString();
+  return url.toString();
+}
+
+export function readBattlegraphTargetOrigin(hash: string): string | null {
+  const value = new URLSearchParams(hash.replace(/^#/, "")).get(BATTLEGRAPH_ORIGIN_PARAMETER);
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const localDevelopment = ["localhost", "127.0.0.1"].includes(url.hostname)
+      || /^10\./.test(url.hostname)
+      || /^192\.168\./.test(url.hostname)
+      || /^172\.(1[6-9]|2\d|3[01])\./.test(url.hostname);
+    return url.origin === value && (url.protocol === "https:" || (url.protocol === "http:" && localDevelopment)) ? value : null;
+  } catch {
+    return null;
+  }
+}

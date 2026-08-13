@@ -1,4 +1,5 @@
 import { collectBattleLogs } from "./collectBattleLogs";
+import { createCollectorResultMessage, readBattlegraphTargetOrigin } from "./bridge";
 
 interface NextData {
   buildId?: string;
@@ -28,15 +29,13 @@ function resolveUserCode(nextData: NextData): number {
   return userCode;
 }
 
-function downloadJson(value: unknown, userCode: number) {
-  const blob = new Blob([JSON.stringify(value)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  anchor.href = url;
-  anchor.download = `sf6-battlelog-${userCode}-${stamp}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
+function sendToBattlegraph(bundle: Awaited<ReturnType<typeof collectBattleLogs>>) {
+  if (!window.opener || window.opener.closed) {
+    throw new Error("Open Buckler from SF6 Battlegraph before running the collector");
+  }
+  const targetOrigin = readBattlegraphTargetOrigin(window.location.hash);
+  if (!targetOrigin) throw new Error("Battlegraph target origin was not found");
+  window.opener.postMessage(createCollectorResultMessage(bundle), targetOrigin);
 }
 
 async function run() {
@@ -59,7 +58,7 @@ async function run() {
       );
     },
   });
-  downloadJson(bundle, userCode);
+  sendToBattlegraph(bundle);
   console.info("[SF6 Battlegraph] Collection complete", {
     pages: bundle.pages.length,
   });

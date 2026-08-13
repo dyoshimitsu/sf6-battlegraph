@@ -1,6 +1,6 @@
 # Collector export format
 
-The Buckler collector exports one JSON bundle containing every fetched combined-history page. Version 1 has the following envelope:
+The Buckler collector transfers one structured-clone bundle containing every fetched combined-history page. Version 1 keeps the following envelope so validation and raw persistence remain stable:
 
 ```json
 {
@@ -56,9 +56,11 @@ During development:
 2. open `dist/collector.js` and copy its complete contents
 3. sign in to Buckler and open the target profile's Battle Log
 4. open the browser developer console, paste the script, and run it
-5. wait for all progress messages and the JSON download
+5. wait for all progress messages; the bundle is returned directly to the Battlegraph window that opened Buckler
 
 The collector reads the current `buildId`, locale, and profile user code from the page. It sends same-origin requests so the browser supplies the existing Buckler session cookie; the cookie is never read into or written to the bundle.
+
+The Battlegraph receiver accepts the versioned message only from `https://www.streetfighter.com`, then performs the same user-code and schema validation used by the persistence pipeline. No battle-log file is downloaded. Backup export and restore remain separate administrative file operations.
 
 The default collector requests only the combined `/battlelog` history. A failed page aborts the collection instead of creating a bundle that looks complete.
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
 import { getCharacterName, getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
@@ -21,6 +21,7 @@ import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
+import { buildBucklerLaunchUrl, readCollectorResultMessage } from "../collector/bridge";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -77,11 +78,9 @@ function storedPreview(matches: NormalizedMatch[], chunkCount: number): BucklerB
 export function App() {
   const { locale, setLocale, t } = useI18n();
   const adminAuth = useAdminAuth(firebaseRuntime);
-  const inputRef = useRef<HTMLInputElement>(null);
   const restoreInputRef = useRef<HTMLInputElement>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [mode, setMode] = useState("");
@@ -141,24 +140,26 @@ export function App() {
     return () => { active = false; };
   }, [adminAuth.state.status, imported !== null, t]);
 
-  async function importFile(file?: File) {
-    if (!file) return;
-    setError(null);
-    try {
-      const source = JSON.parse(await file.text()) as unknown;
-      const preview = parseCollectorImport(source, INITIAL_USER_CODE);
-      setImported({ fileName: file.name, fileSize: file.size, source, canSync: true, preview });
-    } catch (cause) {
-      setImported(null);
-      if (cause instanceof SyntaxError) setError(t("errorInvalidJson"));
-      else if (cause instanceof BucklerValidationError) setError(cause.message);
-      else setError(t("errorUnexpected"));
+  useEffect(() => {
+    function receiveCollectorResult(event: MessageEvent) {
+      const message = readCollectorResultMessage(event.origin, event.data);
+      if (!message) return;
+      setError(null);
+      try {
+        const preview = parseCollectorImport(message.bundle, INITIAL_USER_CODE);
+        setImported({ fileName: t("collectorTransfer"), fileSize: new Blob([JSON.stringify(message.bundle)]).size, source: message.bundle, canSync: true, preview });
+      } catch (cause) {
+        setImported(null);
+        setError(cause instanceof BucklerValidationError ? cause.message : t("errorUnexpected"));
+      }
     }
-  }
+    window.addEventListener("message", receiveCollectorResult);
+    return () => window.removeEventListener("message", receiveCollectorResult);
+  }, [t]);
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    void importFile(event.target.files?.[0]);
-    event.target.value = "";
+  function openBuckler() {
+    const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin);
+    window.open(url, "sf6-battlegraph-buckler");
   }
 
   function resetFilters() {
@@ -242,17 +243,15 @@ export function App() {
         <section className="workspace">
           <div className="section-heading"><div><p className="eyebrow">{t("importEyebrow")}</p><h2>{t("importTitle")}</h2></div><p>{t("userCode")} <strong>{INITIAL_USER_CODE}</strong></p></div>
           {!imported ? <div className="workspace-grid">
-            <div className={`drop-zone ${isDragging ? "is-dragging" : ""}`} onDragEnter={() => setIsDragging(true)} onDragLeave={() => setIsDragging(false)} onDragOver={(e) => e.preventDefault()} onDrop={(e: DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); void importFile(e.dataTransfer.files[0]); }}>
-              <div className="drop-symbol"><span>↓</span></div><h3>{t("dropTitle")}</h3><p>{t("dropDescription")}</p>
-              <button className="primary-button" type="button" onClick={() => inputRef.current?.click()}>{t("selectFile")}</button>
+            <div className="drop-zone">
+              <div className="drop-symbol"><span>↗</span></div><h3>{t("openBucklerTitle")}</h3><p>{t("openBucklerDescription")}</p>
+              <button className="primary-button" type="button" onClick={openBuckler}>{t("openBuckler")}</button>
               <a className={`collector-link ${import.meta.env.DEV ? "is-disabled" : ""}`} href={import.meta.env.DEV ? undefined : "./collector.js"} download={!import.meta.env.DEV} onClick={(e) => { if (import.meta.env.DEV) { e.preventDefault(); window.alert(t("collectorDevAlert")); } }}>{t(import.meta.env.DEV ? "collectorDevelopment" : "collectorProduction")}</a>
-              <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
             </div>
             <aside className="roadmap-card"><p className="eyebrow">{t("steps")}</p><ol>{readiness.map((item, index) => <li className={item.done ? "done" : ""} key={item.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.label}</b><i /></li>)}</ol></aside>
           </div> : <div className="loaded-file-bar">
             <div><p className="eyebrow">{imported.canSync ? t("validImport") : t("firestoreData")}</p><strong>{imported.fileName}</strong><span>{imported.canSync ? `${formatBytes(imported.fileSize)} · ` : ""}{imported.preview.uniqueMatchCount} {t("uniqueMatches")}</span></div>
-            <button className="primary-button" type="button" onClick={() => inputRef.current?.click()}>{t("replaceFile")}</button>
-            <input ref={inputRef} type="file" accept="application/json,.json" onChange={handleFileChange} hidden />
+            <button className="primary-button" type="button" onClick={openBuckler}>{t("refreshFromBuckler")}</button>
           </div>}
           {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
           {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
