@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
+import { getCharacterName } from "../domain/buckler/characterNames";
 import { BucklerValidationError, type BucklerBundlePreview } from "../domain/buckler/types";
 import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import { useI18n } from "../i18n/useI18n";
@@ -20,10 +21,6 @@ function formatBytes(bytes: number): string {
 
 function formatWinRate(value: number | null): string {
   return value === null ? "—" : `${value.toFixed(1)}%`;
-}
-
-function playerCharacterName(player: BucklerBundlePreview["matches"][number]["subject"]): string {
-  return player.playing_character_name ?? player.character_name ?? "Unknown";
 }
 
 export function App() {
@@ -123,13 +120,13 @@ export function App() {
               <div className="filter-bar">
                 <label><span>{t("fromDate")}</span><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></label><label><span>{t("toDate")}</span><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></label>
                 <label><span>{t("mode")}</span><select value={mode} onChange={e => setMode(e.target.value)}><option value="">{t("all")}</option>{imported.preview.sources.filter(s => s.sourceType !== "all" && s.sourceType !== "unknown").map(s => <option key={s.sourceType}>{s.sourceType}</option>)}</select></label>
-                <label><span>{t("yourCharacter")}</span><select value={subjectCharacterId} onChange={e => setSubjectCharacterId(e.target.value)}><option value="">{t("all")}</option>{allStatistics.bySubjectCharacter.filter(r => r.characterId !== null).map(r => <option key={r.characterId} value={r.characterId ?? ""}>{r.characterName}</option>)}</select></label>
-                <label><span>{t("opponentCharacter")}</span><select value={opponentCharacterId} onChange={e => setOpponentCharacterId(e.target.value)}><option value="">{t("all")}</option>{allStatistics.byOpponentCharacter.filter(r => r.characterId !== null).map(r => <option key={r.characterId} value={r.characterId ?? ""}>{r.characterName}</option>)}</select></label>
+                <label><span>{t("yourCharacter")}</span><select value={subjectCharacterId} onChange={e => setSubjectCharacterId(e.target.value)}><option value="">{t("all")}</option>{allStatistics.bySubjectCharacter.filter(r => r.characterId !== null).map(r => { const sample = imported.preview.matches.find(m => (m.subject.playing_character_id ?? m.subject.character_id) === r.characterId); return <option key={r.characterId} value={r.characterId ?? ""}>{sample ? getCharacterName(sample.subject, locale) : r.characterName}</option>; })}</select></label>
+                <label><span>{t("opponentCharacter")}</span><select value={opponentCharacterId} onChange={e => setOpponentCharacterId(e.target.value)}><option value="">{t("all")}</option>{allStatistics.byOpponentCharacter.filter(r => r.characterId !== null).map(r => { const sample = imported.preview.matches.find(m => (m.opponent.playing_character_id ?? m.opponent.character_id) === r.characterId); return <option key={r.characterId} value={r.characterId ?? ""}>{sample ? getCharacterName(sample.opponent, locale) : r.characterName}</option>; })}</select></label>
                 <button type="button" onClick={resetFilters}>{t("reset")}</button>
               </div>
               <div className="record-banner"><article><span>{t("winRate")}</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article><article><span>{t("wins")}</span><strong>{statistics.overall.wins}</strong></article><article><span>{t("losses")}</span><strong>{statistics.overall.losses}</strong></article><article><span>{t("undecided")}</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article></div>
-              <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={statistics.byOpponentCharacter.slice(0, 8)} recordLine={t} /></div>
-              <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestTen")}</span></div><div className="table-wrap"><table><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourCharacter")}</th><th>{t("opponent")}</th><th>{t("mode")}</th><th>{t("rating")}</th></tr></thead><tbody>{filteredMatches.slice(0, 10).map(match => <tr key={match.replayId}><td>{formatTimestamp(match.playedAtEpoch)}</td><td><span className={`result-badge ${match.result}`}>{match.result}</span></td><td>{playerCharacterName(match.subject)}</td><td>{playerCharacterName(match.opponent)}</td><td>{match.battleTypeName ?? match.mode}</td><td>{match.subject.master_rating || match.subject.league_point || "—"}</td></tr>)}{filteredMatches.length === 0 && <tr><td className="empty-cell" colSpan={6}>{t("noRecords")}</td></tr>}</tbody></table></div></article>
+              <div className="analysis-grid"><CharacterPanel eyebrow={t("yourFighters")} title={t("yourCharacterRecords")} records={statistics.bySubjectCharacter} matches={filteredMatches} side="subject" locale={locale} recordLine={t} /><CharacterPanel eyebrow={t("matchups")} title={t("opponentCharacterRecords")} records={statistics.byOpponentCharacter.slice(0, 8)} matches={filteredMatches} side="opponent" locale={locale} recordLine={t} /></div>
+              <article className="recent-card"><div className="card-heading"><div><p className="eyebrow">{t("recentMatches")}</p><h3>{t("recentTitle")}</h3></div><span>{t("latestTen")}</span></div><div className="table-wrap"><table><thead><tr><th>{t("dateTime")}</th><th>{t("result")}</th><th>{t("yourCharacter")}</th><th>{t("opponent")}</th><th>{t("mode")}</th><th>{t("rating")}</th></tr></thead><tbody>{filteredMatches.slice(0, 10).map(match => <tr key={match.replayId}><td>{formatTimestamp(match.playedAtEpoch)}</td><td><span className={`result-badge ${match.result}`}>{match.result}</span></td><td>{getCharacterName(match.subject, locale)}</td><td>{getCharacterName(match.opponent, locale)}</td><td>{match.battleTypeName ?? match.mode}</td><td>{match.subject.master_rating || match.subject.league_point || "—"}</td></tr>)}{filteredMatches.length === 0 && <tr><td className="empty-cell" colSpan={6}>{t("noRecords")}</td></tr>}</tbody></table></div></article>
             </section>
           </>}
         </section>
@@ -140,6 +137,6 @@ export function App() {
 }
 
 type CharacterRecord = ReturnType<typeof aggregateMatches>["bySubjectCharacter"][number];
-function CharacterPanel({ eyebrow, title, records, recordLine }: { eyebrow: string; title: string; records: CharacterRecord[]; recordLine: (key: "recordLine", values: Record<string, number>) => string }) {
-  return <article className="analysis-card"><p className="eyebrow">{eyebrow}</p><h3>{title}</h3><div className="character-records">{records.map(record => <div key={`${record.characterId}-${record.characterSlug}`}><span>{record.characterName}</span><strong>{formatWinRate(record.winRate)}</strong><small>{recordLine("recordLine", { matches: record.matches, wins: record.wins, losses: record.losses })}</small></div>)}</div></article>;
+function CharacterPanel({ eyebrow, title, records, matches, side, locale, recordLine }: { eyebrow: string; title: string; records: CharacterRecord[]; matches: BucklerBundlePreview["matches"]; side: "subject" | "opponent"; locale: "ja" | "en"; recordLine: (key: "recordLine", values: Record<string, number>) => string }) {
+  return <article className="analysis-card"><p className="eyebrow">{eyebrow}</p><h3>{title}</h3><div className="character-records">{records.map(record => { const sample = matches.find(match => (match[side].playing_character_id ?? match[side].character_id) === record.characterId); return <div key={`${record.characterId}-${record.characterSlug}`}><span>{sample ? getCharacterName(sample[side], locale) : record.characterName}</span><strong>{formatWinRate(record.winRate)}</strong><small>{recordLine("recordLine", { matches: record.matches, wins: record.wins, losses: record.losses })}</small></div>; })}</div></article>;
 }
