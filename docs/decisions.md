@@ -8,13 +8,13 @@ Vite / React / TypeScript の静的 SPA と Buckler import parser を実装し�
 - `common.statusCode`、`sid`、ページ情報、replay の必須識別情報を検証する
 - 対象ユーザーが各 replay の player 1 / player 2 の一方に存在することを確認する
 - ページ数、試合数、期間、battle type、warning を同期前に表示する
-- Firebase未設定時はファイルを外部へ送信せず、ブラウザ内だけで処理する
+- Firebase未設定時は認証・同期を無効化し、設定状態を画面に表示する
 - parser は React と Firebase に依存しない純粋な TypeScript として実装する
 - bundle 内の複数モード・複数ページを検証し、`replay_id` で重複排除する
 - 対象ユーザーが player 1 / player 2 のどちらでも `subject` と `opponent` に正規化する
 - 互換性・調査目的で複数sourceを読み込んだ場合は、同じreplayの全`sourceTypes`を保持する
 
-Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページからbuild ID、locale、ユーザーコードを解決し、全モード合算の総合履歴をページングして、完了後に起点のBattlegraph画面へbundleを直接返す。途中のHTTP・認証・形式エラーでは不完全なbundleを送信しない。
+Buckler上でbundleを生成するコレクターをChrome拡張へ組み込んだ。現在のBucklerページからbuild ID、locale、ユーザーコードを解決し、全モード合算の総合履歴をページングして、完了後に起点のBattlegraph画面へbundleを直接返す。途中のHTTP・認証・形式エラーでは不完全なbundleを送信しない。
 
 日常のバトルログ取得ではJSONファイルを介さない。BattlegraphからBucklerを開いてwindow参照を確立し、collector protocol version 1のmessageを受信する。受信側はBuckler originを固定検証し、既存parserでユーザーコードと全raw responseを再検証する。Firestoreへの書き込みはFirebase認証を保持するBattlegraph側だけが行う。
 
@@ -43,7 +43,7 @@ LP・MR推移は選択キャラクターについてフィルタ後の直近100�
 - 全体、使用キャラクター別、相手キャラクター別の勝敗と勝率を計算する
 - 相手キャラクターは0戦を含む全rosterを表示し、対戦済みは対戦数降順、0戦は指定roster順に並べる。未知の新キャラクターはRANDOM直前に置く
 - 使用キャラクターと相手キャラクターは、キャラ名・大きな対戦数・勝敗・勝率バーの共通カードUIで表示する
-- 東京時間の日別に試合数、勝敗、勝率を集計し、選択中フィルターを反映した直近14プレイ日のトレンドを表示する
+- 東京時間の日別に試合数、勝敗、勝率を集計し、選択中フィルターを反映した直近14暦日のトレンドを表示する
 - 勝率の母数は勝敗を判定できた試合とし、draw / unknown は別に表示する
 - 直近100試合を正規化済みデータから表示し、各ラウンドの勝敗と決着方法を併記する
 - query chunkを東京時間の月単位、最大250試合、UTF-8実測700 KiB以下で新しいgenerationへ分割する
@@ -51,9 +51,9 @@ LP・MR推移は選択キャラクターについてフィルタ後の直近100�
 
 `round_results` は Buckler 公式表示が参照する `icon_result{code}_{side}.png` を確認し、`0=敗者側`、`1=V（通常KO）`、`2=C（削り）`、`3=T（タイムオーバー）`、`4=D（ドロー）`、`5=OD`、`6=SA`、`7=CA`、`8=P（パーフェクト）` として表示する。未知のコードは捨てずに `#<code>` と表示する。
 
-GitHub Pages の検証・デプロイ workflow を実装した。`master`へのpushと手動実行で、テスト・型検査・Webアプリとstandalone collectorのビルドがすべて成功した場合だけPages artifactをデプロイする。Pull Requestでは検証だけを実行する。
+GitHub Pagesの検証・デプロイworkflowを実装した。`master`へのpushと手動実行で、テスト、Firestore Rulesテスト、型検査、Webアプリ、Chrome拡張のビルドがすべて成功した場合だけPages artifactをデプロイする。Pull Requestでは検証だけを実行する。
 
-Firebase Web設定はVite環境変数から読み込み、必須4項目の一部だけが設定された状態をエラーにする。未設定時はローカルプレビューを維持する。設定済みの場合はGoogleポップアップ認証を使い、`admins/{uid}`ドキュメントの存在で同期管理者を判定する。初期管理者はFirebase Consoleで作成し、クライアントからの自己登録は許可しない。
+Firebase Web設定はVite環境変数から読み込み、必須4項目の一部だけが設定された状態をエラーにする。未設定時は認証・同期を無効化する。設定済みの場合はGoogleポップアップ認証を使い、`admins/{uid}`ドキュメントの存在で同期管理者を判定する。初期管理者はFirebase Consoleで作成し、クライアントからの自己登録は許可しない。
 
 Firestore Security Rulesは`settings/deployment.visibility`を参照し、`private`では管理者だけに読み取りを許可し、`public`ではplayer配下の読み取りを公開する。書き込みはどちらのモードでも`admins/{uid}`登録者だけに許可する。管理者ドキュメントはクライアントから作成・変更・削除できない。Rules EmulatorのテストをCIで実行し、成功後にだけPagesをデプロイする。
 
@@ -189,7 +189,7 @@ manifestへ最終同期日時を保存し、画面では7日経過で注意、14
 
 全期間集計の初期目標を10,000試合とする。合成データによる回帰テストでは、全期間集計と絞り込み、およびFirestore query chunk生成をそれぞれ2秒以内、manifestを含む初期読み込みを50 reads以内に制限する。2026-08-13の開発VMでは集計・絞り込み93ms、chunk生成171msだった。実端末やブラウザでの時間を保証する値ではないが、アルゴリズムの大幅な性能劣化をCIで検出する基準として使う。
 
-初期版は手動同期とする。GitHub Actions に Buckler Cookie を保存する自動同期は、セッション失効、秘密情報管理、アクセス制御、運用安定性を別途評価してから追加する。
+初期版は管理者がBattlegraphのボタンを押して開始する同期とする。取得、検証、Firestore保存はChrome拡張とWebアプリが自動で継続する。GitHub ActionsにBuckler Cookieを保存する無人同期は行わない。
 
 Buckler の JSON endpoint は公開 API として提供されているものではない。取得頻度を抑え、仕様変更やアクセス停止を通常の障害として扱えるようにする。
 

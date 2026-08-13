@@ -9,7 +9,21 @@ Buckler で参照できる対戦履歴には件数上限があるため、定期
 
 ## Status
 
-現在は初期実装段階です。collector bundleをブラウザへ読み込み、検証、`replay_id`による重複排除、対象プレイヤー基準の正規化、同期前プレビュー、Firestoreへの同期ができます。保存後はmanifestが示すquery chunkだけを自動で読み込み、期間・モード・キャラクターによる絞り込み、戦績集計、日別トレンド、LP/MRグラフを復元します。対象プレイヤーとしてユーザーコード `1134991793` を使って実装を進めますが、将来的には clone した利用者が自身のユーザーコードと Firebase プロジェクトを設定してセルフホストできる構成にします。
+Chrome拡張からBucklerの総合履歴を直接取得し、検証、`replay_id`による重複排除、対象プレイヤー基準の正規化、Firestore同期までをボタン一回で実行できます。保存後は期間・モード・使用キャラクターによる絞り込み、全期間の戦績集計、直近14日の日別記録、キャラクター別のLP/MR直近100試合を表示します。
+
+現在のデフォルト対象はユーザーコード`1134991793`です。環境変数を変更すれば、cloneした利用者が自身のユーザーコードとFirebaseプロジェクトでセルフホストできます。
+
+## First-time setup
+
+1. FirebaseプロジェクトでWebアプリ、Cloud Firestore、Google Authenticationを有効にする
+2. `firestore.rules`をFirebase ConsoleまたはFirebase CLIで対象プロジェクトへ反映する
+3. `.env.example`を`.env.local`へコピーし、自分のユーザーコード、Firebase Web設定、配信originを入力する
+4. `npm run dev`でBattlegraphを開いてGoogleログインし、Firebase ConsoleのAuthentication → Usersで自分のUIDを確認する
+5. そのUIDと同じdocument IDで`admins/{uid}`をFirestore Consoleから作成し、Battlegraphを再読み込みする
+6. `npm run build`を実行し、`dist/extension`をChromeへ読み込む
+7. Battlegraphの「Bucklerから再取得・同期」を押す
+
+Chrome拡張の詳しい導入・更新方法は[Chrome connector](docs/chrome-extension.md)を参照してください。
 
 ## Development
 
@@ -29,7 +43,7 @@ npm run typecheck
 npm run build
 ```
 
-Firebase Authenticationの管理者判定とFirestore同期を実装しています。管理者ログイン後にcollector JSONを読み込むと、既存履歴と`replay_id`で統合し、raw snapshot、完全な試合、全履歴のquery chunk、manifestをFirestoreへ同期できます。次回以降は`private`構成では管理者ログイン後、`public`構成ではページ表示時に保存済み戦績を自動で表示します。Firebase未設定時は、読み込んだJSONをブラウザ内だけで処理するローカルプレビューとして動作します。
+管理者ログイン後にChrome拡張から受信したbundleを検証し、既存履歴と`replay_id`で統合して、raw snapshot、完全な試合、全履歴のquery chunk、manifestをFirestoreへ同期します。次回以降は`private`構成では管理者ログイン後、`public`構成ではページ表示時に保存済み戦績を自動表示します。日常の同期にJSONファイルのダウンロードや選択は必要ありません。
 
 管理者は画面上部の「全データをバックアップ」から、Firestoreに保存したplayer、完全match、raw snapshot/page/part、query chunk、manifest、sync記録を単一JSONへ書き出せます。バックアップ時だけ全対象documentを読み取るため、実行前に確認画面を表示します。ダウンロード前に必須document、対象ユーザー、パス重複、rawのバイト数とSHA-256、分割partの連続性を検証します。
 
@@ -92,7 +106,7 @@ GitHub FreeでPagesを無料利用する場合、リポジトリをpublicにす�
 - 日本語と英語を切り替えて利用できる
 - LP / MR 推移、勝率、キャラクター別戦績などをブラウザで集計する
 - GitHub Pages と Firebase の無料枠で個人運用できるようにする
-- 将来的にリポジトリを公開し、各利用者がセルフホストできるようにする
+- リポジトリを公開した際に、各利用者がcloneしてセルフホストできるようにする
 
 ## Architecture
 
@@ -144,7 +158,7 @@ GitHub Pages は静的ホスティングであるため、Buckler の取得処�
 
 ## Visibility and security
 
-初期実装では次の 2 モードを想定します。
+デプロイごとに次の2モードを選択できます。
 
 - `private`: 管理者だけが読み書きできる
 - `public`: 誰でも読み取れ、管理者だけが書き込める
@@ -163,7 +177,7 @@ Bucklerの総合履歴は全対戦モードを合算した直近100試合を返�
 
 Firestore に多数の事前集計を作るのではなく、軽量な試合データを複数試合単位の `queryChunks` にまとめ、ブラウザの JavaScript で集計します。
 
-1 試合 1 ドキュメントを全件読む方式と比べて Firestore の読み取り数を抑えながら、集計軸を後から柔軟に追加できます。試合の完全データは詳細を開いたときだけ読み込みます。
+1試合1ドキュメントを全件読む方式と比べてFirestoreの読み取り数を抑えながら、集計軸を後から柔軟に追加できます。通常画面はquery chunkだけを読み、完全な試合とraw responseはバックアップ、再解析、障害調査のために保存します。
 
 ## License
 

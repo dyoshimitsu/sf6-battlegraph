@@ -32,17 +32,7 @@ sf6-battlegraph は、常時稼働するバックエンドを持たず、GitHub 
 
 ### Static web application
 
-React、TypeScript、Vite で構築し、GitHub Pages に配信する。GitHub Pages のサブパスとリロード制約を避けるため `HashRouter` を使用する。
-
-想定ルート:
-
-```text
-/#/             dashboard
-/#/matches      match history
-/#/stats        statistics and charts
-/#/sync         import and synchronization
-/#/settings     deployment settings
-```
+React、TypeScript、Viteで構築し、GitHub Pagesに配信する。初期版はルーターを持たない単一ダッシュボードとし、直近の試合、分析フィルター、LP/MR、日別記録、キャラクター別戦績を同じ画面に配置する。同期、バックアップ、復元は管理者ヘッダーから実行する。
 
 責務:
 
@@ -79,13 +69,13 @@ Firestore は分析データベースとして使用せず、集計は原則と�
 ```text
 collector bundle (`postMessage`)
   ↓
-file/schema validation
+origin/protocol/schema validation
   ↓
 user code and response status validation
   ↓
-SHA-256 calculation
+raw page size and SHA-256 calculation
   ↓
-deduplicate raw snapshots
+preserve the complete raw snapshot
   ↓
 merge replay lists by replay_id
   ↓
@@ -114,9 +104,9 @@ mark synchronization complete
 ### Idempotency
 
 - match document ID は `replay_id` とする
-- raw page はレスポンスの SHA-256 を記録する
-- 同じbundleを再取得しても論理的な重複を作らない
-- `firstSeenAt` は維持し、再取得時に `lastSeenAt` を更新する
+- raw pageはレスポンスのSHA-256を記録する
+- 同じbundleを再取得しても`replay_id`が同じ試合を複数作らない
+- 再取得したcomplete matchは最新のraw replayで更新し、過去のraw snapshotは同期単位で維持する
 
 ### Chunk generations
 
@@ -141,9 +131,9 @@ sync記録とraw snapshot親documentは準備開始時に`prepared`で作成し�
 1. active manifest
 2. manifestに列挙されたactive generationのquery chunks
 3. JavaScript でフィルタ・集計
-4. 詳細表示時だけ完全な match document
+4. JavaScriptで全期間を集計し、表示項目ごとの直近範囲を適用する
 
-初期版は全期間のグラフと集計を復元するためactive generationを一括で読む。履歴量と実際のread数を測定した後、期間指定時に該当chunkだけ読む最適化を検討する。
+初期版は全期間の集計を復元するためactive generationを一括で読む。10,000試合の回帰テストではmanifestを含む初期読み込みを50 reads以内に制限する。LP/MRは選択キャラクターの直近100試合、日別記録は最新データを終点とする直近14暦日を表示する。
 
 raw snapshots は再解析、障害調査、エクスポート時にのみ読む。
 

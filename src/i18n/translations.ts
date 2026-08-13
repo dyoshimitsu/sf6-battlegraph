@@ -106,7 +106,7 @@ export const translations = {
     noStoredDataTitle: "まだ戦績が保存されていません",
     noStoredDataDescription: "Chrome拡張を導入し、Bucklerから取得・同期してください。",
     unofficial: "Unofficial · Not affiliated with CAPCOM",
-    errorUnexpected: "ファイルの読み込み中に予期しないエラーが発生しました。",
+    errorUnexpected: "取得データの処理中に予期しないエラーが発生しました。",
   },
   en: {
     appName: "SF6 Battlegraph",
@@ -213,7 +213,7 @@ export const translations = {
     noStoredDataTitle: "No battle records stored yet",
     noStoredDataDescription: "Install the Chrome connector, then fetch and sync your records from Buckler.",
     unofficial: "Unofficial · Not affiliated with CAPCOM",
-    errorUnexpected: "An unexpected error occurred while reading the file.",
+    errorUnexpected: "An unexpected error occurred while processing the fetched data.",
   },
 } as const;
 
