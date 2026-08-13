@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
+import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import {
   BucklerValidationError,
   type BucklerBundlePreview,
@@ -30,11 +31,24 @@ function formatTimestamp(timestamp?: number): string {
     : TOKYO_DATE_TIME.format(new Date(timestamp * 1000));
 }
 
+function formatWinRate(value: number | null): string {
+  return value === null ? "—" : `${value.toFixed(1)}%`;
+}
+
+function playerCharacterName(player: BucklerBundlePreview["matches"][number]["subject"]): string {
+  return player.playing_character_name ?? player.character_name ?? "Unknown";
+}
+
 export function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [mode, setMode] = useState("");
+  const [subjectCharacterId, setSubjectCharacterId] = useState("");
+  const [opponentCharacterId, setOpponentCharacterId] = useState("");
 
   const readiness = useMemo(
     () => [
@@ -43,6 +57,24 @@ export function App() {
       { label: "Firestore同期", done: false },
       { label: "グラフ表示", done: false },
     ],
+    [imported],
+  );
+  const filteredMatches = useMemo(
+    () => filterMatches(imported?.preview.matches ?? [], {
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+      mode: mode ? mode as BucklerBundlePreview["matches"][number]["mode"] : undefined,
+      subjectCharacterId: subjectCharacterId ? Number(subjectCharacterId) : undefined,
+      opponentCharacterId: opponentCharacterId ? Number(opponentCharacterId) : undefined,
+    }),
+    [fromDate, imported, mode, opponentCharacterId, subjectCharacterId, toDate],
+  );
+  const statistics = useMemo(
+    () => aggregateMatches(filteredMatches),
+    [filteredMatches],
+  );
+  const unfilteredStatistics = useMemo(
+    () => aggregateMatches(imported?.preview.matches ?? []),
     [imported],
   );
 
@@ -157,6 +189,7 @@ export function App() {
           {error && <div className="message error" role="alert">{error}</div>}
 
           {imported && (
+            <>
             <section className="preview" aria-live="polite">
               <div className="preview-title">
                 <div>
@@ -196,6 +229,87 @@ export function App() {
                 </ul>
               )}
             </section>
+
+            <section className="statistics-section">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">LOCAL ANALYSIS</p>
+                  <h2>読み込んだ戦績</h2>
+                </div>
+                <p>{filteredMatches.length} / {imported.preview.uniqueMatchCount} 試合を表示</p>
+              </div>
+
+              <div className="filter-bar">
+                <label><span>開始日</span><input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
+                <label><span>終了日</span><input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
+                <label><span>モード</span><select value={mode} onChange={(event) => setMode(event.target.value)}><option value="">すべて</option>{imported.preview.sources.filter((source) => source.sourceType !== "all" && source.sourceType !== "unknown").map((source) => <option key={source.sourceType} value={source.sourceType}>{source.sourceType}</option>)}</select></label>
+                <label><span>使用キャラ</span><select value={subjectCharacterId} onChange={(event) => setSubjectCharacterId(event.target.value)}><option value="">すべて</option>{unfilteredStatistics.bySubjectCharacter.filter((record) => record.characterId !== null).map((record) => <option key={record.characterId} value={record.characterId ?? ""}>{record.characterName}</option>)}</select></label>
+                <label><span>相手キャラ</span><select value={opponentCharacterId} onChange={(event) => setOpponentCharacterId(event.target.value)}><option value="">すべて</option>{unfilteredStatistics.byOpponentCharacter.filter((record) => record.characterId !== null).map((record) => <option key={record.characterId} value={record.characterId ?? ""}>{record.characterName}</option>)}</select></label>
+                <button type="button" onClick={() => { setFromDate(""); setToDate(""); setMode(""); setSubjectCharacterId(""); setOpponentCharacterId(""); }}>リセット</button>
+              </div>
+
+              <div className="record-banner">
+                <article><span>勝率</span><strong>{formatWinRate(statistics.overall.winRate)}</strong></article>
+                <article><span>勝利</span><strong className="win-text">{statistics.overall.wins}</strong></article>
+                <article><span>敗北</span><strong className="loss-text">{statistics.overall.losses}</strong></article>
+                <article><span>判定不能</span><strong>{statistics.overall.unknown + statistics.overall.draws}</strong></article>
+              </div>
+
+              <div className="analysis-grid">
+                <article className="analysis-card">
+                  <p className="eyebrow">YOUR FIGHTERS</p>
+                  <h3>使用キャラクター</h3>
+                  <div className="character-records">
+                    {statistics.bySubjectCharacter.map((record) => (
+                      <div key={`${record.characterId}-${record.characterSlug}`}>
+                        <span>{record.characterName}</span>
+                        <strong>{formatWinRate(record.winRate)}</strong>
+                        <small>{record.matches}戦 · {record.wins}勝 {record.losses}敗</small>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+
+                <article className="analysis-card">
+                  <p className="eyebrow">MATCHUPS</p>
+                  <h3>対戦相手キャラクター</h3>
+                  <div className="character-records">
+                    {statistics.byOpponentCharacter.slice(0, 8).map((record) => (
+                      <div key={`${record.characterId}-${record.characterSlug}`}>
+                        <span>{record.characterName}</span>
+                        <strong>{formatWinRate(record.winRate)}</strong>
+                        <small>{record.matches}戦 · {record.wins}勝 {record.losses}敗</small>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              </div>
+
+              <article className="recent-card">
+                <div className="card-heading">
+                  <div><p className="eyebrow">RECENT MATCHES</p><h3>直近の試合</h3></div>
+                  <span>最新10件</span>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>日時</th><th>結果</th><th>使用キャラ</th><th>相手キャラ</th><th>モード</th><th>LP / MR</th></tr></thead>
+                    <tbody>
+                      {filteredMatches.slice(0, 10).map((match) => (
+                        <tr key={match.replayId}>
+                          <td>{formatTimestamp(match.playedAtEpoch)}</td>
+                          <td><span className={`result-badge ${match.result}`}>{match.result}</span></td>
+                          <td>{playerCharacterName(match.subject)}</td>
+                          <td>{playerCharacterName(match.opponent)}</td>
+                          <td>{match.mode}</td>
+                          <td>{match.subject.master_rating || match.subject.league_point || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
+            </>
           )}
         </section>
       </main>

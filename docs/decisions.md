@@ -16,7 +16,15 @@ Vite / React / TypeScript の静的 SPA と Buckler import parser を実装し�
 
 Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページから build ID、locale、ユーザーコードを解決し、全モードをページングして、完了後に bundle をダウンロードする。途中の HTTP・認証・形式エラーでは不完全な bundle を出力しない。
 
-次の段階では、実際の Buckler に対してモード別 endpoint を検証し、正規化結果を使った最初の集計を実装する。
+正規化済み試合に対するクライアント集計も実装した。
+
+- 期間は `Asia/Tokyo` の暦日で両端を含めて絞り込む
+- モード、使用キャラクター、相手キャラクターを組み合わせて絞り込む
+- 全体、使用キャラクター別、相手キャラクター別の勝敗と勝率を計算する
+- 勝率の母数は勝敗を判定できた試合とし、draw / unknown は別に表示する
+- 直近10試合を正規化済みデータから表示する
+
+次の段階では、実際の Buckler に対してモード別 endpoint と round result の意味を検証する。勝敗は現時点では、提供されたサンプルから観察した「各 `round_results` の非ゼロ値がそのプレイヤーのラウンド勝利を表す」という規則に基づく推定である。
 
 ## Confirmed decisions
 
