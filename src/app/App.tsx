@@ -17,6 +17,7 @@ import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
 import { createSyncId } from "../domain/storage/createSyncId";
 import { exportFirestoreArchive } from "../domain/storage/exportArchive";
 import { createFirestoreArchivePort } from "../firebase/firestoreArchivePort";
+import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -183,7 +184,7 @@ export function App() {
     if (firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin" || !window.confirm(t("backupConfirm"))) return;
     setIsExporting(true); setError(null);
     try {
-      const archive = await exportFirestoreArchive(createFirestoreArchivePort(firebaseRuntime.services.db), INITIAL_USER_CODE);
+      const archive = validateFirestoreArchive(await exportFirestoreArchive(createFirestoreArchivePort(firebaseRuntime.services.db), INITIAL_USER_CODE));
       const blob = new Blob([JSON.stringify(archive)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");

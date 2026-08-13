@@ -1,6 +1,5 @@
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
 import type { PlannedWrite } from "./syncPlan";
+import { canonicalJson, sha256Hex } from "./jsonIntegrity";
 
 export const MAX_INLINE_RAW_BYTES = 700 * 1024;
 export const MAX_RAW_PART_BYTES = 700 * 1024;
@@ -26,7 +25,7 @@ function splitUtf8(bytes: Uint8Array, maxBytes: number): string[] {
 export function buildRawPageWrites(input: RawPageWriteInput): PlannedWrite[] {
   const serialized = JSON.stringify(input.raw);
   const bytes = new TextEncoder().encode(serialized);
-  const rawSha256 = bytesToHex(sha256(bytes));
+  const rawSha256 = bytes.length <= MAX_INLINE_RAW_BYTES ? sha256Hex(canonicalJson(input.raw)) : sha256Hex(bytes);
   const common = { ...input.metadata, rawUtf8Bytes: bytes.length, rawSha256 };
   if (bytes.length <= MAX_INLINE_RAW_BYTES) {
     return [{ path: input.path, data: { ...common, storage: "inline", raw: input.raw } }];
