@@ -14,7 +14,9 @@ Vite / React / TypeScript の静的 SPA と Buckler import parser を実装し�
 - 対象ユーザーが player 1 / player 2 のどちらでも `subject` と `opponent` に正規化する
 - 同じ replay が総合・モード別履歴の双方にある場合は全 `sourceTypes` を保持する
 
-次の段階では、Buckler 上で bundle を生成する collector と、正規化結果を使った最初の集計を実装する。
+Buckler 上で bundle を生成する standalone collector も実装した。現在の Buckler ページから build ID、locale、ユーザーコードを解決し、全モードをページングして、完了後に bundle をダウンロードする。途中の HTTP・認証・形式エラーでは不完全な bundle を出力しない。
+
+次の段階では、実際の Buckler に対してモード別 endpoint を検証し、正規化結果を使った最初の集計を実装する。
 
 ## Confirmed decisions
 

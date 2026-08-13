@@ -30,6 +30,8 @@ npm run build
 
 現段階では Firebase への書き込みは行いません。ローカル画面に読み込んだ JSON はブラウザ内だけで検証されます。
 
+`npm run build` はWebアプリに加えて、Buckler上で実行するstandaloneな `dist/collector.js` も生成します。現段階の実行手順は[Collector export format](docs/collector-format.md#running-the-collector)を参照してください。
+
 ## Goals
 
 - ランク、カジュアル、ルーム、バトルハブを含む全対戦モードを保存する

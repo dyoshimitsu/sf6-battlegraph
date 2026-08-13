@@ -129,6 +129,9 @@ export function App() {
               <button type="button" onClick={() => inputRef.current?.click()}>
                 ファイルを選択
               </button>
+              <a className="collector-link" href="./collector.js" download>
+                Bucklerコレクターをダウンロード
+              </a>
               <input
                 ref={inputRef}
                 type="file"
