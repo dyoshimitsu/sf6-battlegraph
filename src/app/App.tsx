@@ -104,12 +104,6 @@ export function App() {
   }), [locale]);
   const formatTimestamp = (timestamp?: number) => timestamp === undefined ? "—" : dateTimeFormatter.format(new Date(timestamp * 1000));
 
-  const readiness = [
-    { label: t("validateJson"), done: imported !== null },
-    { label: t("mergePages"), done: imported !== null && !imported.preview.isSinglePage },
-    { label: t("firestoreSync"), done: imported !== null && !imported.canSync },
-    { label: t("chartDisplay"), done: imported !== null },
-  ];
   const filteredMatches = useMemo(() => filterMatches(imported?.preview.matches ?? [], {
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
@@ -253,6 +247,7 @@ export function App() {
         <div className="header-actions">
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
+          {adminAuth.state.status === "admin" && <button className="auth-button header-sync-button" type="button" disabled={isCollecting || isSyncing} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>}
           {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <button className="auth-button" type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button>}
           {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}
           {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}
@@ -266,18 +261,6 @@ export function App() {
 
       <main id="top">
         <section className="workspace">
-          <div className="section-heading"><div><p className="eyebrow">{t("importEyebrow")}</p><h2>{t("importTitle")}</h2></div><p>{t("userCode")} <strong>{INITIAL_USER_CODE}</strong></p></div>
-          {!imported ? <div className="workspace-grid">
-            <div className="drop-zone">
-              <div className="drop-symbol"><span>↗</span></div><h3>{t("openBucklerTitle")}</h3><p>{t("openBucklerDescription")}</p>
-              <button className="primary-button" type="button" disabled={isCollecting || isSyncing} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "openBuckler")}</button>
-              <a className={`collector-link ${import.meta.env.DEV ? "is-disabled" : ""}`} href={import.meta.env.DEV ? undefined : "./sf6-battlegraph-extension.zip"} download={!import.meta.env.DEV} onClick={(e) => { if (import.meta.env.DEV) { e.preventDefault(); window.alert(t("collectorDevAlert")); } }}>{t(import.meta.env.DEV ? "collectorDevelopment" : "connectorDownload")}</a>
-            </div>
-            <aside className="roadmap-card"><p className="eyebrow">{t("steps")}</p><ol>{readiness.map((item, index) => <li className={item.done ? "done" : ""} key={item.label}><span>{String(index + 1).padStart(2, "0")}</span><b>{item.label}</b><i /></li>)}</ol></aside>
-          </div> : <div className="loaded-file-bar">
-            <div><p className="eyebrow">{imported.canSync ? t("validImport") : t("firestoreData")}</p><strong>{imported.fileName}</strong><span>{imported.canSync ? `${formatBytes(imported.fileSize)} · ` : ""}{imported.preview.uniqueMatchCount} {t("uniqueMatches")}</span></div>
-            <button className="primary-button" type="button" disabled={isCollecting || isSyncing} onClick={openBuckler}>{t(isCollecting ? "collectingFromBuckler" : isSyncing ? "syncing" : "refreshFromBuckler")}</button>
-          </div>}
           {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
           {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
           {syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}
