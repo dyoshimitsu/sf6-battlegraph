@@ -312,7 +312,6 @@ h3 {
   padding: 52px 0 92px;
 }
 .section-heading,
-.preview-title,
 .card-heading {
   display: flex;
   align-items: end;
@@ -322,14 +321,12 @@ h3 {
 .section-heading {
   margin-bottom: 24px;
 }
-.section-heading h2,
-.preview-title h2 {
+.section-heading h2 {
   margin: 0;
   font-size: 34px;
   font-weight: 600;
 }
 .section-heading > p,
-.preview-title > span,
 .card-heading > span {
   margin: 0;
   color: var(--muted);
@@ -340,7 +337,6 @@ h3 {
 .section-heading strong {
   color: #dfe1e5;
 }
-.preview,
 .analysis-card,
 .recent-card {
   background: linear-gradient(145deg, rgba(22, 25, 30, 0.92), rgba(14, 16, 20, 0.96));
@@ -429,27 +425,6 @@ h3 {
   background: #211513;
   border-color: rgba(255, 118, 95, 0.3);
 }
-.preview {
-  margin-top: 14px;
-  padding: 30px;
-}
-.preview-title {
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--line);
-}
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-.metrics article {
-  padding: 25px 20px 22px 0;
-  border-bottom: 1px solid var(--line);
-}
-.metrics article + article {
-  padding-left: 22px;
-  border-left: 1px solid var(--line);
-}
-.metrics span,
 .record-banner span {
   display: block;
   margin-bottom: 7px;
@@ -460,78 +435,8 @@ h3 {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-.metrics strong {
-  font:
-    600 38px "Space Grotesk",
-    sans-serif;
-}
-.preview-details {
-  margin: 0;
-}
-.preview-details div {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--line);
-}
-.preview-details dt {
-  color: var(--muted);
-  font-size: 10px;
-}
-.preview-details dd {
-  margin: 0;
-  font:
-    400 11px "DM Mono",
-    monospace;
-}
-.source-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 9px;
-  margin-top: 20px;
-}
-.source-grid article {
-  padding: 16px;
-  background: #0d0f12;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-.source-grid span {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--accent);
-  font:
-    500 9px "DM Mono",
-    monospace;
-  text-transform: uppercase;
-}
-.source-grid strong {
-  font:
-    600 24px "Space Grotesk",
-    sans-serif;
-}
-.source-grid small,
-.source-grid p {
-  color: var(--muted);
-  font-size: 9px;
-}
-.source-grid p {
-  margin: 5px 0 0;
-}
-.warning-list {
-  margin: 18px 0 0;
-  padding: 14px 14px 14px 32px;
-  color: #e8dca3;
-  background: rgba(232, 220, 163, 0.05);
-  border-radius: 10px;
-  font-size: 10px;
-  line-height: 1.8;
-}
 .statistics-section {
   padding-top: 0;
-}
-.preview + .statistics-section {
-  padding-top: 64px;
 }
 .statistics-section > .recent-card {
   margin-top: 0;
@@ -1310,11 +1215,7 @@ footer {
 .language-switch button,
 .eyebrow,
 .sync-bar span,
-.metrics span,
 .record-banner span,
-.source-grid span,
-.source-grid small,
-.source-grid p,
 .filter-bar button,
 .analysis-scope span,
 .sync-reminder span,
@@ -1344,10 +1245,7 @@ footer {
 .admin-menu a,
 .admin-menu button,
 .section-heading > p,
-.preview-title > span,
 .card-heading > span,
-.preview-details dt,
-.warning-list,
 .filter-bar input,
 .filter-bar select,
 table,
@@ -1390,17 +1288,14 @@ table,
   .filter-bar {
     grid-template-columns: repeat(2, 1fr);
   }
-  .record-banner,
-  .metrics {
+  .record-banner {
     grid-template-columns: repeat(2, 1fr);
   }
   .record-banner article:nth-child(3),
-  .record-banner article:nth-child(5),
-  .metrics article:nth-child(3) {
+  .record-banner article:nth-child(5) {
     border-left: 0;
   }
   .section-heading,
-  .preview-title,
   .lp-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -1425,26 +1320,20 @@ table,
   .status-pill {
     display: none;
   }
-  .preview,
   .analysis-card,
   .recent-card,
   .lp-card {
     padding: 18px;
   }
-  .metrics,
   .record-banner {
     grid-template-columns: 1fr;
   }
-  .metrics article + article,
   .record-banner article + article {
     padding-left: 0;
     border-left: 0;
   }
   .filter-bar {
     grid-template-columns: 1fr;
-  }
-  .preview-details div {
-    grid-template-columns: 80px 1fr;
   }
   .character-records {
     grid-template-columns: repeat(2, minmax(0, 1fr));
