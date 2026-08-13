@@ -19,6 +19,7 @@ Battlegraphは導入済み拡張のversionを検出する。未導入または�
 1. ダウンロードしたZIPを展開する
 2. `chrome://extensions`で古いBattlegraph Connectorを削除する
 3. デベロッパーモードを有効にし、新しいバージョン付きフォルダを読み込む
+4. Battlegraphのページを再読み込みする
 
 拡張は永続データを持たないため、削除してもFirestoreの戦績やBucklerの認証情報は失われない。導入後にBattlegraphを再読み込みする。
 
