@@ -67,6 +67,7 @@ GitHub Pages は静的ホスティングであるため、Buckler の取得処�
 - [Architecture](docs/architecture.md)
 - [Data model](docs/data-model.md)
 - [Decisions and validation](docs/decisions.md)
+- [Repository instructions for Codex](AGENTS.md)
 
 ## Visibility and security
 
