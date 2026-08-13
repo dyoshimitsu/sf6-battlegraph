@@ -93,5 +93,19 @@ describe("aggregateMatches", () => {
       characterId: 1,
       matches: 2,
     });
+    expect(statistics.byDay).toEqual([
+      { date: "2023-11-15", matches: 3, wins: 1, losses: 1, draws: 0, unknown: 1, winRate: 50 },
+    ]);
+  });
+
+  it("groups daily records by the Tokyo calendar date in chronological order", () => {
+    const statistics = aggregateMatches([
+      match("B", "loss", Date.parse("2026-08-13T15:00:00Z") / 1000, 21, 1),
+      match("A", "win", Date.parse("2026-08-12T15:00:00Z") / 1000, 21, 1),
+    ]);
+    expect(statistics.byDay.map(day => [day.date, day.matches, day.winRate])).toEqual([
+      ["2026-08-13", 1, 100],
+      ["2026-08-14", 1, 0],
+    ]);
   });
 });
