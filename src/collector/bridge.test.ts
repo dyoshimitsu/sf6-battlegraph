@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "./bridge";
+import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage, readKnownReplayIds } from "./bridge";
 import type { BucklerCollectorBundle } from "../domain/buckler/types";
 
 const bundle = {
@@ -25,9 +25,10 @@ describe("collector bridge", () => {
   });
 
   it("round-trips a restricted Battlegraph target origin through the Buckler URL", () => {
-    const url = new URL(buildBucklerLaunchUrl(bundle.userCode, "https://owner.github.io"));
+    const url = new URL(buildBucklerLaunchUrl(bundle.userCode, "https://owner.github.io", ["NEWEST01", "KNOWN002", "NEWEST01", "bad id"]));
     expect(url.origin).toBe(BUCKLER_ORIGIN);
     expect(readBattlegraphTargetOrigin(url.hash)).toBe("https://owner.github.io");
+    expect(readKnownReplayIds(url.hash)).toEqual(["NEWEST01", "KNOWN002"]);
     expect(readBattlegraphTargetOrigin("#sf6-battlegraph-origin=http%3A%2F%2F192.168.201.128%3A5174")).toBe("http://192.168.201.128:5174");
     expect(readBattlegraphTargetOrigin("#sf6-battlegraph-origin=http://example.com")).toBeNull();
   });

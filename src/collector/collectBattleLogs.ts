@@ -21,6 +21,7 @@ export interface CollectorOptions {
   fetcher?: typeof fetch;
   now?: () => Date;
   delayMs?: number;
+  knownReplayIds?: Iterable<string>;
   onProgress?: (progress: CollectorProgress) => void;
 }
 
@@ -108,6 +109,8 @@ export async function collectBattleLogs(
   const now = options.now ?? (() => new Date());
   const delayMs = options.delayMs ?? 200;
   const pages: BucklerCollectorPage[] = [];
+  const knownReplayIds = new Set(options.knownReplayIds ?? []);
+  let stoppedAtKnownReplayId: string | undefined;
 
   for (const source of sources) {
     let pageNumber = 1;
@@ -136,6 +139,8 @@ export async function collectBattleLogs(
         fetchedAt: now().toISOString(),
         response: response as BucklerPageResponse,
       });
+      stoppedAtKnownReplayId = preview.response.pageProps.replay_list.find(replay => knownReplayIds.has(replay.replay_id))?.replay_id;
+      if (stoppedAtKnownReplayId) break;
       pageNumber += 1;
       if (pageNumber <= totalPages && delayMs > 0) {
         await wait(delayMs);
@@ -150,5 +155,7 @@ export async function collectBattleLogs(
     buildId: options.buildId,
     exportedAt: now().toISOString(),
     pages,
+    knownReplayBoundaryCount: knownReplayIds.size,
+    ...(stoppedAtKnownReplayId ? { stopReason: "known-replay" as const, stoppedAtKnownReplayId } : {}),
   };
 }

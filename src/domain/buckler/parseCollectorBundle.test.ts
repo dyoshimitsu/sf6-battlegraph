@@ -102,6 +102,25 @@ describe("parseCollectorImport", () => {
     expect(result.warnings).toContain("casual: imported 1 of 3 pages");
   });
 
+  it("accepts an intentional stop at a known replay without an incomplete warning", () => {
+    const input = {
+      ...bundle([bundlePage("all", 1, page(1, 3, [replay("KNOWN001", 1, 1_700_000_000)]))]),
+      stopReason: "known-replay",
+      stoppedAtKnownReplayId: "KNOWN001",
+    };
+
+    expect(parseCollectorImport(input, SUBJECT).warnings).not.toContain("all: imported 1 of 3 pages");
+  });
+
+  it("warns when requested known boundaries have fallen outside the available history", () => {
+    const input = {
+      ...bundle([bundlePage("all", 1, page(1, 1, [replay("LATEST01", 1, 1_700_000_000)]))]),
+      knownReplayBoundaryCount: 20,
+    };
+
+    expect(parseCollectorImport(input, SUBJECT).warnings).toContain("Known replay boundary was not found; all available pages were fetched");
+  });
+
   it("continues to accept a single raw page", () => {
     const result = parseCollectorImport(
       page(1, 1, [replay("SINGLE001", 1, 1_700_000_000)]),

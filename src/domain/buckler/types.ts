@@ -90,6 +90,9 @@ export interface BucklerCollectorBundle {
   buildId: string;
   exportedAt: string;
   pages: BucklerCollectorPage[];
+  stopReason?: "known-replay";
+  stoppedAtKnownReplayId?: string;
+  knownReplayBoundaryCount?: number;
 }
 
 export type MatchResult = "win" | "loss" | "draw" | "unknown";
@@ -134,6 +137,9 @@ export interface BucklerBundlePreview {
   sources: CollectorSourceSummary[];
   warnings: string[];
   isSinglePage: boolean;
+  stopReason?: "known-replay";
+  stoppedAtKnownReplayId?: string;
+  knownReplayBoundaryCount?: number;
 }
 
 export class BucklerValidationError extends Error {

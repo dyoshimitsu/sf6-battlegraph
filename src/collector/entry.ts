@@ -1,5 +1,5 @@
 import { collectBattleLogs } from "./collectBattleLogs";
-import { createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin } from "./bridge";
+import { createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin, readKnownReplayIds } from "./bridge";
 
 interface NextData {
   buildId?: string;
@@ -53,6 +53,7 @@ async function run() {
     buildId: nextData.buildId,
     locale,
     userCode,
+    knownReplayIds: readKnownReplayIds(window.location.hash),
     onProgress: ({ sourceType, page, totalPages }) => {
       console.info(
         `[SF6 Battlegraph] ${sourceType}: page ${page}${totalPages ? `/${totalPages}` : ""}`,

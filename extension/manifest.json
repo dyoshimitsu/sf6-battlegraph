@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SF6 Battlegraph Connector",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Transfers your Buckler battle log directly to SF6 Battlegraph.",
   "permissions": ["storage"],
   "background": {

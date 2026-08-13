@@ -65,6 +65,11 @@ function parseBundle(input: unknown): BucklerCollectorBundle | null {
   const userCode = requireNumber(input.userCode, "bundle.userCode");
   const buildId = requireString(input.buildId, "bundle.buildId");
   const exportedAt = parseIsoDate(input.exportedAt, "bundle.exportedAt");
+  const stopReason = input.stopReason === undefined ? undefined : requireString(input.stopReason, "bundle.stopReason");
+  if (stopReason !== undefined && stopReason !== "known-replay") throw new BucklerValidationError("bundle.stopReason is unsupported");
+  const stoppedAtKnownReplayId = stopReason === "known-replay" ? requireString(input.stoppedAtKnownReplayId, "bundle.stoppedAtKnownReplayId") : undefined;
+  const knownReplayBoundaryCount = input.knownReplayBoundaryCount === undefined ? 0 : requireNumber(input.knownReplayBoundaryCount, "bundle.knownReplayBoundaryCount");
+  if (!Number.isInteger(knownReplayBoundaryCount) || knownReplayBoundaryCount < 0 || knownReplayBoundaryCount > 20) throw new BucklerValidationError("bundle.knownReplayBoundaryCount must be an integer from 0 to 20");
   if (!Array.isArray(input.pages) || input.pages.length === 0) {
     throw new BucklerValidationError("bundle.pages must be a non-empty array");
   }
@@ -98,6 +103,8 @@ function parseBundle(input: unknown): BucklerCollectorBundle | null {
     buildId,
     exportedAt,
     pages,
+    knownReplayBoundaryCount,
+    ...(stopReason === "known-replay" ? { stopReason, stoppedAtKnownReplayId } : {}),
   };
 }
 
@@ -250,11 +257,17 @@ export function parseCollectorImport(
   }
 
   for (const source of sourceSummaries.values()) {
-    if (source.pages < source.expectedPages) {
+    if (source.pages < source.expectedPages && bundle?.stopReason !== "known-replay") {
       warnings.push(
         `${source.sourceType}: imported ${source.pages} of ${source.expectedPages} pages`,
       );
     }
+  }
+  if (bundle?.stopReason === "known-replay" && !matches.has(bundle.stoppedAtKnownReplayId ?? "")) {
+    throw new BucklerValidationError("bundle stoppedAtKnownReplayId was not found in the fetched pages");
+  }
+  if ((bundle?.knownReplayBoundaryCount ?? 0) > 0 && bundle?.stopReason !== "known-replay") {
+    warnings.push("Known replay boundary was not found; all available pages were fetched");
   }
 
   const normalizedMatches = Array.from(matches.values()).sort(
@@ -276,5 +289,8 @@ export function parseCollectorImport(
     sources: Array.from(sourceSummaries.values()),
     warnings,
     isSinglePage,
+    stopReason: bundle?.stopReason,
+    stoppedAtKnownReplayId: bundle?.stoppedAtKnownReplayId,
+    knownReplayBoundaryCount: bundle?.knownReplayBoundaryCount,
   };
 }

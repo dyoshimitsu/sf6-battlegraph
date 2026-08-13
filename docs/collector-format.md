@@ -64,6 +64,8 @@ The Battlegraph receiver accepts the versioned message only from `https://www.st
 
 The default collector requests only the combined `/battlelog` history. A failed page aborts the collection instead of creating a bundle that looks complete.
 
+On the first synchronization, no replay boundary is available and the collector fetches every page. Later synchronizations pass up to 20 recent stored replay IDs in the launch URL fragment. The collector preserves the complete page containing the first known ID and then stops. Such a bundle records `stopReason: "known-replay"` and `stoppedAtKnownReplayId`; the importer validates that the boundary replay is actually present before accepting the intentional partial page range. `knownReplayBoundaryCount` distinguishes the initial full fetch from a full fetch where every supplied boundary has fallen outside Buckler's available history; the latter produces a possible-gap warning.
+
 ## Versioning
 
 Changing the bundle envelope requires a new `version`. Adding Buckler fields inside a raw `response` does not change this format version because those fields are preserved without interpretation.

@@ -242,7 +242,8 @@ export function App() {
   }, []);
 
   function openBuckler() {
-    const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin);
+    const knownReplayIds = (archivedMatches ?? imported?.preview.matches ?? []).slice(0, 20).map(match => match.replayId);
+    const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin, knownReplayIds);
     window.postMessage(createCollectorStartMessage(url), window.location.origin);
     setError(null);
     setIsCollecting(true);

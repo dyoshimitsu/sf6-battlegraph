@@ -8,6 +8,7 @@ export const CONNECTOR_PING_MESSAGE_TYPE = "sf6-battlegraph.connector-ping";
 export const CONNECTOR_READY_MESSAGE_TYPE = "sf6-battlegraph.connector-ready";
 export const BUCKLER_ORIGIN = "https://www.streetfighter.com";
 export const BATTLEGRAPH_ORIGIN_PARAMETER = "sf6-battlegraph-origin";
+export const KNOWN_REPLAYS_PARAMETER = "sf6-battlegraph-known-replays";
 
 export interface CollectorResultMessage {
   type: typeof COLLECTOR_MESSAGE_TYPE;
@@ -78,10 +79,18 @@ export function readCollectorResultMessage(origin: string, value: unknown, recei
   return candidate as CollectorResultMessage;
 }
 
-export function buildBucklerLaunchUrl(userCode: number, battlegraphOrigin: string): string {
+export function buildBucklerLaunchUrl(userCode: number, battlegraphOrigin: string, knownReplayIds: string[] = []): string {
   const url = new URL(`/6/buckler/ja-jp/profile/${userCode}/battlelog`, BUCKLER_ORIGIN);
-  url.hash = new URLSearchParams({ [BATTLEGRAPH_ORIGIN_PARAMETER]: battlegraphOrigin }).toString();
+  const hash = new URLSearchParams({ [BATTLEGRAPH_ORIGIN_PARAMETER]: battlegraphOrigin });
+  const known = [...new Set(knownReplayIds.filter(id => /^[A-Za-z0-9_-]{1,64}$/.test(id)))].slice(0, 20);
+  if (known.length) hash.set(KNOWN_REPLAYS_PARAMETER, known.join(","));
+  url.hash = hash.toString();
   return url.toString();
+}
+
+export function readKnownReplayIds(hash: string): string[] {
+  const value = new URLSearchParams(hash.replace(/^#/, "")).get(KNOWN_REPLAYS_PARAMETER);
+  return value ? [...new Set(value.split(",").filter(id => /^[A-Za-z0-9_-]{1,64}$/.test(id)))].slice(0, 20) : [];
 }
 
 export function readBattlegraphTargetOrigin(hash: string): string | null {

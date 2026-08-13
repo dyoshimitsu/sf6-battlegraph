@@ -108,4 +108,22 @@ describe("collectBattleLogs", () => {
       }),
     ).rejects.toThrow("HTTP 403");
   });
+
+  it("stops after preserving the page containing a known replay", async () => {
+    const responses = [page(1, 3, "NEW00001"), page(2, 3, "KNOWN001"), page(3, 3, "OLD00001")];
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(responses.shift()), { status: 200 }));
+    const bundle = await collectBattleLogs({
+      buildId: "build_123",
+      locale: "ja-jp",
+      userCode: USER_CODE,
+      origin: "https://www.streetfighter.com",
+      fetcher,
+      knownReplayIds: ["KNOWN001"],
+      delayMs: 0,
+    });
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(bundle.pages.map(item => item.page)).toEqual([1, 2]);
+    expect(bundle).toMatchObject({ stopReason: "known-replay", stoppedAtKnownReplayId: "KNOWN001", knownReplayBoundaryCount: 1 });
+  });
 });
