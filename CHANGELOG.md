@@ -12,7 +12,6 @@
 ### Changed
 
 - 自動同期中の同期前プレビューを廃止し、同期結果をトーストだけで通知
-- 戦績フィルターの日付表示を`yyyy/mm/dd`へ統一
 - 開発・CIのNode.js要件を26以降へ更新
 - query chunk schemaをv2へ更新し、追跡対象の`subjectSide`を永続化
 - 管理者同期時に旧query chunkで欠落した1P・2P情報を完全matchから一度だけ復元
