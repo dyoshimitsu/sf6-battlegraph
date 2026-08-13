@@ -67,6 +67,20 @@ describe("filterMatches", () => {
     expect(filterMatches(matches, { mode: "casual", subjectCharacterId: 1 })).toEqual([matches[1]]);
   });
 
+  it("filters by derived Act and exact battle version", () => {
+    const act12 = match("act12", "win", Date.parse("2026-07-31T03:00:00Z") / 1000, 21, 1);
+    const act13 = {
+      ...match("act13", "loss", Date.parse("2026-08-01T03:00:00Z") / 1000, 21, 1),
+      battleVersion: 20_004_000,
+    };
+    const previousVersion = { ...act12, battleVersion: 20_003_000 };
+
+    expect(filterMatches([previousVersion, act13], { actId: 13 })).toEqual([act13]);
+    expect(filterMatches([previousVersion, act13], { battleVersion: 20_003_000 })).toEqual([
+      previousVersion,
+    ]);
+  });
+
   it("filters by the inferred mode when the acquisition source was all", () => {
     const casual = { ...matches[1], mode: "casual" as const, sourceTypes: ["all" as const] };
     expect(filterMatches([matches[0], casual], { mode: "casual" })).toEqual([casual]);

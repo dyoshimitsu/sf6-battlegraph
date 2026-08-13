@@ -7,6 +7,7 @@ import {
   readCollectorStatusMessage,
   readConnectorReadyMessage,
 } from "../collector/bridge";
+import { availableActsForEpochs } from "../domain/buckler/acts";
 import { getCharacterName, getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
 import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
@@ -108,6 +109,8 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [actId, setActId] = useState("");
+  const [battleVersion, setBattleVersion] = useState("");
   const [mode, setMode] = useState("");
   const [subjectCharacterId, setSubjectCharacterId] = useState("");
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
@@ -141,10 +144,12 @@ export function App() {
       filterMatches(imported?.preview.matches ?? [], {
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
+        actId: actId ? Number(actId) : undefined,
+        battleVersion: battleVersion ? Number(battleVersion) : undefined,
         mode: mode ? (mode as BucklerBundlePreview["matches"][number]["mode"]) : undefined,
         subjectCharacterId: subjectCharacterId ? Number(subjectCharacterId) : undefined,
       }),
-    [fromDate, imported, mode, subjectCharacterId, toDate],
+    [actId, battleVersion, fromDate, imported, mode, subjectCharacterId, toDate],
   );
   const statistics = useMemo(() => aggregateMatches(filteredMatches), [filteredMatches]);
   const allStatistics = useMemo(
@@ -158,6 +163,22 @@ export function App() {
       ),
     [imported],
   );
+  const availableActs = useMemo(
+    () =>
+      availableActsForEpochs((imported?.preview.matches ?? []).map((match) => match.playedAtEpoch)),
+    [imported],
+  );
+  const availableBattleVersions = useMemo(
+    () =>
+      [
+        ...new Set(
+          (imported?.preview.matches ?? []).flatMap((match) =>
+            match.battleVersion === undefined ? [] : [match.battleVersion],
+          ),
+        ),
+      ].sort((left, right) => right - left),
+    [imported],
+  );
   const opponentRecords = useMemo(
     () =>
       completeOpponentRoster(statistics.byOpponentCharacter, (slug) =>
@@ -165,7 +186,9 @@ export function App() {
       ),
     [locale, statistics.byOpponentCharacter],
   );
-  const hasActiveFilters = Boolean(fromDate || toDate || mode || subjectCharacterId);
+  const hasActiveFilters = Boolean(
+    fromDate || toDate || actId || battleVersion || mode || subjectCharacterId,
+  );
   const lastSyncedAtEpoch = readLastSyncedAtEpoch(storedManifest);
   const syncFreshness = getSyncFreshness(lastSyncedAtEpoch);
   const pendingMerge = useMemo(
@@ -358,6 +381,8 @@ export function App() {
   function resetFilters() {
     setFromDate("");
     setToDate("");
+    setActId("");
+    setBattleVersion("");
     setMode("");
     setSubjectCharacterId("");
   }
@@ -853,6 +878,35 @@ export function App() {
                       onChange={(event) => setToDate(event.target.value)}
                     />
                   </label>
+                  {availableActs.length > 0 && (
+                    <label>
+                      <span>{t("act")}</span>
+                      <select value={actId} onChange={(event) => setActId(event.target.value)}>
+                        <option value="">{t("all")}</option>
+                        {[...availableActs].reverse().map((act) => (
+                          <option key={act.id} value={act.id}>
+                            {t("actLabel", { id: act.id })}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {availableBattleVersions.length > 1 && (
+                    <label>
+                      <span>{t("gameVersion")}</span>
+                      <select
+                        value={battleVersion}
+                        onChange={(event) => setBattleVersion(event.target.value)}
+                      >
+                        <option value="">{t("all")}</option>
+                        {availableBattleVersions.map((version) => (
+                          <option key={version} value={version}>
+                            {version}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <label>
                     <span>{t("mode")}</span>
                     <select value={mode} onChange={(e) => setMode(e.target.value)}>

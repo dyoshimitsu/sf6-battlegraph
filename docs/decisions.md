@@ -150,6 +150,12 @@ UIは日本語と英語に対応する。初回はブラウザ言語から選択
 - `common.statusCode` で成功・認証エラーを確認できる
 - 未認証リクエストでは 403 レスポンスとなる
 
+## Act and game-version filters
+
+BucklerのバトルログにはAct番号が含まれない。そのためActは`uploaded_at`と、`Asia/Tokyo`で定義したMaster League Act開始日時のマスターからクライアント側で導出する。日付だけではなく、各メンテナンス終了日時を境界にして、開始時刻以上・次のAct開始時刻未満をそのActとして扱う。期間外の試合はActフィルターの対象外にする。
+
+`battle_version`はquery chunkにすでに含まれている。ゲームバージョンのフィルターは保存済みデータに2種類以上の値がある時だけ表示し、1種類だけの間は不要な選択肢を表示しない。どちらのフィルターも既存query chunkをブラウザで絞り込むため、通常表示のFirestore read数は増加しない。
+
 ## Items to validate during implementation
 
 以下は未確認のため、推測を固定仕様にしない。

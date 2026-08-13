@@ -453,7 +453,7 @@ h3 {
 }
 .filter-bar {
   display: grid;
-  grid-template-columns: repeat(5, minmax(120px, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto;
   gap: 9px;
   margin-bottom: 12px;
   padding: 14px;
