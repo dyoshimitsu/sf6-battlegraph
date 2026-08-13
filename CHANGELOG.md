@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-14
+
+### Fixed
+
+- Chrome拡張のcontent script間で定数名が衝突し、Bucklerページで構文エラーになる不具合を修正
+
 ## [1.1.0] - 2026-08-14
 
 ### Added
@@ -62,3 +68,4 @@
 
 [1.0.0]: https://github.com/dyoshimitsu/sf6-battlegraph/releases/tag/v1.0.0
 [1.1.0]: https://github.com/dyoshimitsu/sf6-battlegraph/releases/tag/v1.1.0
+[1.1.1]: https://github.com/dyoshimitsu/sf6-battlegraph/releases/tag/v1.1.1
