@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.local
+.env
+.env.*
+!.env.example
+coverage/
+*.tsbuildinfo
+
+# Personal battle-log data and authentication material
+data/
+exports/
+*battlelog*.json
+*.cookie

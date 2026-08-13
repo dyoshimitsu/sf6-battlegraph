@@ -1,5 +1,18 @@
 # Decisions and validation
 
+## Implementation status
+
+最初の縦切りとして、Vite / React / TypeScript の静的 SPA と Buckler page response parser を実装した。
+
+- JSON ファイルをブラウザで選択またはドロップできる
+- `common.statusCode`、`sid`、ページ情報、replay の必須識別情報を検証する
+- 対象ユーザーが各 replay の player 1 / player 2 の一方に存在することを確認する
+- ページ数、試合数、期間、battle type、warning を同期前に表示する
+- 現段階ではファイルを外部へ送信せず、Firestore への書き込みも行わない
+- parser は React と Firebase に依存しない純粋な TypeScript として実装する
+
+次の段階では、複数ページ・複数モードをまとめる collector export format と replay normalization を実装する。
+
 ## Confirmed decisions
 
 ### Hosting and persistence
