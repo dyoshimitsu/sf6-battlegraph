@@ -18,6 +18,8 @@ import { createSyncId } from "../domain/storage/createSyncId";
 import { exportFirestoreArchive } from "../domain/storage/exportArchive";
 import { createFirestoreArchivePort } from "../firebase/firestoreArchivePort";
 import { validateFirestoreArchive } from "../domain/storage/validateArchive";
+import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
+import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -75,6 +77,7 @@ export function App() {
   const { locale, setLocale, t } = useI18n();
   const adminAuth = useAdminAuth(firebaseRuntime);
   const inputRef = useRef<HTMLInputElement>(null);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -90,6 +93,8 @@ export function App() {
   const [archivedMatches, setArchivedMatches] = useState<NormalizedMatch[] | null>(null);
   const [storedManifest, setStoredManifest] = useState<StoredManifest | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreProgress, setRestoreProgress] = useState<string | null>(null);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -197,6 +202,24 @@ export function App() {
     } finally { setIsExporting(false); }
   }
 
+  async function restoreBackup(file?: File) {
+    if (!file || firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin") return;
+    setError(null); setRestoreProgress(null);
+    try {
+      const plan = buildRestorePlan(JSON.parse(await file.text()) as unknown, INITIAL_USER_CODE);
+      if (!window.confirm(t("restoreConfirm", { count: plan.writeCount }))) return;
+      setIsRestoring(true); setRestoreProgress(t("restoreProgress", { completed: 0, total: plan.writeCount }));
+      await executeRestorePlan(createFirestoreRestorePort(firebaseRuntime.services.db), plan, (completed, total) => setRestoreProgress(t("restoreProgress", { completed, total })));
+      const stored = await loadStoredMatches(createFirestoreReadPort(firebaseRuntime.services.db), INITIAL_USER_CODE);
+      if (!stored) throw new Error(t("storedLoadFailed"));
+      setArchivedMatches(stored.matches); setStoredManifest(stored.manifest);
+      setImported({ fileName: t("storedData"), fileSize: 0, source: null, canSync: false, preview: storedPreview(stored.matches, stored.manifest.chunks.length) });
+      setRestoreProgress(t("restoreComplete", { count: plan.writeCount }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t("restoreFailed"));
+    } finally { setIsRestoring(false); }
+  }
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -206,6 +229,8 @@ export function App() {
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
           {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <button className="auth-button" type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button>}
           {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}
+          {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isRestoring} onClick={() => restoreInputRef.current?.click()}>{isRestoring ? t("restoreRunning") : t("restoreBackup")}</button>}
+          <input ref={restoreInputRef} type="file" accept="application/json,.json" hidden onChange={event => { void restoreBackup(event.target.files?.[0]); event.target.value = ""; }} />
           <div className="language-switch" aria-label="Language">
             <button className={locale === "ja" ? "active" : ""} onClick={() => setLocale("ja")}>JP</button>
             <button className={locale === "en" ? "active" : ""} onClick={() => setLocale("en")}>EN</button>
@@ -232,6 +257,7 @@ export function App() {
           {isLoadingStored && <div className="message" role="status">{t("loadingStored")}</div>}
           {imported?.canSync && adminAuth.state.status === "admin" && <div className="sync-bar"><div><p className="eyebrow">FIRESTORE</p><strong>{t("syncTitle")}</strong><span>{syncProgress ? `${syncProgress.completed} / ${syncProgress.total}` : pendingMerge ? t("syncPreview", { count: pendingMerge.totalMatches, newCount: pendingMerge.newMatches, refreshedCount: pendingMerge.refreshedMatches, retainedCount: pendingMerge.retainedMatches }) : t("syncDescription")}</span></div><button className="primary-button" type="button" disabled={isSyncing} onClick={() => void synchronize()}>{isSyncing ? t("syncing") : t("syncNow")}</button></div>}
           {syncMessage && <div className={`message ${syncProgress?.phase === "complete" ? "success" : "error"}`} role="status">{syncMessage}</div>}
+          {restoreProgress && <div className={`message ${isRestoring ? "" : "success"}`} role="status">{restoreProgress}</div>}
           {error && <div className="message error" role="alert">{error}</div>}
 
           {imported && <>

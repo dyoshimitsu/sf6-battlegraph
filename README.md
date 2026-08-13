@@ -33,6 +33,8 @@ Firebase Authenticationの管理者判定とFirestore同期を実装していま
 
 管理者は画面上部の「全データをバックアップ」から、Firestoreに保存したplayer、完全match、raw snapshot/page/part、query chunk、manifest、sync記録を単一JSONへ書き出せます。バックアップ時だけ全対象documentを読み取るため、実行前に確認画面を表示します。ダウンロード前に必須document、対象ユーザー、パス重複、rawのバイト数とSHA-256、分割partの連続性を検証します。
 
+「バックアップを復元」では検証済みJSONだけを同じユーザーコードへ復元します。既存documentを一括削除せず、同じパスをmerge更新します。データ層を最大450 writeずつ保存し、すべて成功した後にmanifestを最後に切り替えます。
+
 Firebaseを接続する場合は`.env.example`を`.env.local`へコピーし、Firebase Consoleで登録したWebアプリの設定と対象ユーザーコードを入力します。
 
 ```sh
