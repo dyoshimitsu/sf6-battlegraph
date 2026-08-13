@@ -1262,6 +1262,48 @@ footer {
 .filter-bar {
   grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
 }
+.date-filter-control {
+  position: relative;
+  display: block;
+}
+.date-filter-control > input[type="text"] {
+  width: 100%;
+  padding-right: 38px;
+}
+.calendar-button {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.calendar-button:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.calendar-button svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+.native-date-picker {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 /* Keep display typography unchanged while making supporting text easier to read. */
 .brand small,
 .status-pill,

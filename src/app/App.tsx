@@ -103,6 +103,8 @@ export function App() {
   const { locale, setLocale, t } = useI18n();
   const adminAuth = useAdminAuth(firebaseRuntime);
   const restoreInputRef = useRef<HTMLInputElement>(null);
+  const fromDatePickerRef = useRef<HTMLInputElement>(null);
+  const toDatePickerRef = useRef<HTMLInputElement>(null);
   const adminMenuRef = useRef<HTMLDetailsElement>(null);
   const collectorTimeoutRef = useRef<number | null>(null);
   const [imported, setImported] = useState<ImportedBundle | null>(null);
@@ -840,25 +842,61 @@ export function App() {
                 <div className="filter-bar">
                   <label>
                     <span>{t("fromDate")}</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="yyyy/mm/dd"
-                      maxLength={10}
-                      value={fromDate}
-                      onChange={(e) => setFromDate(formatDateFilterInput(e.target.value))}
-                    />
+                    <span className="date-filter-control">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="yyyy/mm/dd"
+                        maxLength={10}
+                        value={fromDate}
+                        onChange={(e) => setFromDate(formatDateFilterInput(e.target.value))}
+                      />
+                      <button
+                        type="button"
+                        className="calendar-button"
+                        aria-label={t("openCalendar")}
+                        onClick={() => fromDatePickerRef.current?.showPicker()}
+                      >
+                        <CalendarIcon />
+                      </button>
+                      <input
+                        ref={fromDatePickerRef}
+                        className="native-date-picker"
+                        type="date"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        onChange={(event) => setFromDate(formatDateFilterInput(event.target.value))}
+                      />
+                    </span>
                   </label>
                   <label>
                     <span>{t("toDate")}</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="yyyy/mm/dd"
-                      maxLength={10}
-                      value={toDate}
-                      onChange={(e) => setToDate(formatDateFilterInput(e.target.value))}
-                    />
+                    <span className="date-filter-control">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="yyyy/mm/dd"
+                        maxLength={10}
+                        value={toDate}
+                        onChange={(e) => setToDate(formatDateFilterInput(e.target.value))}
+                      />
+                      <button
+                        type="button"
+                        className="calendar-button"
+                        aria-label={t("openCalendar")}
+                        onClick={() => toDatePickerRef.current?.showPicker()}
+                      >
+                        <CalendarIcon />
+                      </button>
+                      <input
+                        ref={toDatePickerRef}
+                        className="native-date-picker"
+                        type="date"
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        onChange={(event) => setToDate(formatDateFilterInput(event.target.value))}
+                      />
+                    </span>
                   </label>
                   <label>
                     <span>{t("mode")}</span>
@@ -998,6 +1036,14 @@ export function App() {
         <span>{t("unofficial")}</span>
       </footer>
     </div>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 2v3M17 2v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z" />
+    </svg>
   );
 }
 
