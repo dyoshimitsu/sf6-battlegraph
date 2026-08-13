@@ -32,6 +32,8 @@ GitHub Pages の検証・デプロイ workflow を実装した。`master`へのp
 
 Firebase Web設定はVite環境変数から読み込み、必須4項目の一部だけが設定された状態をエラーにする。未設定時はローカルプレビューを維持する。設定済みの場合はGoogleポップアップ認証を使い、`admins/{uid}`ドキュメントの存在で同期管理者を判定する。初期管理者はFirebase Consoleで作成し、クライアントからの自己登録は許可しない。
 
+Firestore Security Rulesは`settings/deployment.visibility`を参照し、`private`では管理者だけに読み取りを許可し、`public`ではplayer配下の読み取りを公開する。書き込みはどちらのモードでも`admins/{uid}`登録者だけに許可する。管理者ドキュメントはクライアントから作成・変更・削除できない。Rules EmulatorのテストをCIで実行し、成功後にだけPagesをデプロイする。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions

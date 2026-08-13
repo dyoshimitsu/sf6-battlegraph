@@ -10,7 +10,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --config vite.collector.config.ts",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:rules:unit": "vitest run --config vitest.rules.config.ts",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-sf6-battlegraph \"npm run test:rules:unit\""
   },
   "dependencies": {
     "firebase": "^12.17.1",
@@ -18,9 +20,12 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@types/node": "^26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.5",
+    "firebase-tools": "^15.26.0",
     "typescript": "7.0.2",
     "vite": "8.2.1",
     "vitest": "4.1.10"

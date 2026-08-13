@@ -13,7 +13,7 @@ Buckler で参照できる対戦履歴には件数上限があるため、定期
 
 ## Development
 
-Node.js 20.19 以降を使用します。
+Node.js 20.19以降を使用します。Firestore Security RulesのテストにはJava 21以降も必要です。
 
 ```sh
 npm install
@@ -24,6 +24,7 @@ npm run dev
 
 ```sh
 npm test
+npm run test:rules
 npm run typecheck
 npm run build
 ```
