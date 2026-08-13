@@ -23,6 +23,7 @@ import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
 import { buildBucklerLaunchUrl, CONNECTOR_PING_MESSAGE_TYPE, createCollectorStartMessage, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "../collector/bridge";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
+import { buildDailyWindow } from "../domain/statistics/dailyWindow";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -332,7 +333,7 @@ export function App() {
 
 type DailyRecord = ReturnType<typeof aggregateMatches>["byDay"][number];
 function DailyTrend({ records, locale, labels }: { records: DailyRecord[]; locale: "ja" | "en"; labels: Record<"eyebrow" | "title" | "matches" | "winRate" | "empty", string> & { activeDays: (count: number) => string } }) {
-  const recent = records.slice(-14);
+  const recent = buildDailyWindow(records, 14);
   const maxMatches = Math.max(1, ...recent.map(record => record.matches));
   const date = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", { month: "short", day: "numeric", timeZone: "Asia/Tokyo" });
   return <article className="daily-card"><div className="card-heading"><div><p className="eyebrow">{labels.eyebrow}</p><h3>{labels.title}</h3></div><span>{recent.length ? labels.activeDays(recent.length) : labels.empty}</span></div>{recent.length > 0 && <div className="daily-bars" style={{ gridTemplateColumns: `repeat(${recent.length}, minmax(24px, 1fr))` }}>{recent.map(record => <div className="daily-column" key={record.date} title={`${record.date} · ${record.matches} ${labels.matches} · ${labels.winRate} ${formatWinRate(record.winRate)}`}><div className="daily-plot"><i className="daily-volume" style={{ height: `${record.matches / maxMatches * 100}%` }}><b style={{ height: `${record.winRate ?? 0}%` }} /></i></div><strong>{record.matches}</strong><span>{date.format(new Date(`${record.date}T00:00:00+09:00`))}</span></div>)}</div>}</article>;
@@ -350,7 +351,7 @@ function RatingChart({ matches, locale, labels }: { matches: BucklerBundlePrevie
   const characters = [...characterGroups.entries()].sort((left, right) => right[1].length - left[1].length || compareCharacterSlugs(left[1][0]?.subject.playing_character_tool_name ?? left[1][0]?.subject.character_tool_name ?? "unknown", right[1][0]?.subject.playing_character_tool_name ?? right[1][0]?.subject.character_tool_name ?? "unknown"));
   const effectiveCharacter = characters.some(([key]) => key === selectedCharacter) ? selectedCharacter : characters[0]?.[0] ?? "";
   const chartMatches = characterGroups.get(effectiveCharacter) ?? [];
-  const ordered = [...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch);
+  const ordered = [...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch).slice(-100);
   const number = new Intl.NumberFormat(locale === "ja" ? "ja-JP" : "en-US");
   const width = 1000, height = 230, padX = 22, padY = 18;
   function series(kind: "lp" | "mr") {
