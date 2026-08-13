@@ -24,7 +24,7 @@ export interface CollectorStartMessage {
 export interface CollectorStatusMessage {
   type: typeof COLLECTOR_STATUS_MESSAGE_TYPE;
   version: typeof COLLECTOR_MESSAGE_VERSION;
-  status: "authentication-required" | "error";
+  status: "authentication-required" | "started" | "error";
   message?: string;
 }
 
@@ -41,6 +41,10 @@ export function createCollectorAuthenticationRequiredMessage(): CollectorStatusM
   return { type: COLLECTOR_STATUS_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, status: "authentication-required" };
 }
 
+export function createCollectorStartedMessage(): CollectorStatusMessage {
+  return { type: COLLECTOR_STATUS_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, status: "started" };
+}
+
 export function createCollectorErrorMessage(message: string): CollectorStatusMessage {
   return { type: COLLECTOR_STATUS_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, status: "error", message: message.slice(0, 500) };
 }
@@ -50,7 +54,7 @@ export function readCollectorStatusMessage(origin: string, value: unknown, recei
   const candidate = value as Partial<CollectorStatusMessage>;
   return candidate.type === COLLECTOR_STATUS_MESSAGE_TYPE
     && candidate.version === COLLECTOR_MESSAGE_VERSION
-    && (candidate.status === "authentication-required" || (candidate.status === "error" && typeof candidate.message === "string"))
+    && (["authentication-required", "started"].includes(candidate.status ?? "") || (candidate.status === "error" && typeof candidate.message === "string"))
     ? candidate as CollectorStatusMessage
     : null;
 }

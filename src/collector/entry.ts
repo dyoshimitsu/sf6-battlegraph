@@ -1,5 +1,5 @@
 import { collectBattleLogs } from "./collectBattleLogs";
-import { createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, readBattlegraphTargetOrigin } from "./bridge";
+import { createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin } from "./bridge";
 
 interface NextData {
   buildId?: string;
@@ -42,6 +42,7 @@ async function run() {
     throw new Error("Run this collector on www.streetfighter.com");
   }
   if (!readBattlegraphTargetOrigin(window.location.hash)) return;
+  window.postMessage(createCollectorStartedMessage(), window.location.origin);
   const nextData = readNextData();
   if (!nextData.buildId) throw new Error("Buckler buildId was not found");
   const userCode = resolveUserCode(nextData);

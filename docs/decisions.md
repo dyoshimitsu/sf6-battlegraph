@@ -24,6 +24,8 @@ Bucklerの`window.opener`が別origin間で維持されることに依存しな�
 
 Manifest V3 service workerは収集中にも休止・再起動し得るため、起点タブとBucklerタブの対応はメモリではなく`chrome.storage.session`へ保持する。データはブラウザセッション内だけに存在し、収集タブを閉じた時点で削除する。Buckler側のcollector例外は汎用timeoutにせず、500文字以内の診断messageとして起点Battlegraphへ返す。
 
+Buckler側のisolated world bridgeは`document_start`で先に待機し、main world collectorは開始時に`started` statusを返す。Battlegraphは開始前30秒と開始後2分のtimeoutを区別するため、content script未実行、収集中の停止、collector例外を別のエラーとして表示できる。
+
 管理者がBattlegraphから取得を開始した場合、完全bundleの受信と検証成功を契機にFirestore同期を自動開始する。成功後は保存済みデータへ表示を切り替える。認証・権限不足時は同期を開始せず、同期失敗時は検証済みbundleを画面に保持して手動再試行を可能にする。
 
 Bucklerの収集タブは`active: false`で背面に開き、Battlegraphからフォーカスを移さない。bundleの返送成功後に収集タブを閉じる。

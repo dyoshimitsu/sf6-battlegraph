@@ -157,6 +157,15 @@ export function App() {
       const status = readCollectorStatusMessage(event.origin, event.data, window.location.origin);
       if (status) {
         if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
+        if (status.status === "started") {
+          setError(null);
+          collectorTimeoutRef.current = window.setTimeout(() => {
+            collectorTimeoutRef.current = null;
+            setIsCollecting(false);
+            setError(t("collectorFetchTimeout"));
+          }, 2 * 60_000);
+          return;
+        }
         if (status.status === "error") {
           collectorTimeoutRef.current = null;
           setIsCollecting(false);
@@ -241,7 +250,7 @@ export function App() {
     collectorTimeoutRef.current = window.setTimeout(() => {
       collectorTimeoutRef.current = null;
       setIsCollecting(false);
-      setError(t("collectorTimeout"));
+      setError(t("collectorStartTimeout"));
     }, 30_000);
   }
 

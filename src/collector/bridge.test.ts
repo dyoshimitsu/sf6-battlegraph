@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "./bridge";
+import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorErrorMessage, createCollectorResultMessage, createCollectorStartedMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage, readConnectorReadyMessage } from "./bridge";
 import type { BucklerCollectorBundle } from "../domain/buckler/types";
 
 const bundle = {
@@ -43,6 +43,11 @@ describe("collector bridge", () => {
     expect(status.message).toHaveLength(500);
     expect(readCollectorStatusMessage("https://owner.github.io", status, "https://owner.github.io")).toEqual(status);
     expect(readCollectorStatusMessage("https://owner.github.io", { ...status, message: 1 }, "https://owner.github.io")).toBeNull();
+  });
+
+  it("accepts a collector started status", () => {
+    const status = createCollectorStartedMessage();
+    expect(readCollectorStatusMessage("https://owner.github.io", status, "https://owner.github.io")).toEqual(status);
   });
 
   it("validates connector version announcements", () => {
