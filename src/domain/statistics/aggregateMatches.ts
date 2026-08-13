@@ -4,6 +4,7 @@ import type {
   MatchResult,
   NormalizedMatch,
 } from "../buckler/types";
+import { compareCharacterSlugs } from "../buckler/characterOrder";
 
 export interface MatchFilters {
   fromDate?: string;
@@ -116,7 +117,7 @@ function groupByCharacter(
     records.set(key, record);
   }
   return Array.from(records.values()).sort(
-    (left, right) => right.matches - left.matches || left.characterName.localeCompare(right.characterName),
+    (left, right) => right.matches - left.matches || compareCharacterSlugs(left.characterSlug, right.characterSlug),
   );
 }
 
