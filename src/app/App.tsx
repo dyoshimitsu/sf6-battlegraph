@@ -118,6 +118,7 @@ export function App() {
   }), [fromDate, imported, mode, subjectCharacterId, toDate]);
   const statistics = useMemo(() => aggregateMatches(filteredMatches), [filteredMatches]);
   const allStatistics = useMemo(() => aggregateMatches(imported?.preview.matches ?? []), [imported]);
+  const availableModes = useMemo(() => [...new Set((imported?.preview.matches ?? []).map(match => match.mode))].filter(value => value !== "all" && value !== "unknown"), [imported]);
   const opponentRecords = useMemo(() => completeOpponentRoster(statistics.byOpponentCharacter, slug => getCharacterNameBySlug(slug, locale)), [locale, statistics.byOpponentCharacter]);
   const hasActiveFilters = Boolean(fromDate || toDate || mode || subjectCharacterId);
   const lastSyncedAtEpoch = readLastSyncedAtEpoch(storedManifest);
@@ -354,7 +355,7 @@ export function App() {
               <section className="analysis-zone"><div className="section-heading"><div><p className="eyebrow">{t("localAnalysis")}</p><h2>{t("recordTitle")}</h2></div><div className="analysis-scope"><strong>{t(hasActiveFilters ? "filteredScope" : "allTime")}</strong><span>{t("showingMatches", { shown: filteredMatches.length, total: imported.preview.uniqueMatchCount })}</span></div></div>
               <div className="filter-bar">
                 <label><span>{t("fromDate")}</span><input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></label><label><span>{t("toDate")}</span><input type="date" value={toDate} onChange={e => setToDate(e.target.value)} /></label>
-                <label><span>{t("mode")}</span><select value={mode} onChange={e => setMode(e.target.value)}><option value="">{t("all")}</option>{imported.preview.sources.filter(s => s.sourceType !== "all" && s.sourceType !== "unknown").map(s => <option key={s.sourceType}>{s.sourceType}</option>)}</select></label>
+                <label><span>{t("mode")}</span><select value={mode} onChange={e => setMode(e.target.value)}><option value="">{t("all")}</option>{availableModes.map(value => <option key={value}>{value}</option>)}</select></label>
                 <label><span>{t("yourCharacter")}</span><select value={subjectCharacterId} onChange={e => setSubjectCharacterId(e.target.value)}><option value="">{t("all")}</option>{[...allStatistics.bySubjectCharacter].sort((a, b) => compareCharacterSlugs(a.characterSlug, b.characterSlug)).filter(r => r.characterId !== null).map(r => { const sample = imported.preview.matches.find(m => (m.subject.playing_character_id ?? m.subject.character_id) === r.characterId); return <option key={r.characterId} value={r.characterId ?? ""}>{sample ? getCharacterName(sample.subject, locale) : r.characterName}</option>; })}</select></label>
                 <button type="button" onClick={resetFilters}>{t("reset")}</button>
               </div>

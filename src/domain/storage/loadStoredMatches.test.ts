@@ -26,6 +26,14 @@ describe("loadStoredMatches", () => {
     expect(result?.reads).toBe(3);
   });
 
+  it("repairs legacy all-mode query matches from their battle metadata", async () => {
+    const { manifest, chunks } = fixture();
+    chunks[0].matches[0] = { ...chunks[0].matches[0], mode: "all", battleType: 4, battleTypeName: "BATTLE HUB" };
+    const port: StoredMatchReadPort = { getManifest: async () => manifest, getChunks: async () => chunks };
+    const result = await loadStoredMatches(port, 100);
+    expect(result?.matches.find(match => match.replayId === "old")?.mode).toBe("hub");
+  });
+
   it("rejects an incomplete generation", async () => {
     const { manifest } = fixture();
     await expect(loadStoredMatches({ getManifest: async () => manifest, getChunks: async () => [] }, 100)).rejects.toThrow(/incomplete/);

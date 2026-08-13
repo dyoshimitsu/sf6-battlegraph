@@ -92,6 +92,24 @@ describe("parseCollectorImport", () => {
     expect(result.matches.every((match) => match.result === "win")).toBe(true);
   });
 
+  it("derives each match mode from a combined battle log", () => {
+    const ranked = replay("RANKED001", 1, 1_700_000_000);
+    const casual = { ...replay("CASUAL001", 1, 1_699_999_900), replay_battle_type: 2, replay_battle_type_name: "CASUAL MATCH" };
+    const custom = { ...replay("CUSTOM001", 1, 1_699_999_800), replay_battle_type: 3, replay_battle_type_name: "CUSTOM ROOM" };
+    const hub = { ...replay("HUB000001", 1, 1_699_999_700), replay_battle_type: 4, replay_battle_type_name: "BATTLE HUB" };
+
+    const result = parseCollectorImport(bundle([
+      bundlePage("all", 1, page(1, 1, [ranked, casual, custom, hub])),
+    ]), SUBJECT);
+
+    expect(Object.fromEntries(result.matches.map(match => [match.replayId, match.mode]))).toEqual({
+      RANKED001: "ranked",
+      CASUAL001: "casual",
+      CUSTOM001: "custom",
+      HUB000001: "hub",
+    });
+  });
+
   it("warns about an incomplete source", () => {
     const input = bundle([
       bundlePage("casual", 1, page(1, 3, [replay("CASUAL001", 1, 1_700_000_000)])),

@@ -1,3 +1,5 @@
+importScripts("background-policy.js");
+
 const START_TYPE = "sf6-battlegraph.collector-start";
 const RESULT_TYPE = "sf6-battlegraph.collector-result";
 const STATUS_TYPE = "sf6-battlegraph.collector-status";
@@ -43,7 +45,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     findTargetTab(sourceTabId).then((targetTabId) => {
       if (targetTabId === undefined) return;
       return chrome.tabs.sendMessage(targetTabId, message).then(() => {
-        if (message.status === "authentication-required") return chrome.tabs.update(sourceTabId, { active: true });
+        if (Sf6BattlegraphBackgroundPolicy.shouldActivateBucklerTab(message.status)) return chrome.tabs.update(sourceTabId, { active: true });
       });
     });
   }

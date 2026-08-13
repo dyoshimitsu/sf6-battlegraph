@@ -65,6 +65,11 @@ describe("filterMatches", () => {
     expect(filterMatches(matches, { mode: "casual", subjectCharacterId: 1 }))
       .toEqual([matches[1]]);
   });
+
+  it("filters by the inferred mode when the acquisition source was all", () => {
+    const casual = { ...matches[1], mode: "casual" as const, sourceTypes: ["all" as const] };
+    expect(filterMatches([matches[0], casual], { mode: "casual" })).toEqual([casual]);
+  });
 });
 
 describe("aggregateMatches", () => {

@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
           if (!appBridge) throw new Error("app-bridge content script was not found");
           appBridge.matches = buildConnectorMatchPatterns(loadEnv(mode, process.cwd(), "").VITE_CONNECTOR_ORIGINS);
           this.emitFile({ type: "asset", fileName: "manifest.json", source: `${JSON.stringify(manifest, null, 2)}\n` });
-          for (const fileName of ["app-bridge.js", "buckler-bridge.js", "auth-watcher.js", "background.js"]) {
+          for (const fileName of ["app-bridge.js", "buckler-bridge.js", "auth-watcher.js", "background-policy.js", "background.js"]) {
             this.emitFile({ type: "asset", fileName, source: readFileSync(`extension/${fileName}`, "utf8") });
           }
         },

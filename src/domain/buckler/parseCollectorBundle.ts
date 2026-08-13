@@ -1,4 +1,5 @@
 import { parseBucklerPage } from "./parseBucklerPage";
+import { inferBattleMode } from "./battleModes";
 import {
   BucklerValidationError,
   type BucklerBundlePreview,
@@ -146,7 +147,7 @@ function normalizeReplay(
     battleType: replay.replay_battle_type,
     battleSubType: replay.replay_battle_sub_type,
     battleTypeName: replay.replay_battle_type_name,
-    mode: sourceType,
+    mode: inferBattleMode(replay, sourceType),
     sourceTypes: [sourceType],
     subjectSide,
     result: inferResult(roundsWon, roundsLost),

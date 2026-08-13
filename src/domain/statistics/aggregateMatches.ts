@@ -74,7 +74,7 @@ export function filterMatches(
     const date = toTokyoDate(match.playedAtEpoch);
     if (filters.fromDate && date < filters.fromDate) return false;
     if (filters.toDate && date > filters.toDate) return false;
-    if (filters.mode && !match.sourceTypes.includes(filters.mode)) return false;
+    if (filters.mode && match.mode !== filters.mode && !match.sourceTypes.includes(filters.mode)) return false;
     if (
       filters.subjectCharacterId !== undefined &&
       characterId(match.subject) !== filters.subjectCharacterId

@@ -1,4 +1,5 @@
 import type { BucklerPlayerInfo, BucklerReplay, NormalizedMatch } from "../buckler/types";
+import { inferBattleMode } from "../buckler/battleModes";
 import type { QueryChunk, QueryChunkDescriptor, QueryMatch, QueryPlayer } from "./queryChunks";
 
 export interface StoredManifest {
@@ -61,7 +62,7 @@ export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
     battleType: match.battleType,
     battleSubType: match.battleSubType,
     battleTypeName: match.battleTypeName,
-    mode: match.mode,
+    mode: inferBattleMode(raw, match.mode),
     sourceTypes: [...match.sourceTypes],
     subjectSide: 1,
     result: match.result,
