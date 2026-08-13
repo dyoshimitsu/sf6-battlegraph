@@ -17,7 +17,7 @@ export default defineConfig({
         name: "extension-manifest",
         generateBundle() {
           this.emitFile({ type: "asset", fileName: "manifest.json", source: readFileSync("extension/manifest.json", "utf8") });
-          for (const fileName of ["app-bridge.js", "buckler-bridge.js", "background.js"]) {
+          for (const fileName of ["app-bridge.js", "buckler-bridge.js", "auth-watcher.js", "background.js"]) {
             this.emitFile({ type: "asset", fileName, source: readFileSync(`extension/${fileName}`, "utf8") });
           }
         },

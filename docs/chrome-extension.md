@@ -25,6 +25,8 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 
 通常のBuckler閲覧では接続フラグがないため収集しない。取得失敗時は不完全なbundleを返さない。
 
+Buckler認証が切れている場合、拡張は認証画面への遷移を検出して収集タブを前面へ出す。ユーザーがログインしBattle Logへ戻ると、同じ要求の取得と同期を自動再開する。10分以内にログインが完了しない場合、Battlegraph側の待機表示を解除する。
+
 ## Permissions and isolation
 
 - content scriptの対象は`https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*`だけ

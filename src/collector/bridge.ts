@@ -3,6 +3,7 @@ import type { BucklerCollectorBundle } from "../domain/buckler/types";
 export const COLLECTOR_MESSAGE_TYPE = "sf6-battlegraph.collector-result";
 export const COLLECTOR_MESSAGE_VERSION = 1;
 export const COLLECTOR_START_MESSAGE_TYPE = "sf6-battlegraph.collector-start";
+export const COLLECTOR_STATUS_MESSAGE_TYPE = "sf6-battlegraph.collector-status";
 export const BUCKLER_ORIGIN = "https://www.streetfighter.com";
 export const BATTLEGRAPH_ORIGIN_PARAMETER = "sf6-battlegraph-origin";
 
@@ -18,8 +19,28 @@ export interface CollectorStartMessage {
   url: string;
 }
 
+export interface CollectorStatusMessage {
+  type: typeof COLLECTOR_STATUS_MESSAGE_TYPE;
+  version: typeof COLLECTOR_MESSAGE_VERSION;
+  status: "authentication-required";
+}
+
 export function createCollectorStartMessage(url: string): CollectorStartMessage {
   return { type: COLLECTOR_START_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, url };
+}
+
+export function createCollectorAuthenticationRequiredMessage(): CollectorStatusMessage {
+  return { type: COLLECTOR_STATUS_MESSAGE_TYPE, version: COLLECTOR_MESSAGE_VERSION, status: "authentication-required" };
+}
+
+export function readCollectorStatusMessage(origin: string, value: unknown, receiverOrigin: string): CollectorStatusMessage | null {
+  if (origin !== receiverOrigin || typeof value !== "object" || value === null) return null;
+  const candidate = value as Partial<CollectorStatusMessage>;
+  return candidate.type === COLLECTOR_STATUS_MESSAGE_TYPE
+    && candidate.version === COLLECTOR_MESSAGE_VERSION
+    && candidate.status === "authentication-required"
+    ? candidate as CollectorStatusMessage
+    : null;
 }
 
 export function createCollectorResultMessage(bundle: BucklerCollectorBundle): CollectorResultMessage {

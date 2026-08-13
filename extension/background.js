@@ -1,5 +1,6 @@
 const START_TYPE = "sf6-battlegraph.collector-start";
 const RESULT_TYPE = "sf6-battlegraph.collector-result";
+const STATUS_TYPE = "sf6-battlegraph.collector-status";
 const requests = new Map();
 
 chrome.runtime.onMessage.addListener((message, sender) => {
@@ -14,5 +15,10 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     if (targetTabId === undefined) return;
     requests.delete(sender.tab.id);
     chrome.tabs.sendMessage(targetTabId, message).then(() => chrome.tabs.remove(sender.tab.id));
+  }
+  if (message?.type === STATUS_TYPE && sender.tab?.id !== undefined) {
+    const targetTabId = requests.get(sender.tab.id);
+    if (targetTabId === undefined) return;
+    chrome.tabs.sendMessage(targetTabId, message).then(() => chrome.tabs.update(sender.tab.id, { active: true }));
   }
 });

@@ -21,7 +21,7 @@ import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
-import { buildBucklerLaunchUrl, createCollectorStartMessage, readCollectorResultMessage } from "../collector/bridge";
+import { buildBucklerLaunchUrl, createCollectorStartMessage, readCollectorResultMessage, readCollectorStatusMessage } from "../collector/bridge";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
@@ -140,6 +140,17 @@ export function App() {
 
   useEffect(() => {
     function receiveCollectorResult(event: MessageEvent) {
+      const status = readCollectorStatusMessage(event.origin, event.data, window.location.origin);
+      if (status) {
+        if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);
+        collectorTimeoutRef.current = window.setTimeout(() => {
+          collectorTimeoutRef.current = null;
+          setIsCollecting(false);
+          setError(t("collectorLoginTimeout"));
+        }, 10 * 60_000);
+        setError(t("collectorAuthenticationRequired"));
+        return;
+      }
       const message = readCollectorResultMessage(event.origin, event.data, window.location.origin);
       if (!message) return;
       if (collectorTimeoutRef.current !== null) window.clearTimeout(collectorTimeoutRef.current);

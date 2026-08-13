@@ -9,6 +9,13 @@
   "content_scripts": [
     {
       "matches": [
+        "https://www.streetfighter.com/6/buckler/*"
+      ],
+      "js": ["auth-watcher.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "https://www.streetfighter.com/6/buckler/*/profile/*/battlelog*"
       ],
       "js": ["collector.js"],

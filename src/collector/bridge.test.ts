@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage } from "./bridge";
+import { BUCKLER_ORIGIN, buildBucklerLaunchUrl, createCollectorAuthenticationRequiredMessage, createCollectorResultMessage, readBattlegraphTargetOrigin, readCollectorResultMessage, readCollectorStatusMessage } from "./bridge";
 import type { BucklerCollectorBundle } from "../domain/buckler/types";
 
 const bundle = {
@@ -30,5 +30,11 @@ describe("collector bridge", () => {
     expect(readBattlegraphTargetOrigin(url.hash)).toBe("https://owner.github.io");
     expect(readBattlegraphTargetOrigin("#sf6-battlegraph-origin=http%3A%2F%2F192.168.201.128%3A5174")).toBe("http://192.168.201.128:5174");
     expect(readBattlegraphTargetOrigin("#sf6-battlegraph-origin=http://example.com")).toBeNull();
+  });
+
+  it("accepts authentication status only from the receiver origin", () => {
+    const status = createCollectorAuthenticationRequiredMessage();
+    expect(readCollectorStatusMessage("https://owner.github.io", status, "https://owner.github.io")).toEqual(status);
+    expect(readCollectorStatusMessage(BUCKLER_ORIGIN, status, "https://owner.github.io")).toBeNull();
   });
 });
