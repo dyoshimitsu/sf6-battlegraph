@@ -54,6 +54,8 @@ Firestore adapterは1 batchあたり450 writeを上限とし、全data batchのc
 
 query chunkはactive generationと直前1世代だけを保持する。同期時は新manifestへ直前世代と削除予定IDを先に記録し、2世代以上前を削除してから削除予定を解除する。manifest切替前の失敗では旧activeを維持し、切替後の整理失敗では新activeを利用しながら次回同期で削除を再試行する。
 
+管理者はFirestoreの全保存層をパス付きdocument配列として単一JSONへバックアップできる。通常表示では実行せず、明示操作と確認後にだけ完全match、raw snapshot/page/partを含む全対象を読み取る。復元機能はバックアップ形式の実データ検証後に追加する。
+
 UIは日本語と英語に対応する。初回はブラウザ言語から選択し、利用者の選択を`localStorage`へ保存する。翻訳は軽量な型付き辞書で管理し、両言語のキーと埋め込み変数が一致することをテストする。デザインはチャコールを基調に、ライムを状態・主要操作のアクセントとして使う。
 
 ## Confirmed decisions

@@ -15,6 +15,8 @@ import { loadStoredMatches, type StoredManifest } from "../domain/storage/loadSt
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
 import { createSyncId } from "../domain/storage/createSyncId";
+import { exportFirestoreArchive } from "../domain/storage/exportArchive";
+import { createFirestoreArchivePort } from "../firebase/firestoreArchivePort";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -86,6 +88,7 @@ export function App() {
   const [isLoadingStored, setIsLoadingStored] = useState(false);
   const [archivedMatches, setArchivedMatches] = useState<NormalizedMatch[] | null>(null);
   const [storedManifest, setStoredManifest] = useState<StoredManifest | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const dateTimeFormatter = useMemo(() => new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Tokyo",
@@ -176,6 +179,23 @@ export function App() {
     } finally { setIsSyncing(false); }
   }
 
+  async function exportBackup() {
+    if (firebaseRuntime.status !== "ready" || adminAuth.state.status !== "admin" || !window.confirm(t("backupConfirm"))) return;
+    setIsExporting(true); setError(null);
+    try {
+      const archive = await exportFirestoreArchive(createFirestoreArchivePort(firebaseRuntime.services.db), INITIAL_USER_CODE);
+      const blob = new Blob([JSON.stringify(archive)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `sf6-battlegraph-backup-${INITIAL_USER_CODE}-${archive.exportedAt.replace(/[:.]/g, "-")}.json`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t("backupFailed"));
+    } finally { setIsExporting(false); }
+  }
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -184,6 +204,7 @@ export function App() {
           <span className={`status-pill auth-${adminAuth.state.status}`} title={adminAuth.state.status === "error" ? adminAuth.state.message : undefined}><i /> {authLabel}</span>
           {adminAuth.state.status === "signedOut" && <button className="auth-button" type="button" onClick={() => void adminAuth.signIn()}>{t("googleSignIn")}</button>}
           {(adminAuth.state.status === "admin" || adminAuth.state.status === "notAdmin") && <button className="auth-button" type="button" onClick={() => void adminAuth.signOut()}>{t("signOut")}</button>}
+          {adminAuth.state.status === "admin" && <button className="auth-button" type="button" disabled={isExporting} onClick={() => void exportBackup()}>{isExporting ? t("backupExporting") : t("backupExport")}</button>}
           <div className="language-switch" aria-label="Language">
             <button className={locale === "ja" ? "active" : ""} onClick={() => setLocale("ja")}>JP</button>
             <button className={locale === "en" ? "active" : ""} onClick={() => setLocale("en")}>EN</button>
