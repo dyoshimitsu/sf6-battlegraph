@@ -27,14 +27,16 @@ import {
 import { createSyncId } from "../domain/storage/createSyncId";
 import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
 import { exportFirestoreArchive } from "../domain/storage/exportArchive";
+import { hydrateMatchSides } from "../domain/storage/hydrateMatchSides";
 import { loadStoredMatches, type StoredManifest } from "../domain/storage/loadStoredMatches";
-import { summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
+import { mergeStoredMatches, summarizeStoredMerge } from "../domain/storage/mergeStoredMatches";
 import { buildRestorePlan, executeRestorePlan } from "../domain/storage/restoreArchive";
 import { getSyncFreshness, readLastSyncedAtEpoch } from "../domain/storage/syncFreshness";
 import { buildSyncPlan } from "../domain/storage/syncPlan";
 import { validateFirestoreArchive } from "../domain/storage/validateArchive";
 import { deploymentConfig, firebaseRuntime } from "../firebase/client";
 import { createFirestoreArchivePort } from "../firebase/firestoreArchivePort";
+import { createFirestoreMatchSidePort } from "../firebase/firestoreMatchSidePort";
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
@@ -379,9 +381,15 @@ export function App() {
               INITIAL_USER_CODE,
             )
           : null;
-      const existing = archivedMatches ?? loaded?.matches ?? [];
+      const stored = archivedMatches ?? loaded?.matches ?? [];
       const previousManifest = storedManifest ?? loaded?.manifest;
-      const summary = summarizeStoredMerge(existing, imported.preview.matches);
+      const summary = summarizeStoredMerge(stored, imported.preview.matches);
+      const merged = mergeStoredMatches(stored, imported.preview.matches);
+      const { matches: existing, hydratedCount } = await hydrateMatchSides(
+        createFirestoreMatchSidePort(firebaseRuntime.services.db),
+        INITIAL_USER_CODE,
+        merged,
+      );
       const plan = buildSyncPlan(
         imported.source,
         imported.preview,
@@ -408,13 +416,16 @@ export function App() {
         canSync: false,
         preview: storedPreview(plan.storedMatches, (plan.manifest.data.chunks as unknown[]).length),
       });
+      const completeMessage = t("syncComplete", {
+        count: summary.totalMatches,
+        newCount: summary.newMatches,
+        refreshedCount: summary.refreshedMatches,
+        retainedCount: summary.retainedMatches,
+      });
       setSyncMessage(
-        t("syncComplete", {
-          count: summary.totalMatches,
-          newCount: summary.newMatches,
-          refreshedCount: summary.refreshedMatches,
-          retainedCount: summary.retainedMatches,
-        }),
+        hydratedCount > 0
+          ? `${completeMessage} ${t("sideMigrationComplete", { count: hydratedCount })}`
+          : completeMessage,
       );
     } catch (cause) {
       setSyncMessage(cause instanceof Error ? cause.message : t("syncFailed"));

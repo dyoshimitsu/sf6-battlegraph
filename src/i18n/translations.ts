@@ -32,6 +32,7 @@ export const translations = {
     syncing: "同期中…",
     syncComplete:
       "合計{count}試合を保存しました（新規 {newCount}・再取得 {refreshedCount}・既存維持 {retainedCount}）",
+    sideMigrationComplete: "過去{count}試合の1P・2P情報を復元しました。",
     syncFailed: "Firestore同期に失敗しました",
     storedData: "保存済みの戦績",
     loadingStored: "Firestoreから保存済み戦績を読み込んでいます…",
@@ -166,6 +167,7 @@ export const translations = {
     syncing: "Syncing…",
     syncComplete:
       "Stored {count} matches (new {newCount}, refreshed {refreshedCount}, retained {retainedCount})",
+    sideMigrationComplete: "Restored P1/P2 data for {count} previous matches.",
     syncFailed: "Firestore synchronization failed",
     storedData: "Stored battle records",
     loadingStored: "Loading stored records from Firestore…",

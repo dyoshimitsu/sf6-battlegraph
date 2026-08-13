@@ -185,7 +185,7 @@ query chunk は集計に必要なフィールドをまとめた read optimizatio
 }
 ```
 
-`subjectSide`は追跡対象ユーザーが1P側なら`1`、2P側なら`2`。schema version 1の旧chunkには存在しないため、クライアントは推測せず不明として扱う。次回以降に同じreplayをBucklerから再取得したとき、新しいgenerationへ正確なsideが保存される。
+`subjectSide`は追跡対象ユーザーが1P側なら`1`、2P側なら`2`。schema version 1の旧chunkには存在しないため、クライアントは推測せず不明として扱う。次の管理者同期時に、不足する完全matchだけからsideを一度読み取り、新しいgenerationへ保存する。移行後の通常閲覧では追加readは発生しない。
 
 chunk は月単位を基本とし、以下のいずれかに達する前に分割する。
 
