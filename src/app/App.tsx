@@ -1352,6 +1352,10 @@ function CharacterPanel({
               (match[side].playing_character_id ?? match[side].character_id) === record.characterId,
           );
           const winRate = record.winRate ?? 0;
+          const opponentColor =
+            side === "opponent" && record.winRate !== null
+              ? `hsl(${winRate >= 50 ? 145 : 5} 60% ${25 + (Math.abs(winRate - 50) / 50) * 17}%)`
+              : undefined;
           return (
             <div key={`${record.characterId}-${record.characterSlug}`}>
               <span className="character-name">
@@ -1368,8 +1372,8 @@ function CharacterPanel({
                   losses: record.losses,
                 })}
               </small>
-              <div className="win-rate">
-                <i style={{ width: `${winRate}%` }} />
+              <div className={`win-rate${side === "opponent" ? " opponent-win-rate" : ""}`}>
+                <i style={{ width: `${winRate}%`, background: opponentColor }} />
                 <span>{formatWinRate(winRate)}</span>
               </div>
             </div>
