@@ -782,6 +782,42 @@ th {
 }
 .character-records .record-line {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.character-records .record-line span {
+  color: var(--muted);
+  font: inherit;
+}
+.matchup-priorities {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #171d18;
+  border: 1px solid #334237;
+  border-radius: 9px;
+}
+.matchup-priorities > strong {
+  color: var(--accent);
+  font-size: 13px;
+}
+.matchup-priorities > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.matchup-priority-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.matchup-priority-list span {
+  padding: 5px 8px;
+  color: #e2e7de;
+  background: #263127;
+  border-radius: 5px;
+  font-size: 11px;
 }
 .is-roster .character-records {
   grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
@@ -838,12 +874,18 @@ th {
   text-align: right;
 }
 .matchup-search {
-  grid-column: 1 / -1;
-  justify-self: start;
-  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   color: #b9c2a4;
-  font-size: 11px;
+  padding: 2px;
   text-decoration: none;
+}
+.matchup-search svg {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 .matchup-search:hover {
   color: var(--accent);
