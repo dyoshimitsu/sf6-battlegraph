@@ -111,7 +111,8 @@ export const translations = {
     opponentCharacterRecords: "対戦相手キャラクター",
     matchupSearch: "YouTubeで対策を探す",
     matchupPriorities: "対策候補",
-    matchupPriorityDescription: "勝敗が確定した10戦以上で負け越している相手を、負け越し数順に表示",
+    matchupPriorityDescription:
+      "絞り込み後の直近ランクマッチ100戦から、勝敗確定10戦以上で負け越している相手を負け越し数順に表示",
     matchupPriorityEmpty: "条件に合うキャラクターはありません",
     recordLine: "{matches}戦 · {wins}勝 {losses}敗",
     recentMatches: "RECENT MATCHES",
@@ -240,7 +241,7 @@ export const translations = {
     matchupSearch: "Find matchup guides on YouTube",
     matchupPriorities: "Matchups to practice",
     matchupPriorityDescription:
-      "Losing matchups with 10 or more decided games, ranked by net losses",
+      "From the latest 100 filtered ranked matches: losing matchups with 10 or more decided games, ranked by net losses",
     matchupPriorityEmpty: "No matchups meet these criteria",
     recordLine: "{matches} matches · {wins}W {losses}L",
     recentMatches: "RECENT MATCHES",

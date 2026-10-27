@@ -20,7 +20,7 @@ import {
 import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
 import { buildDailyWindow } from "../domain/statistics/dailyWindow";
-import { matchupPriorities } from "../domain/statistics/matchupPriorities";
+import { recentRankedMatchupPriorities } from "../domain/statistics/matchupPriorities";
 import {
   latestRatingCharacterKey,
   ratingCharacterKey,
@@ -188,8 +188,8 @@ export function App() {
     [locale, statistics.byOpponentCharacter],
   );
   const priorityMatchups = useMemo(
-    () => matchupPriorities(statistics.byOpponentCharacter),
-    [statistics.byOpponentCharacter],
+    () => recentRankedMatchupPriorities(filteredMatches),
+    [filteredMatches],
   );
   const hasActiveFilters = Boolean(
     fromDate || toDate || actId || battleVersion || mode || subjectCharacterId,
