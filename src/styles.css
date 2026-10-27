@@ -837,6 +837,22 @@ th {
     monospace;
   text-align: right;
 }
+.matchup-search {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 6px;
+  color: #b9c2a4;
+  font-size: 11px;
+  text-decoration: none;
+}
+.matchup-search:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.matchup-search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 .lp-card {
   margin-top: 14px;
   padding: 24px;

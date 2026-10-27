@@ -1017,6 +1017,7 @@ export function App() {
                     side="opponent"
                     locale={locale}
                     recordLine={t}
+                    matchupSearchLabel={t("matchupSearch")}
                   />
                 </div>
               </section>
@@ -1332,6 +1333,7 @@ function CharacterPanel({
   side,
   locale,
   recordLine,
+  matchupSearchLabel,
 }: {
   eyebrow: string;
   title: string;
@@ -1340,6 +1342,7 @@ function CharacterPanel({
   side: "subject" | "opponent";
   locale: "ja" | "en";
   recordLine: (key: "recordLine", values: Record<string, number>) => string;
+  matchupSearchLabel?: string;
 }) {
   return (
     <article className="analysis-card character-panel is-roster">
@@ -1356,11 +1359,18 @@ function CharacterPanel({
             side === "opponent" && record.winRate !== null
               ? `hsl(${winRate >= 50 ? 145 : 5} 60% ${25 + (Math.abs(winRate - 50) / 50) * 17}%)`
               : undefined;
+          const characterName = sample
+            ? getCharacterName(sample[side], locale)
+            : record.characterName;
+          const japaneseName = getCharacterNameBySlug(
+            record.characterSlug,
+            "ja",
+            sample?.[side].playing_character_name ?? sample?.[side].character_name,
+          );
+          const searchUrl = `https://www.youtube.com/results?${new URLSearchParams({ search_query: `スト6 ${japaneseName} 対策` })}`;
           return (
             <div key={`${record.characterId}-${record.characterSlug}`}>
-              <span className="character-name">
-                {sample ? getCharacterName(sample[side], locale) : record.characterName}
-              </span>
+              <span className="character-name">{characterName}</span>
               <strong className="match-count">
                 {record.matches}
                 <small>{locale === "ja" ? "戦" : " matches"}</small>
@@ -1376,6 +1386,17 @@ function CharacterPanel({
                 <i style={{ width: `${winRate}%`, background: opponentColor }} />
                 <span>{formatWinRate(winRate)}</span>
               </div>
+              {side === "opponent" && matchupSearchLabel && (
+                <a
+                  className="matchup-search"
+                  href={searchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${characterName}: ${matchupSearchLabel}`}
+                >
+                  {matchupSearchLabel} ↗
+                </a>
+              )}
             </div>
           );
         })}
