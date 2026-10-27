@@ -782,6 +782,42 @@ th {
 }
 .character-records .record-line {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.character-records .record-line span {
+  color: var(--muted);
+  font: inherit;
+}
+.matchup-priorities {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #171d18;
+  border: 1px solid #334237;
+  border-radius: 9px;
+}
+.matchup-priorities > strong {
+  color: var(--accent);
+  font-size: 13px;
+}
+.matchup-priorities > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.matchup-priority-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.matchup-priority-list span {
+  padding: 5px 8px;
+  color: #e2e7de;
+  background: #263127;
+  border-radius: 5px;
+  font-size: 11px;
 }
 .is-roster .character-records {
   grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
@@ -816,9 +852,19 @@ th {
   background: linear-gradient(90deg, #789d27, var(--accent));
   border-radius: 4px;
 }
+.opponent-win-rate::after {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.55);
+  content: "";
+}
 .win-rate span {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: block;
   padding: 2px 6px;
   color: #f3f5f0;
@@ -826,6 +872,28 @@ th {
     600 9px "DM Mono",
     monospace;
   text-align: right;
+}
+.matchup-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #b9c2a4;
+  padding: 2px;
+  text-decoration: none;
+}
+.matchup-search svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+.matchup-search:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.matchup-search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 .lp-card {
   margin-top: 14px;
