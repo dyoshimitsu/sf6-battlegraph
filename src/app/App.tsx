@@ -830,6 +830,11 @@ export function App() {
                             <small className="secondary-detail rating-detail">
                               {formatRating(match.opponent)}
                             </small>
+                            {match.opponent.player.fighter_id && (
+                              <small className="secondary-detail opponent-identity">
+                                {match.opponent.player.fighter_id}
+                              </small>
+                            )}
                             {match.opponentPeak && (
                               <small
                                 className="secondary-detail opponent-identity"
