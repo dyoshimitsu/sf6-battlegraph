@@ -76,6 +76,7 @@ export function queryMatchToNormalized(match: QueryMatch): NormalizedMatch {
     roundsLost: match.roundsLost,
     subject,
     opponent,
+    opponentPeak: match.opponentPeak,
     raw,
   };
 }

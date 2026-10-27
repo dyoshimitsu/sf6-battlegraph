@@ -830,11 +830,21 @@ export function App() {
                             <small className="secondary-detail rating-detail">
                               {formatRating(match.opponent)}
                             </small>
-                            <small className="secondary-detail opponent-identity">
-                              {match.opponent.player.fighter_id ?? "—"} ·{" "}
-                              {match.opponent.player.short_id} ·{" "}
-                              {match.opponent.player.platform_name ?? "—"}
-                            </small>
+                            {match.opponentPeak && (
+                              <small
+                                className="secondary-detail opponent-identity"
+                                title={`${t("opponentPeak")}: ${formatTimestamp(Date.parse(match.opponentPeak.fetchedAt) / 1000)}`}
+                              >
+                                {t("opponentPeak")} {match.opponentPeak.rating.toLocaleString()} MR
+                                ·{" "}
+                                {getCharacterNameBySlug(
+                                  match.opponentPeak.characterSlug,
+                                  locale,
+                                  match.opponentPeak.characterName,
+                                )}{" "}
+                                · Act {match.opponentPeak.actId}
+                              </small>
+                            )}
                           </td>
                           <td>
                             <span className="primary-detail">

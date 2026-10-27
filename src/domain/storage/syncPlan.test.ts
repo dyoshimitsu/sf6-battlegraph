@@ -63,6 +63,25 @@ function preview(): BucklerBundlePreview {
 }
 
 describe("buildSyncPlan", () => {
+  it("preserves the first peak in both stored matches and complete match writes", () => {
+    const peak = {
+      actId: 13,
+      fetchedAt: "2026-08-13T00:00:00Z",
+      rating: 1591,
+      characterId: 28,
+      characterName: "舞",
+      characterSlug: "mai",
+    };
+    const old = { ...normalizedMatch(), opponentPeak: peak };
+    const incoming = preview();
+    incoming.matches[0].opponentPeak = { ...peak, rating: 1700 };
+    const plan = buildSyncPlan({}, incoming, "sync-peak", "generation-peak", "private", [old]);
+    expect(plan.storedMatches[0].opponentPeak).toEqual(peak);
+    expect(
+      plan.writesBeforeManifest.find((write) => write.path.endsWith("/matches/REPLAY1"))?.data
+        .opponentPeak,
+    ).toEqual(peak);
+  });
   it("plans raw, complete match, chunk, sync, and manifest writes", () => {
     const source = {
       format: "sf6-battlegraph.collector",

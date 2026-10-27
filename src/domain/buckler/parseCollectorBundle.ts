@@ -1,4 +1,5 @@
 import { inferBattleMode } from "./battleModes";
+import { parseOpponentPeak } from "./opponentPeak";
 import { parseBucklerPage } from "./parseBucklerPage";
 import {
   type BucklerBundlePreview,
@@ -105,6 +106,39 @@ function parseBundle(input: unknown): BucklerCollectorBundle | null {
     };
   });
 
+  const opponentPeaks =
+    input.opponentPeaks === undefined
+      ? undefined
+      : (() => {
+          if (!Array.isArray(input.opponentPeaks))
+            throw new BucklerValidationError("bundle.opponentPeaks must be an array");
+          return input.opponentPeaks.map((value, index) => {
+            if (!isRecord(value))
+              throw new BucklerValidationError(`bundle.opponentPeaks[${index}] must be an object`);
+            const userCode = requireNumber(value.userCode, "opponentPeak.userCode");
+            const actId = requireNumber(value.actId, "opponentPeak.actId");
+            if (
+              !Number.isSafeInteger(userCode) ||
+              userCode <= 0 ||
+              !Number.isSafeInteger(actId) ||
+              actId < 0
+            )
+              throw new BucklerValidationError("Invalid opponent peak identifiers");
+            const snapshot = {
+              userCode,
+              actId,
+              fetchedAt: parseIsoDate(value.fetchedAt, "opponentPeak.fetchedAt"),
+              response: value.response,
+            };
+            try {
+              parseOpponentPeak(snapshot);
+            } catch {
+              throw new BucklerValidationError("Invalid opponent peak response");
+            }
+            return snapshot;
+          });
+        })();
+
   return {
     format: "sf6-battlegraph.collector",
     version: 1,
@@ -112,6 +146,7 @@ function parseBundle(input: unknown): BucklerCollectorBundle | null {
     buildId,
     exportedAt,
     pages,
+    opponentPeaks,
     knownReplayBoundaryCount,
     ...(stopReason === "known-replay" ? { stopReason, stoppedAtKnownReplayId } : {}),
   };
@@ -276,9 +311,13 @@ export function parseCollectorImport(
     warnings.push("Known replay boundary was not found; all available pages were fetched");
   }
 
-  const normalizedMatches = Array.from(matches.values()).sort(
-    (left, right) => right.playedAtEpoch - left.playedAtEpoch,
+  const peaks = new Map(
+    bundle?.opponentPeaks?.map((snapshot) => [snapshot.userCode, parseOpponentPeak(snapshot)]) ??
+      [],
   );
+  const normalizedMatches = Array.from(matches.values())
+    .map((match) => ({ ...match, opponentPeak: peaks.get(match.opponent.player.short_id) }))
+    .sort((left, right) => right.playedAtEpoch - left.playedAtEpoch);
   const timestamps = normalizedMatches.map((match) => match.playedAtEpoch);
 
   return {

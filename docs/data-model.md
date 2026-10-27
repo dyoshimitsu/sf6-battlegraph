@@ -187,6 +187,8 @@ query chunk は集計に必要なフィールドをまとめた read optimizatio
 
 `subjectSide`は追跡対象ユーザーが1P側なら`1`、2P側なら`2`。schema version 1の旧chunkには存在しないため、クライアントは推測せず不明として扱う。次の管理者同期時に、不足する完全matchだけからsideを一度読み取り、新しいgenerationへ保存する。移行後の通常閲覧では追加readは発生しない。
 
+`opponentPeak`は任意の取得時点スナップショットで、`actId`、`fetchedAt`、`rating`、`characterId`、`characterName`、`characterSlug`を含む。完全matchとquery chunkの両方に保存し、同じreplayを再取得しても最初の値を維持する。元のプロフィールAPIレスポンスはraw snapshotのpageに保存する。旧データや取得できなかった場合は値を持たない。
+
 chunk は月単位を基本とし、以下のいずれかに達する前に分割する。
 
 - 最大 250 試合

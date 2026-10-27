@@ -3,6 +3,7 @@ import type {
   BucklerSourceType,
   MatchResult,
   NormalizedMatch,
+  OpponentPeak,
 } from "../buckler/types";
 import { toTokyoDate } from "../statistics/aggregateMatches";
 
@@ -39,6 +40,7 @@ export interface QueryMatch {
   roundsLost: number;
   subject: QueryPlayer;
   opponent: QueryPlayer;
+  opponentPeak?: OpponentPeak;
 }
 
 export interface QueryChunk {
@@ -107,6 +109,7 @@ export function toQueryMatch(match: NormalizedMatch): QueryMatch {
     roundsLost: match.roundsLost,
     subject: playerToQuery(match.subject),
     opponent: playerToQuery(match.opponent),
+    opponentPeak: match.opponentPeak,
   };
 }
 

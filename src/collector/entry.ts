@@ -7,6 +7,7 @@ import {
   readKnownReplayIds,
 } from "./bridge";
 import { collectBattleLogs } from "./collectBattleLogs";
+import { collectOpponentPeaks } from "./collectOpponentPeaks";
 
 interface NextData {
   buildId?: string;
@@ -65,6 +66,16 @@ async function run() {
       );
     },
   });
+  try {
+    bundle.opponentPeaks = await collectOpponentPeaks(
+      bundle,
+      window.fetch.bind(window),
+      window.location.origin,
+      locale,
+    );
+  } catch (error) {
+    console.warn("[SF6 Battlegraph] Opponent peak collection failed", error);
+  }
   sendToBattlegraph(bundle);
   console.info("[SF6 Battlegraph] Collection complete", {
     pages: bundle.pages.length,

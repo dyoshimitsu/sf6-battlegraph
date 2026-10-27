@@ -41,6 +41,21 @@ describe("mergeStoredMatches", () => {
     expect(merged.sourceTypes).toEqual(["ranked", "all"]);
   });
 
+  it("preserves the first acquired peak even when a replay is fetched again", () => {
+    const peak = {
+      actId: 13,
+      fetchedAt: "2026-08-13T00:00:00Z",
+      rating: 1591,
+      characterId: 28,
+      characterName: "舞",
+      characterSlug: "mai",
+    };
+    const existing = { ...match("same", 1), opponentPeak: peak };
+    const incoming = { ...match("same", 1), opponentPeak: { ...peak, rating: 1700 } };
+    expect(mergeStoredMatches([existing], [incoming])[0].opponentPeak).toEqual(peak);
+    expect(mergeStoredMatches([match("same", 1)], [incoming])[0].opponentPeak?.rating).toBe(1700);
+  });
+
   it("reports new, refreshed, retained, and total matches without double-counting ids", () => {
     expect(
       summarizeStoredMerge(

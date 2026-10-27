@@ -19,6 +19,7 @@ export function mergeStoredMatches(
       previous
         ? {
             ...match,
+            opponentPeak: previous.opponentPeak ?? match.opponentPeak,
             sourceTypes: [...new Set([...previous.sourceTypes, ...match.sourceTypes])],
           }
         : match,

@@ -38,6 +38,8 @@ interface RawPage {
   page: number;
   fetchedAt?: string;
   response: unknown;
+  opponentUserCode?: number;
+  actId?: number;
 }
 
 function rawPages(source: unknown): RawPage[] {
@@ -46,7 +48,8 @@ function rawPages(source: unknown): RawPage[] {
     typeof source === "object" &&
     (source as Partial<BucklerCollectorBundle>).format === "sf6-battlegraph.collector"
   ) {
-    return ((source as BucklerCollectorBundle).pages ?? []).map((item, index) => ({
+    const bundle = source as BucklerCollectorBundle;
+    const pages = (bundle.pages ?? []).map((item, index) => ({
       id: `${item.sourceType}_${String(item.page).padStart(3, "0")}_${index}`,
       sourceType: item.sourceType,
       sourcePath: item.sourcePath,
@@ -54,6 +57,17 @@ function rawPages(source: unknown): RawPage[] {
       fetchedAt: item.fetchedAt,
       response: item.response,
     }));
+    const peaks = (bundle.opponentPeaks ?? []).map((item, index) => ({
+      id: `opponent_peak_${String(index).padStart(3, "0")}`,
+      sourceType: "opponent-peak",
+      sourcePath: "/api/profile/play/act/highest/master_rating_info",
+      page: index + 1,
+      fetchedAt: item.fetchedAt,
+      response: item.response,
+      opponentUserCode: item.userCode,
+      actId: item.actId,
+    }));
+    return [...pages, ...peaks];
   }
   const response = source as Partial<BucklerPageResponse>;
   return [
@@ -113,6 +127,7 @@ function completeMatch(match: NormalizedMatch, syncId: string): Record<string, u
     opponentLeaguePoint: match.opponent.league_point,
     opponentLeagueRank: match.opponent.league_rank,
     opponentMasterRating: match.opponent.master_rating,
+    opponentPeak: match.opponentPeak,
     raw: match.raw,
     sourceSyncIds: [syncId],
     schemaVersion: STORAGE_SCHEMA_VERSION,
@@ -193,14 +208,18 @@ export function buildSyncPlan(
           sourcePath: page.sourcePath,
           page: page.page,
           fetchedAt: page.fetchedAt,
+          opponentUserCode: page.opponentUserCode,
+          actId: page.actId,
         },
         raw: page.response,
       }),
     ),
-    ...preview.matches.map((match) => ({
-      path: `${base}/matches/${match.replayId}`,
-      data: completeMatch(match, syncId),
-    })),
+    ...allMatches
+      .filter((match) => preview.matches.some((item) => item.replayId === match.replayId))
+      .map((match) => ({
+        path: `${base}/matches/${match.replayId}`,
+        data: completeMatch(match, syncId),
+      })),
     ...chunks.chunks.map((chunk) => chunkWrite(userCode, chunk)),
     {
       path: `${base}/syncs/${syncId}`,

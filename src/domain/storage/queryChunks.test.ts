@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NormalizedMatch } from "../buckler/types";
+import { queryMatchToNormalized } from "./loadStoredMatches";
 import { buildQueryChunkGeneration, serializedUtf8Bytes } from "./queryChunks";
 
 function match(id: string, at: number): NormalizedMatch {
@@ -81,5 +82,22 @@ describe("buildQueryChunkGeneration", () => {
       subject: { characterSlug: "jamie", leaguePoint: 19000, roundResults: [1, 6] },
       opponent: { userCode: 200, fighterId: "Player 200", platform: "Steam" },
     });
+  });
+
+  it("round-trips an acquired opponent peak without changing old matches", () => {
+    const peak = {
+      actId: 13,
+      fetchedAt: "2026-08-13T00:00:00Z",
+      rating: 1591,
+      characterId: 28,
+      characterName: "舞",
+      characterSlug: "mai",
+    };
+    const original = { ...match("one", 1738368001), opponentPeak: peak };
+    const query = buildQueryChunkGeneration([original], "gen-5").chunks[0].matches[0];
+    expect(queryMatchToNormalized(query).opponentPeak).toEqual(peak);
+    expect(
+      queryMatchToNormalized({ ...query, opponentPeak: undefined }).opponentPeak,
+    ).toBeUndefined();
   });
 });

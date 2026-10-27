@@ -27,6 +27,7 @@ sf6-battlegraph は、常時稼働するバックエンドを持たず、GitHub 
 - HTTP ステータスとレスポンス形式を検証する
 - 取得元、ページ番号、取得日時などのメタデータを付加する
 - raw レスポンスを変更せず、`postMessage` で起点のBattlegraph画面へ返す
+- 現在のActを確認し、取得した試合の相手ごとにAct最高MRを取得する（失敗時も対戦ログ同期は継続）
 
 コレクターは Firestore に直接書き込まない。Buckler Cookieは公式origin内、Firebase認証はBattlegraph origin内に分離する。Battlegraphは送信originとprotocol versionを確認し、受信bundleを従来と同じparserで検証してから同期する。
 

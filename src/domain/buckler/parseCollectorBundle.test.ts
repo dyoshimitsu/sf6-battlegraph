@@ -60,6 +60,38 @@ function bundlePage(sourceType: string, pageNumber: number, response: unknown) {
 }
 
 describe("parseCollectorImport", () => {
+  it("attaches the opponent peak to both player sides", () => {
+    const input = {
+      ...bundle([
+        bundlePage(
+          "all",
+          1,
+          page(1, 1, [replay("ONE", 1, 1_700_000_000), replay("TWO", 2, 1_699_999_999)]),
+        ),
+      ]),
+      opponentPeaks: [
+        {
+          userCode: 2000000002,
+          actId: 13,
+          fetchedAt: "2026-08-13T00:00:00Z",
+          response: {
+            response: {
+              character_league_infos: [
+                {
+                  character_id: 28,
+                  character_name: "舞",
+                  character_tool_name: "mai",
+                  league_info: { master_rating: 1591 },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    };
+    const result = parseCollectorImport(input, SUBJECT);
+    expect(result.matches.map((match) => match.opponentPeak?.rating)).toEqual([1591, 1591]);
+  });
   it("merges pages, deduplicates replay ids, and preserves source types", () => {
     const shared = replay("SHARED001", 1, 1_700_000_000);
     const input = bundle([

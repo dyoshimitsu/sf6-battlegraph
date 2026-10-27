@@ -84,9 +84,26 @@ export interface BucklerCollectorBundle {
   buildId: string;
   exportedAt: string;
   pages: BucklerCollectorPage[];
+  opponentPeaks?: OpponentPeakSnapshot[];
   stopReason?: "known-replay";
   stoppedAtKnownReplayId?: string;
   knownReplayBoundaryCount?: number;
+}
+
+export interface OpponentPeakSnapshot {
+  userCode: number;
+  actId: number;
+  fetchedAt: string;
+  response: unknown;
+}
+
+export interface OpponentPeak {
+  actId: number;
+  fetchedAt: string;
+  rating: number;
+  characterId: number;
+  characterName: string;
+  characterSlug: string;
 }
 
 export type MatchResult = "win" | "loss" | "draw" | "unknown";
@@ -107,6 +124,7 @@ export interface NormalizedMatch {
   roundsLost: number;
   subject: BucklerPlayerInfo;
   opponent: BucklerPlayerInfo;
+  opponentPeak?: OpponentPeak;
   raw: BucklerReplay;
 }
 

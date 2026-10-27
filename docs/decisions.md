@@ -150,6 +150,10 @@ UIは日本語と英語に対応する。初回はブラウザ言語から選択
 - `common.statusCode` で成功・認証エラーを確認できる
 - 未認証リクエストでは 403 レスポンスとなる
 
+## Opponent Act peak
+
+ユーザー提供の`/api/profile/play/act/highest/master_rating_info`レスポンスと説明に基づき、`peak: false`で指定Actのキャラクター別最高MRを取得する。コレクターはプロフィールの`current_season_id`を取得し、相手ごとに同じActを一度だけ問い合わせる。0は未記録として扱い、取得日時、Act、最高MRとキャラクターを保存する。これは対戦時点ではなく取得時点の最高値であり、再取得時には最初に保存した値を維持する。profile APIの仕様、rate limit、過去Actの可用性は未検証で、取得失敗時も対戦ログの同期を継続する。
+
 ## Act and game-version filters
 
 BucklerのバトルログにはAct番号が含まれない。そのためActは`uploaded_at`と、`Asia/Tokyo`で定義したMaster League Act開始日時のマスターからクライアント側で導出する。日付だけではなく、各メンテナンス終了日時を境界にして、開始時刻以上・次のAct開始時刻未満をそのActとして扱う。期間外の試合はActフィルターの対象外にする。
