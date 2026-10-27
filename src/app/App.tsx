@@ -838,16 +838,14 @@ export function App() {
                             {match.opponentPeak && (
                               <small
                                 className="secondary-detail opponent-identity"
-                                title={`${t("opponentPeak")}: ${formatTimestamp(Date.parse(match.opponentPeak.fetchedAt) / 1000)}`}
+                                title={`Act ${match.opponentPeak.actId} · ${formatTimestamp(Date.parse(match.opponentPeak.fetchedAt) / 1000)}`}
                               >
-                                {t("opponentPeak")} {match.opponentPeak.rating.toLocaleString()} MR
-                                ·{" "}
+                                {t("opponentPeak")} {match.opponentPeak.rating.toLocaleString()}·{" "}
                                 {getCharacterNameBySlug(
                                   match.opponentPeak.characterSlug,
                                   locale,
                                   match.opponentPeak.characterName,
-                                )}{" "}
-                                · Act {match.opponentPeak.actId}
+                                )}
                               </small>
                             )}
                           </td>
