@@ -23,6 +23,7 @@ export async function collectOpponentPeaks(
   });
   if (!profile.ok) throw new Error(`Profile request failed with HTTP ${profile.status}`);
   const data: unknown = await profile.json();
+  bundle.profileSnapshot = { fetchedAt: now().toISOString(), response: data };
   const actId = (data as { pageProps?: { play?: { current_season_id?: unknown } } })?.pageProps
     ?.play?.current_season_id;
   if (typeof actId !== "number" || !Number.isSafeInteger(actId) || actId < 0)

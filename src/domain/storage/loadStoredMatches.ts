@@ -1,4 +1,5 @@
 import { inferBattleMode } from "../buckler/battleModes";
+import type { CurrentRatings } from "../buckler/currentRatings";
 import type { BucklerPlayerInfo, BucklerReplay, NormalizedMatch } from "../buckler/types";
 import type { QueryChunk, QueryChunkDescriptor, QueryMatch, QueryPlayer } from "./queryChunks";
 
@@ -12,6 +13,7 @@ export interface StoredManifest {
   obsoleteChunkIds?: string[];
   sourceSyncId?: string;
   syncedAtEpoch?: number;
+  currentRatings?: CurrentRatings | null;
 }
 
 export interface StoredMatchReadPort {

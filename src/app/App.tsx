@@ -992,6 +992,9 @@ export function App() {
                 </div>
                 <RatingChart
                   matches={filteredMatches}
+                  allMatches={imported.preview.matches}
+                  currentRatings={storedManifest?.currentRatings ?? null}
+                  allowCurrent={!toDate && !actId && !battleVersion}
                   locale={locale}
                   labels={{
                     eyebrow: t("ratingHistory"),
@@ -1131,10 +1134,16 @@ function DailyTrend({
 
 function RatingChart({
   matches,
+  allMatches,
+  currentRatings,
+  allowCurrent,
   locale,
   labels,
 }: {
   matches: BucklerBundlePreview["matches"];
+  allMatches: NormalizedMatch[];
+  currentRatings: StoredManifest["currentRatings"];
+  allowCurrent: boolean;
   locale: "ja" | "en";
   labels: Record<
     | "eyebrow"
@@ -1173,6 +1182,18 @@ function RatingChart({
     : latestRatingCharacterKey(matches);
   const chartMatches = characterGroups.get(effectiveCharacter) ?? [];
   const ordered = [...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch).slice(-100);
+  const latestAll = ratingMatches(allMatches)
+    .filter((match) => ratingCharacterKey(match) === effectiveCharacter)
+    .sort((a, b) => b.playedAtEpoch - a.playedAtEpoch)[0];
+  const latestShown = ordered.at(-1);
+  const snapshotRating =
+    allowCurrent &&
+    latestShown &&
+    latestAll?.replayId === latestShown.replayId &&
+    currentRatings &&
+    Date.parse(currentRatings.fetchedAt) / 1000 >= latestShown.playedAtEpoch
+      ? currentRatings.ratings.find((rating) => `id:${rating.characterId}` === effectiveCharacter)
+      : undefined;
   const number = new Intl.NumberFormat(locale === "ja" ? "ja-JP" : "en-US");
   const width = 1000,
     height = 230,
@@ -1189,6 +1210,9 @@ function RatingChart({
         (point): point is { match: (typeof ordered)[number]; matchIndex: number; value: number } =>
           (point.value ?? 0) > 0,
       );
+    const currentValue = kind === "lp" ? snapshotRating?.leaguePoint : snapshotRating?.masterRating;
+    if (currentValue && latestShown)
+      points.push({ match: latestShown, matchIndex: ordered.length, value: currentValue });
     if (!points.length) return null;
     const values = points.map((point) => point.value),
       highest = Math.max(...values),
@@ -1204,12 +1228,14 @@ function RatingChart({
     const coordinates = points.map((point) => ({
       x:
         padX +
-        (ordered.length === 1
+        (ordered.length === 1 && !currentValue
           ? (width - padX * 2) / 2
-          : (point.matchIndex * (width - padX * 2)) / (ordered.length - 1)),
+          : (point.matchIndex * (width - padX * 2)) /
+            (ordered.length - 1 + (currentValue ? 1 : 0))),
       y: y(point.value),
       value: point.value,
       replayId: point.match.replayId,
+      snapshot: point.matchIndex === ordered.length,
     }));
     const ticks = Array.from({ length: Math.round((max - min) / step) + 1 }, (_, index) => ({
       value: min + index * step,
@@ -1275,6 +1301,9 @@ function RatingChart({
                     <span>
                       {labels.latest}
                       <strong>{number.format(item.latest)}</strong>
+                      {item.coordinates.at(-1)?.snapshot && (
+                        <small>{locale === "ja" ? "（同期時点）" : " (at sync)"}</small>
+                      )}
                     </span>
                     <small>
                       {labels.highest} {number.format(item.highest)} · {labels.lowest}{" "}
@@ -1327,9 +1356,15 @@ function RatingChart({
             <g className={`rating-series ${item.kind}`} key={item.kind}>
               <polyline points={item.line} />
               {item.coordinates.map((point) => (
-                <circle key={`${point.replayId}-${item.kind}`} cx={point.x} cy={point.y} r="3">
+                <circle
+                  key={`${point.replayId}-${item.kind}-${point.snapshot}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r="3"
+                >
                   <title>
                     {number.format(point.value)} {item.kind.toUpperCase()}
+                    {point.snapshot ? (locale === "ja" ? "（同期時点）" : " (at sync)") : ""}
                   </title>
                 </circle>
               ))}

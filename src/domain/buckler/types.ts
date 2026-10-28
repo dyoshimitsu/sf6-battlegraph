@@ -85,6 +85,7 @@ export interface BucklerCollectorBundle {
   exportedAt: string;
   pages: BucklerCollectorPage[];
   opponentPeaks?: OpponentPeakSnapshot[];
+  profileSnapshot?: { fetchedAt: string; response: unknown };
   stopReason?: "known-replay";
   stoppedAtKnownReplayId?: string;
   knownReplayBoundaryCount?: number;

@@ -1,3 +1,4 @@
+import { parseCurrentRatings } from "../buckler/currentRatings";
 import type {
   BucklerBundlePreview,
   BucklerCollectorBundle,
@@ -67,7 +68,23 @@ function rawPages(source: unknown): RawPage[] {
       opponentUserCode: item.userCode,
       actId: item.actId,
     }));
-    return [...pages, ...peaks];
+    const profile = bundle.profileSnapshot;
+    return [
+      ...pages,
+      ...peaks,
+      ...(profile
+        ? [
+            {
+              id: "profile_play",
+              sourceType: "profile",
+              sourcePath: "/play",
+              page: 1,
+              fetchedAt: profile.fetchedAt,
+              response: profile.response,
+            },
+          ]
+        : []),
+    ];
   }
   const response = source as Partial<BucklerPageResponse>;
   return [
@@ -153,6 +170,10 @@ export function buildSyncPlan(
 ): SyncPlan {
   if (!syncId.trim()) throw new Error("syncId must not be empty");
   const userCode = preview.userCode;
+  const bundle = source as Partial<BucklerCollectorBundle> | null;
+  const currentRatings = bundle?.profileSnapshot
+    ? parseCurrentRatings(bundle.profileSnapshot, userCode)
+    : undefined;
   const pages = rawPages(source);
   const allMatches = mergeStoredMatches(archivedMatches, preview.matches);
   const chunks = buildQueryChunkGeneration(allMatches, generation);
@@ -212,6 +233,7 @@ export function buildSyncPlan(
           actId: page.actId,
         },
         raw: page.response,
+        forceParts: page.sourceType === "profile",
       }),
     ),
     ...allMatches
@@ -247,6 +269,7 @@ export function buildSyncPlan(
       schemaVersion: STORAGE_SCHEMA_VERSION,
       sourceSyncId: syncId,
       syncedAtEpoch: Math.floor(Date.now() / 1000),
+      currentRatings: currentRatings ?? null,
       previousGeneration: previousManifest
         ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks }
         : null,

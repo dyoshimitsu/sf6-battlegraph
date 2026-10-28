@@ -8,6 +8,7 @@ export interface RawPageWriteInput {
   path: string;
   metadata: Record<string, unknown>;
   raw: unknown;
+  forceParts?: boolean;
 }
 
 function splitUtf8(bytes: Uint8Array, maxBytes: number): string[] {
@@ -26,9 +27,11 @@ export function buildRawPageWrites(input: RawPageWriteInput): PlannedWrite[] {
   const serialized = JSON.stringify(input.raw);
   const bytes = new TextEncoder().encode(serialized);
   const rawSha256 =
-    bytes.length <= MAX_INLINE_RAW_BYTES ? sha256Hex(canonicalJson(input.raw)) : sha256Hex(bytes);
+    !input.forceParts && bytes.length <= MAX_INLINE_RAW_BYTES
+      ? sha256Hex(canonicalJson(input.raw))
+      : sha256Hex(bytes);
   const common = { ...input.metadata, rawUtf8Bytes: bytes.length, rawSha256 };
-  if (bytes.length <= MAX_INLINE_RAW_BYTES) {
+  if (!input.forceParts && bytes.length <= MAX_INLINE_RAW_BYTES) {
     return [{ path: input.path, data: { ...common, storage: "inline", raw: input.raw } }];
   }
   const parts = splitUtf8(bytes, MAX_RAW_PART_BYTES);

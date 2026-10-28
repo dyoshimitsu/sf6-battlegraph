@@ -159,3 +159,6 @@ raw は Cookie やアクセストークンを含まないことをインポー�
 - Firebase サービスアカウント鍵や Buckler Cookie は使用しない
 
 将来の自動同期では、現在と同じ parser と repository interface を Node.js から再利用できるよう、domain logic を React や Firebase SDK に依存させない。
+# プロフィールの現在値
+
+コレクターがAct取得に使用する `play.json` を再利用し、生レスポンスとキャラクター別現在値を保存する。グラフは現在値を同期時点の別の点として表示し、過去期間等のフィルターには混ぜない。
