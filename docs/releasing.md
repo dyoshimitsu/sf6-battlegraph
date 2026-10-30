@@ -66,3 +66,17 @@ gh release create vx.y.z dist/sf6-battlegraph-connector-vx.y.z.zip \
 3. Pages上で拡張の更新リンクと配布ZIP名が`x.y.z`になっていることを確認する。
 
 修正リリースでも、Chrome拡張に変更がある場合は新しいZIPを添付する。unpacked extensionは自動更新されないため、Release本文で利用者に手動更新が必要なことを明記する。
+
+## Chromeウェブストアの自動申請（任意）
+
+自動申請は初期状態で無効。masterへのpush後、検証とビルドが成功した場合のみ、同じrunでビルドしたストア用ZIPを使用する。公開済みversionと同じなら何もしない。新しいversionだけをアップロード・審査申請し、審査通過後に公開される。古いversion、審査中の更新、ポリシー警告、アップロード未確認などでは停止する。Chrome本体の自動更新は公開後に行われる。
+
+初回設定:
+
+1. Google CloudでChrome Web Store APIとIAM Credentials APIを有効化し、ストア申請用のサービスアカウントを作る。秘密鍵は作成しない。[Googleの設定案内](https://developer.chrome.com/docs/webstore/service-accounts)
+2. Chrome Web Store Developer Dashboardのアカウント設定で、そのサービスアカウントを登録し、パブリッシャーIDを確認する。
+3. GitHub Actions用Workload Identity Federationを作り、このリポジトリのmasterからのpushに限定する属性条件を設定する。対象サービスアカウントに、その限定されたprincipalの`roles/iam.workloadIdentityUser`を付与する。[Googleの設定例](https://github.com/google-github-actions/auth#setting-up-workload-identity-federation)
+4. GitHub ActionsのRepository Variablesへ`CHROME_STORE_WORKLOAD_IDENTITY_PROVIDER`（`projects/番号/locations/global/workloadIdentityPools/プール/providers/プロバイダ`）、`CHROME_STORE_SERVICE_ACCOUNT`（メールアドレス）、`CHROME_STORE_PUBLISHER_ID`、`VITE_CONNECTOR_STORE_ID`を設定する。最後のIDは本番で公開中の拡張を指定する。
+5. ストアに未提出の手動下書きがないことを確認し、`ENABLE_CHROME_STORE_PUBLISH=true`を設定してからmasterへpushする。変数が未設定ならストアへの書き込みは行われない。公開・申請済みの版やActionsの結果をダッシュボードで確認する。
+
+注意: `fetchStatus` APIでは未提出の手動下書きの有無を確実に検出できないため、手動の下書き編集と自動申請を同時に行わない。手動作業中は`ENABLE_CHROME_STORE_PUBLISH`を無効にする。アップロード後に処理が中断された場合も、自動リトライ前にダッシュボードで下書き・申請状態を確認する。別の端末や別システムからの同時操作を防ぐロックではない。APIの認証・実際の申請は初回設定後に確認する必要がある。

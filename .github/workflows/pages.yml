@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   verify:
@@ -44,6 +44,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Test Chrome Web Store submission safeguards
+        run: npm run test:store
+
       - name: Run Firestore security rules tests
         run: npm run test:rules
 
@@ -66,6 +69,19 @@ jobs:
           const missing=required.filter(key=>!process.env[key]);
           if(missing.length){console.error(`Missing repository variables: ${missing.join(", ")}`); process.exit(1)}'
 
+      - name: Validate Chrome Web Store configuration
+        if: github.event_name == 'push' && vars.ENABLE_CHROME_STORE_PUBLISH == 'true'
+        env:
+          VITE_CONNECTOR_ORIGINS: ${{ vars.VITE_CONNECTOR_ORIGINS }}
+          VITE_CONNECTOR_STORE_ID: ${{ vars.VITE_CONNECTOR_STORE_ID }}
+          CHROME_STORE_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.CHROME_STORE_WORKLOAD_IDENTITY_PROVIDER }}
+          CHROME_STORE_SERVICE_ACCOUNT: ${{ vars.CHROME_STORE_SERVICE_ACCOUNT }}
+          CHROME_STORE_PUBLISHER_ID: ${{ vars.CHROME_STORE_PUBLISHER_ID }}
+        run: >-
+          node -e 'const keys=["VITE_CONNECTOR_ORIGINS","VITE_CONNECTOR_STORE_ID","CHROME_STORE_WORKLOAD_IDENTITY_PROVIDER","CHROME_STORE_SERVICE_ACCOUNT","CHROME_STORE_PUBLISHER_ID"];
+          const missing=keys.filter(key=>!process.env[key]);
+          if(missing.length){console.error(`Missing repository variables: ${missing.join(", ")}`); process.exit(1)}'
+
       - name: Build application and Chrome connector
         run: npm run build
         env:
@@ -83,6 +99,15 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+
+      - name: Upload verified Chrome Web Store package
+        if: github.event_name == 'push' && vars.ENABLE_CHROME_STORE_PUBLISH == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-store-package
+          path: dist/sf6-battlegraph-connector-store-v*.zip
+          if-no-files-found: error
+          retention-days: 7
 
   deploy:
     if: github.event_name != 'pull_request' && vars.ENABLE_PAGES_DEPLOY == 'true'
@@ -103,3 +128,36 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  chrome-store:
+    if: github.event_name == 'push' && vars.ENABLE_CHROME_STORE_PUBLISH == 'true'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+      - uses: actions/download-artifact@v8
+        with:
+          name: chrome-store-package
+          path: dist
+      - name: Authenticate without a service-account key
+        id: google-auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.CHROME_STORE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.CHROME_STORE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+          create_credentials_file: false
+      - name: Submit newer connector version for review
+        run: node scripts/chrome-store.mjs
+        env:
+          CHROME_STORE_TOKEN: ${{ steps.google-auth.outputs.access_token }}
+          CHROME_STORE_PUBLISHER_ID: ${{ vars.CHROME_STORE_PUBLISHER_ID }}
+          CHROME_STORE_ITEM_ID: ${{ vars.VITE_CONNECTOR_STORE_ID }}
