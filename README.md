@@ -74,6 +74,7 @@ Google認証をFirebase Consoleで有効にし、Authenticationの承認済み�
 - `VITE_PLAYER_USER_CODE`: 保存対象のSF6ユーザーコード
 - `VITE_DEPLOYMENT_VISIBILITY`: `private`または`public`
 - `VITE_CONNECTOR_ORIGINS`: Battlegraphを配信するoriginをカンマ区切りで指定（パス不可）
+- `VITE_CONNECTOR_STORE_ID`: 任意。公開済みChromeウェブストア拡張のID。未設定の場合は手動ZIPを案内
 - `VITE_FIREBASE_API_KEY`
 - `VITE_FIREBASE_AUTH_DOMAIN`
 - `VITE_FIREBASE_PROJECT_ID`

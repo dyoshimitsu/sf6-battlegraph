@@ -18,7 +18,9 @@ Chromeウェブストア提出用には、manifestをZIP直下に含む`dist/sf6
 
 開発時もViteが同じoriginからビルド済みのバージョン付きZIPを配信し、`Content-Disposition`にもmanifestの現行バージョンを設定する。別ポートからのダウンロードにするとChromeが指定ファイル名を無視するため、connector用preview serverは不要とする。ZIPがまだない場合は先に`npm run build`を実行する。
 
-Battlegraphは導入済み拡張のversionを検出する。未導入またはアプリの期待versionと異なる場合だけ、管理者ヘッダーへ「Chrome拡張を導入／更新」を表示する。リンクを押すと画面内にも次の手順を表示する。
+Battlegraphは導入済み拡張のversionを検出する。`src/app/connectorVersions.ts`の最低互換version以上、サイトと同じビルドのmanifest version以下であれば同期できる。機能上の互換性が失われた場合には最低versionを引き上げる。範囲外は同期できない。未導入または最新versionと異なる場合は導入／更新リンクを表示する。
+
+ストア公開後、`VITE_CONNECTOR_STORE_ID`に拡張IDを指定すると、導入／更新リンクはChromeウェブストアを開く。ストア版はChromeが自動更新するが、更新には審査と配信まで時間がかかる。変数が未設定なら従来の手動ZIPを案内する。手動ZIPは管理メニューから引き続き利用できる。ストア版と手動版は別の拡張として同時に有効にせず、切り替え時には古い方を無効にする。
 
 検出状態にかかわらず、管理メニューの「Chrome拡張をダウンロード」からいつでも最新版を再取得できる。
 

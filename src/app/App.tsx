@@ -47,6 +47,7 @@ import { useI18n } from "../i18n/useI18n";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
 import { CollectionConsent } from "./CollectionConsent";
 import { hasCollectionConsent, rememberCollectionConsent } from "./collectionConsentStorage";
+import { isConnectorCompatible } from "./connectorVersions";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -218,7 +219,7 @@ export function App() {
             : adminAuth.state.status === "notAdmin"
               ? t("notAdmin")
               : t("firebaseError");
-  const connectorReady = connectorVersion === __CONNECTOR_VERSION__;
+  const connectorReady = isConnectorCompatible(connectorVersion, __CONNECTOR_VERSION__);
 
   useEffect(() => {
     if (
@@ -403,6 +404,9 @@ export function App() {
 
   const connectorDownloadName = `sf6-battlegraph-connector-v${__CONNECTOR_VERSION__}.zip`;
   const connectorDownloadUrl = `./${connectorDownloadName}`;
+  const connectorStoreUrl = deploymentConfig.connectorStoreId
+    ? `https://chromewebstore.google.com/detail/${deploymentConfig.connectorStoreId}`
+    : undefined;
 
   function resetFilters() {
     setFromDate("");
@@ -597,9 +601,13 @@ export function App() {
             connectorVersion !== __CONNECTOR_VERSION__ && (
               <a
                 className="auth-button connector-update"
-                href={connectorDownloadUrl}
-                download={connectorDownloadName}
-                onClick={() => setShowConnectorGuide(true)}
+                href={connectorStoreUrl ?? connectorDownloadUrl}
+                download={connectorStoreUrl ? undefined : connectorDownloadName}
+                target={connectorStoreUrl ? "_blank" : undefined}
+                rel={connectorStoreUrl ? "noopener noreferrer" : undefined}
+                onClick={() => {
+                  if (!connectorStoreUrl) setShowConnectorGuide(true);
+                }}
               >
                 {t(connectorVersion === null ? "connectorInstall" : "connectorUpdate")}
               </a>
@@ -628,6 +636,11 @@ export function App() {
               <summary aria-label={t("managementMenu")}>•••</summary>
               <div>
                 <span>{t("managementMenu")}</span>
+                {adminAuth.state.status === "admin" && connectorStoreUrl && (
+                  <a href={connectorStoreUrl} target="_blank" rel="noopener noreferrer">
+                    {t("connectorStore")}
+                  </a>
+                )}
                 {adminAuth.state.status === "admin" && (
                   <a
                     href={connectorDownloadUrl}

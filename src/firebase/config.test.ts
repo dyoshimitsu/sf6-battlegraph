@@ -41,6 +41,16 @@ describe("parseDeploymentConfig", () => {
     );
   });
 
+  it("validates the optional store extension ID", () => {
+    expect(
+      parseDeploymentConfig({ VITE_CONNECTOR_STORE_ID: "abcdefghijklmnopabcdefghijklmnop" })
+        .connectorStoreId,
+    ).toBe("abcdefghijklmnopabcdefghijklmnop");
+    expect(() => parseDeploymentConfig({ VITE_CONNECTOR_STORE_ID: "not-an-extension-id" })).toThrow(
+      /VITE_CONNECTOR_STORE_ID/,
+    );
+  });
+
   it("rejects invalid visibility and user codes", () => {
     expect(() => parseDeploymentConfig({ VITE_DEPLOYMENT_VISIBILITY: "friends" })).toThrow(
       /private or public/,

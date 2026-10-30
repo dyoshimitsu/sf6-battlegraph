@@ -40,6 +40,7 @@ export const translations = {
     connectorInstall: "Chrome拡張を導入",
     connectorUpdate: "Chrome拡張を更新",
     connectorDownload: "Chrome拡張をダウンロード",
+    connectorStore: "Chrome ウェブストアで開く",
     connectorGuideTitle: "Chrome拡張の導入・更新",
     connectorGuideExtract: "ダウンロードしたZIPを展開します",
     connectorGuideOpenExtensions:
@@ -184,6 +185,7 @@ export const translations = {
     connectorInstall: "Install Chrome connector",
     connectorUpdate: "Update Chrome connector",
     connectorDownload: "Download Chrome connector",
+    connectorStore: "Open in Chrome Web Store",
     connectorGuideTitle: "Install or update the Chrome connector",
     connectorGuideExtract: "Extract the downloaded ZIP file",
     connectorGuideOpenExtensions:
