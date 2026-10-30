@@ -52,17 +52,31 @@ export async function submitStoreUpdate({
     throw new Error("Invalid store configuration");
   const name = `publishers/${publisherId}/items/${itemId}`;
   const endpoint = `https://chromewebstore.googleapis.com/v2/${name}`;
-  async function request(url, options = {}) {
+  async function request(operation, url, options = {}) {
     const response = await fetcher(url, {
       ...options,
       headers: { authorization: `Bearer ${token}`, ...options.headers },
     });
-    if (!response.ok) throw new Error(`Chrome Web Store API returned HTTP ${response.status}`);
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const body = await response.json();
+        const status = body?.error?.status;
+        const reason = body?.error?.details?.find((entry) => entry?.reason)?.reason;
+        const safe = (value) => typeof value === "string" && /^[A-Z][A-Z0-9_]{0,99}$/.test(value);
+        if (safe(status)) detail += ` status=${status}`;
+        if (safe(reason)) detail += ` reason=${reason}`;
+      } catch {
+        // Error bodies are optional and must never be logged verbatim.
+      }
+      throw new Error(`Chrome Web Store ${operation} returned HTTP ${response.status}${detail}`);
+    }
     return response.json();
   }
-  const status = await request(`${endpoint}:fetchStatus`);
+  const status = await request("fetchStatus", `${endpoint}:fetchStatus`);
   if (checkStatus(status, version) === "unchanged") return "unchanged";
   const upload = await request(
+    "upload",
     `https://chromewebstore.googleapis.com/upload/v2/${name}:upload?uploadType=media`,
     { method: "POST", headers: { "content-type": "application/zip" }, body: zip },
   );
@@ -72,7 +86,7 @@ export async function submitStoreUpdate({
   let uploadState = upload.uploadState;
   for (let attempt = 0; uploadState === "IN_PROGRESS" && attempt < 12; attempt++) {
     await wait(5000);
-    const latest = await request(`${endpoint}:fetchStatus`);
+    const latest = await request("fetchStatus", `${endpoint}:fetchStatus`);
     if (latest.submittedItemRevisionStatus || latest.takenDown || latest.warned)
       throw new Error("Store status changed during upload; do not publish");
     uploadState = latest.lastAsyncUploadState;
@@ -81,7 +95,7 @@ export async function submitStoreUpdate({
     throw new Error(
       `Upload not confirmed (${uploadState ?? "unknown"}); inspect dashboard before retrying`,
     );
-  const result = await request(`${endpoint}:publish`, {
+  const result = await request("publish", `${endpoint}:publish`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ blockOnWarnings: true }),

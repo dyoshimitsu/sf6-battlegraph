@@ -79,3 +79,29 @@ test("polls an asynchronous upload before submitting", async () => {
   const fetcher = async () => ({ ok: true, json: async () => responses.shift() });
   assert.equal(await submitStoreUpdate({ ...options, fetcher }), "submitted");
 });
+
+test("reports safe API error details without leaking response contents", async () => {
+  const fetcher = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({
+      error: {
+        status: "INVALID_ARGUMENT",
+        message: "secret",
+        details: [{ reason: "INVALID_REQUEST" }],
+      },
+    }),
+  });
+  await assert.rejects(submitStoreUpdate({ ...options, fetcher }), {
+    message:
+      "Chrome Web Store fetchStatus returned HTTP 400 status=INVALID_ARGUMENT reason=INVALID_REQUEST",
+  });
+  const unsafe = async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({ error: { status: "secret token" } }),
+  });
+  await assert.rejects(submitStoreUpdate({ ...options, fetcher: unsafe }), {
+    message: "Chrome Web Store fetchStatus returned HTTP 400",
+  });
+});
