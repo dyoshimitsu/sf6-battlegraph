@@ -39,11 +39,12 @@ export default defineConfig(({ mode }) => ({
               "auth-watcher.js",
               "background-policy.js",
               "background.js",
+              "icon128.png",
             ]) {
               this.emitFile({
                 type: "asset",
                 fileName,
-                source: readFileSync(`extension/${fileName}`, "utf8"),
+                source: readFileSync(`extension/${fileName}`),
               });
             }
           },

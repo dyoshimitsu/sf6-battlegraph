@@ -14,6 +14,8 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 
 本番ビルドでは`dist/sf6-battlegraph-connector-v<version>.zip`も生成する。ZIP名と、展開して作られる単一フォルダ名は`sf6-battlegraph-connector-v<version>`で統一する。そのフォルダをChromeへ読み込む。
 
+Chromeウェブストア提出用には、manifestをZIP直下に含む`dist/sf6-battlegraph-connector-store-v<version>.zip`を使用する。ストア用アイコンは`extension/icon128.png`。スクリーンショットには実際の画面を使用し、公開を望まない個人情報に注意する。
+
 開発時もViteが同じoriginからビルド済みのバージョン付きZIPを配信し、`Content-Disposition`にもmanifestの現行バージョンを設定する。別ポートからのダウンロードにするとChromeが指定ファイル名を無視するため、connector用preview serverは不要とする。ZIPがまだない場合は先に`npm run build`を実行する。
 
 Battlegraphは導入済み拡張のversionを検出する。未導入またはアプリの期待versionと異なる場合だけ、管理者ヘッダーへ「Chrome拡張を導入／更新」を表示する。リンクを押すと画面内にも次の手順を表示する。
