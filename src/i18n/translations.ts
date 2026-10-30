@@ -56,6 +56,19 @@ export const translations = {
     syncReminderDescription:
       "最終同期から{days}日経過しています。100試合の取得上限を超える前に同期してください。",
     collectingFromBuckler: "Bucklerから取得中…",
+    consentTitle: "対戦データの取得と保存",
+    consentData:
+      "Bucklerから対戦履歴とプロフィールを取得します。自分と対戦相手のゲーム内の名前、ユーザーコード、地域、対戦結果などが含まれます。",
+    consentStorage:
+      "生レスポンス全体をBattlegraphに転送し、履歴の保存・分析・再解析のため、この環境のFirestoreに保存します。",
+    consentPublic:
+      "この環境は公開設定です。生レスポンスを含む保存データは、ログインしていない人も読み取れます。",
+    consentPrivate: "この環境は非公開設定です。保存データは管理者のみが読み取れます。",
+    consentSession:
+      "Bucklerへの通信にはブラウザーのログイン済みセッションを使用します。パスワードやCookieはBattlegraphに保存しません。",
+    consentPrivacy: "プライバシーポリシー",
+    consentCancel: "キャンセル",
+    consentAgree: "同意して取得",
     collectorStartTimeout:
       "Chrome拡張は検出できましたが、Buckler側の収集処理を開始できませんでした。拡張を再読み込みしてもう一度お試しください。",
     collectorFetchTimeout:
@@ -186,6 +199,20 @@ export const translations = {
     syncReminderDescription:
       "It has been {days} days since the last sync. Sync before Buckler's 100-match window is exceeded.",
     collectingFromBuckler: "Fetching from Buckler…",
+    consentTitle: "Collect and save battle data",
+    consentData:
+      "Battle logs and profile data are collected from Buckler, including your and your opponents' in-game names, user codes, regions, and match results.",
+    consentStorage:
+      "Complete raw responses are transferred to Battlegraph and saved in this environment's Firestore to preserve, analyze, and reprocess your history.",
+    consentPublic:
+      "This environment is configured as public. Anyone, including visitors who are not signed in, can read the saved data, including raw responses.",
+    consentPrivate:
+      "This environment is configured as private. Only administrators can read the saved data.",
+    consentSession:
+      "The browser's signed-in session is used to access Buckler. Passwords and cookies are not saved to Battlegraph.",
+    consentPrivacy: "Privacy policy",
+    consentCancel: "Cancel",
+    consentAgree: "Agree and fetch",
     collectorStartTimeout:
       "The Chrome connector was detected, but collection did not start on Buckler. Reload the extension and try again.",
     collectorFetchTimeout:

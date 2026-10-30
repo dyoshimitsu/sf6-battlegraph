@@ -34,7 +34,7 @@ cloneした利用者は`.env.local`またはGitHub Repository Variablesの`VITE_
 ## Usage
 
 1. Bucklerへログインしておく
-2. Battlegraphで「Bucklerから取得」を押す
+2. Battlegraphで「Bucklerから取得」を押し、初回に取得・保存内容と公開範囲を確認して「同意して取得」を押す。キャンセルすると取得は開始しない。同意はブラウザーに保存し、管理者・対象ユーザー・Firebaseプロジェクト・公開設定が変わった場合や、同意内容を更新した場合は再確認する。ブラウザーデータを削除した場合も再確認する
 3. 拡張のbackgroundがBattle Logを背面タブで開き、Battlegraphタブと対応付ける
 4. 接続フラグ付きBattle Logページだけで自動的に全ページを取得する
 5. 完全なcollector bundleを拡張内部のmessage経由で元のBattlegraphタブへ返す

@@ -1382,3 +1382,37 @@ table,
     flex-direction: column;
   }
 }
+.collection-consent {
+  width: min(36rem, calc(100% - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 24px;
+  border: 1px solid #41494d;
+  border-radius: 16px;
+  color: #e8eaf0;
+  background: #171b20;
+}
+
+.collection-consent::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.collection-consent h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.collection-consent p {
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+.collection-consent a {
+  color: #c7ff4a;
+}
+
+.collection-consent-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}

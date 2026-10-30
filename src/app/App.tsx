@@ -45,6 +45,8 @@ import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 import { useAdminAuth } from "../firebase/useAdminAuth";
 import { useI18n } from "../i18n/useI18n";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
+import { CollectionConsent } from "./CollectionConsent";
+import { hasCollectionConsent, rememberCollectionConsent } from "./collectionConsentStorage";
 
 const INITIAL_USER_CODE = deploymentConfig.playerUserCode;
 
@@ -127,6 +129,7 @@ export function App() {
   const [autoSyncPending, setAutoSyncPending] = useState(false);
   const [connectorVersion, setConnectorVersion] = useState<string | null | undefined>(undefined);
   const [showConnectorGuide, setShowConnectorGuide] = useState(false);
+  const [showCollectionConsent, setShowCollectionConsent] = useState(false);
 
   const dateTimeFormatter = useMemo(
     () =>
@@ -365,6 +368,7 @@ export function App() {
   }, []);
 
   function openBuckler() {
+    if (adminAuth.state.status !== "admin" || !connectorReady || isCollecting || isSyncing) return;
     const knownReplayIds = (archivedMatches ?? imported?.preview.matches ?? [])
       .slice(0, 20)
       .map((match) => match.replayId);
@@ -378,6 +382,23 @@ export function App() {
       setIsCollecting(false);
       setError(t("collectorStartTimeout"));
     }, 30_000);
+  }
+
+  function consentScope() {
+    if (adminAuth.state.status !== "admin") return null;
+    return {
+      adminUid: adminAuth.state.user.uid,
+      playerUserCode: INITIAL_USER_CODE,
+      projectId: deploymentConfig.firebase?.projectId ?? "",
+      visibility: deploymentConfig.visibility,
+    };
+  }
+
+  function requestCollection() {
+    const scope = consentScope();
+    if (!scope) return;
+    if (hasCollectionConsent(window.localStorage, scope)) openBuckler();
+    else setShowCollectionConsent(true);
   }
 
   const connectorDownloadName = `sf6-battlegraph-connector-v${__CONNECTOR_VERSION__}.zip`;
@@ -589,7 +610,7 @@ export function App() {
               type="button"
               disabled={isCollecting || isSyncing || !connectorReady}
               title={!connectorReady ? t("connectorRequired") : undefined}
-              onClick={openBuckler}
+              onClick={requestCollection}
             >
               {t(
                 !connectorReady
@@ -1059,7 +1080,7 @@ export function App() {
                 type="button"
                 disabled={!connectorReady}
                 title={!connectorReady ? t("connectorRequired") : undefined}
-                onClick={openBuckler}
+                onClick={requestCollection}
               >
                 {t(connectorReady ? "refreshFromBuckler" : "connectorRequired")}
               </button>
@@ -1071,6 +1092,20 @@ export function App() {
         <span>{t("appName")}</span>
         <span>{t("unofficial")}</span>
       </footer>
+      {showCollectionConsent && (
+        <CollectionConsent
+          locale={locale}
+          visibility={deploymentConfig.visibility}
+          onCancel={() => setShowCollectionConsent(false)}
+          onAgree={() => {
+            setShowCollectionConsent(false);
+            const scope = consentScope();
+            if (!scope) return;
+            rememberCollectionConsent(window.localStorage, scope);
+            openBuckler();
+          }}
+        />
+      )}
     </div>
   );
 }
