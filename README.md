@@ -7,7 +7,7 @@
 
 安定版Chrome拡張は[最新のGitHub Release](https://github.com/dyoshimitsu/sf6-battlegraph/releases/latest)からダウンロードできます。変更履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
 
-![SF6 Battlegraph](docs/social-preview.svg)
+![SF6 Battlegraph](docs/social-preview.png)
 
 Street Fighter 6 の Buckler's Boot Camp から自分のバトルログを取得し、長期間保存してグラフや集計として閲覧するためのセルフホスト型 Web アプリケーションです。
 
