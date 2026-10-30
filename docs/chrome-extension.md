@@ -53,4 +53,4 @@ Buckler認証が切れている場合、拡張は認証画面への遷移を検�
 - bundleは一時的に対応付けたBattlegraphタブへだけ返信し、拡張ストレージへ保存しない
 - Battlegraph側はprotocol versionと完全なbundle schemaを再検証する
 
-この拡張はChrome Web Storeへ公開せず、セルフホスト利用者が自身のビルドを手動導入する前提とする。将来ストア配布する場合は、拡張の署名、更新経路、公開サイトoriginの許可方法を別途設計する。
+Chrome Web Storeへの提出を準備中。ストア配布では承認されたoriginがビルドに含まれるため、セルフホスト先のoriginを利用者が追加できるかは別途検証が必要。個人サイト向けのプライバシーポリシーは`public/privacy.html`を参照する。

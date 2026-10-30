@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>プライバシーポリシー | SF6 Battlegraph Connector</title>
+    <style>
+      body { max-width: 48rem; margin: 3rem auto; padding: 0 1.25rem; color: #e8eaf0; background: #111419; font: 16px/1.8 system-ui, sans-serif; }
+      h1, h2 { line-height: 1.35; }
+      h2 { margin-top: 2rem; font-size: 1.2rem; }
+      a { color: #c7ff4a; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>SF6 Battlegraph Connector プライバシーポリシー</h1>
+      <p>最終更新日：2026年10月30日</p>
+      <p>SF6 Battlegraph Connector（以下「拡張機能」）は、ユーザーがBuckler's Boot Campの対戦履歴をSF6 Battlegraphへ取り込むための非公式ツールです。このポリシーは、当プロジェクトが配布する拡張機能と <a href="https://dyoshimitsu.github.io/sf6-battlegraph/">SF6 Battlegraph</a> における情報の取り扱いを説明します。</p>
+      <h2>取得する情報と目的</h2>
+      <p>ユーザーがBattlegraphで取得・同期を開始すると、拡張機能はBucklerから対戦履歴とプロフィールのレスポンスを取得し、Battlegraphへ転送します。これらには、ユーザー本人と対戦相手のゲーム内の名前、ユーザーコード、プラットフォーム、ホーム地域、キャラクター、対戦日時・結果、リプレイID、LP・MRなどの情報が含まれます。プロフィールのレスポンスにはその他のプロフィール情報や統計情報も含まれることがあります。</p>
+      <p>Battlegraphは取得した生のレスポンスと対戦データを保存し、戦績の一覧、絞り込み、集計およびグラフの表示に使用します。取得と保存の対象にはランクマッチ以外の対戦モードも含まれます。</p>
+      <h2>認証と一時的な情報</h2>
+      <p>Bucklerへの通信には、ブラウザーが保持するログイン済みセッションを使います。拡張機能はログインCookieやパスワードを直接読み取ったり、BattlegraphやFirestoreへ保存したりしません。Battlegraphの管理者ログインにはFirebase Authenticationを使用します。</p>
+      <p>拡張機能は、取得元と転送先のタブを対応付けるため、タブの識別子をChromeのセッションストレージに一時保存します。対戦履歴や認証情報はそこに保存しません。</p>
+      <h2>保存先と公開範囲</h2>
+      <p>取得データはBattlegraphからGoogleのCloud Firestoreへ保存されます。GitHub Pagesは画面の配信に使用します。GoogleやGitHubによる情報の取り扱いには各社のポリシーも適用されます。</p>
+      <p>Battlegraphの公開設定がpublicの場合、保存された対戦データはログインしていない閲覧者からも読める設定になります。privateの場合は管理者だけが読み取れる設定です。どちらの場合も書き込みは管理者に制限されます。公開設定は運用者が管理します。</p>
+      <p>拡張機能の配布者は、ユーザーデータを販売せず、転送・保存を含め、上記の機能に必要な目的以外には使用しません。信用力の判断や融資には使用しません。</p>
+      <h2>保管期間と削除</h2>
+      <p>Firestoreに保存されたデータは、運用者が削除するまで保持されます。拡張機能をアンインストールしても保存済みデータは削除されません。削除を希望する場合は下記の窓口へご連絡ください。</p>
+      <h2>お問い合わせ</h2>
+      <p><a href="https://github.com/dyoshimitsu/sf6-battlegraph/issues">GitHub Issues</a> からご連絡ください。Issuesは公開されますので、Cookie、パスワード、トークンなどの秘密情報や、公開を望まない個人情報は書き込まないでください。</p>
+      <h2>セルフホストについて</h2>
+      <p>第三者がこのソフトウェアを複製して独自に運用する場合、データの保存先や公開設定、連絡先は運用者によって異なります。その場合は当該運用者の説明とプライバシーポリシーを確認してください。</p>
+      <h2>変更</h2>
+      <p>機能やデータの取り扱いが変わった場合、このポリシーを更新します。</p>
+    </main>
+  </body>
+</html>
