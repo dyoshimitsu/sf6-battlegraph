@@ -21,19 +21,27 @@ async function forgetRequest(sourceTabId) {
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message?.type === START_TYPE && sender.tab?.id !== undefined) {
     const targetTabId = sender.tab.id;
-    chrome.tabs
-      .create({ url: message.url, active: false })
-      .then((tab) => {
-        if (tab.id !== undefined) return rememberRequest(tab.id, targetTabId);
-      })
-      .catch((error) =>
-        chrome.tabs.sendMessage(targetTabId, {
+    void (async () => {
+      let sourceTabId;
+      try {
+        const tab = await chrome.tabs.create({ url: "about:blank", active: false });
+        if (tab.id === undefined) throw new Error("Buckler tab ID was not available");
+        sourceTabId = tab.id;
+        await rememberRequest(sourceTabId, targetTabId);
+        await chrome.tabs.update(sourceTabId, { url: message.url });
+      } catch (error) {
+        if (sourceTabId !== undefined) {
+          await forgetRequest(sourceTabId).catch(() => {});
+          await chrome.tabs.remove(sourceTabId).catch(() => {});
+        }
+        await chrome.tabs.sendMessage(targetTabId, {
           type: STATUS_TYPE,
           version: 1,
           status: "error",
           message: `Could not open the Buckler tab: ${error instanceof Error ? error.message : String(error)}`,
-        }),
-      );
+        });
+      }
+    })();
     return;
   }
   if (message?.type === RESULT_TYPE && sender.tab?.id !== undefined) {
