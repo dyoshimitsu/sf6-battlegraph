@@ -47,7 +47,38 @@ test("uploads then submits only after confirming the upload", async () => {
   assert.equal(calls.length, 3);
   assert.match(calls[1].url, /:upload\?uploadType=media$/);
   assert.match(calls[2].url, /:publish$/);
-  assert.deepEqual(JSON.parse(calls[2].init.body), { blockOnWarnings: true });
+  assert.deepEqual(JSON.parse(calls[2].init.body), { blockOnWarnings: false });
+});
+
+test("reports warning reasons without logging descriptions", async () => {
+  const warnings = [];
+  const responses = [
+    status,
+    { itemId, uploadState: "SUCCEEDED" },
+    {
+      itemId,
+      state: "PENDING_REVIEW",
+      warningInfo: {
+        warnings: [
+          { reason: "MANUAL_CONFIRMATION_REQUIRED", description: "secret" },
+          { reason: "secret token" },
+        ],
+      },
+    },
+  ];
+  const fetcher = async () => ({ ok: true, json: async () => responses.shift() });
+  assert.equal(
+    await submitStoreUpdate({
+      ...options,
+      fetcher,
+      onWarning: (message) => warnings.push(message),
+    }),
+    "submitted",
+  );
+  assert.deepEqual(warnings, [
+    "Chrome Web Store warning: MANUAL_CONFIRMATION_REQUIRED; inspect the dashboard.",
+    "Chrome Web Store warning: UNKNOWN; inspect the dashboard.",
+  ]);
 });
 
 test("never submits a failed upload or an existing pending update", async () => {

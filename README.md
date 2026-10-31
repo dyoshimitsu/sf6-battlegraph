@@ -5,7 +5,7 @@
 
 **[Live demo](https://dyoshimitsu.github.io/sf6-battlegraph/)**
 
-安定版Chrome拡張は[最新のGitHub Release](https://github.com/dyoshimitsu/sf6-battlegraph/releases/latest)からダウンロードできます。変更履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
+Chrome拡張は[Chromeウェブストア](https://chromewebstore.google.com/detail/ihjpclgibnpcnddoieikhnapmfnkdfkc)からインストールできます。手動インストール用ZIPは[最新のGitHub Release](https://github.com/dyoshimitsu/sf6-battlegraph/releases/latest)からダウンロードできます。変更履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
 
 ![SF6 Battlegraph](docs/social-preview.png)
 
@@ -29,7 +29,7 @@ Buckler で参照できる対戦履歴には件数上限があるため、定期
 3. `.env.example`を`.env.local`へコピーし、自分のユーザーコード、Firebase Web設定、配信originを入力する
 4. `npm run dev`でBattlegraphを開いてGoogleログインし、Firebase ConsoleのAuthentication → Usersで自分のUIDを確認する
 5. そのUIDと同じdocument IDで`admins/{uid}`をFirestore Consoleから作成し、Battlegraphを再読み込みする
-6. `npm run build`を実行し、`dist/extension`をChromeへ読み込む
+6. Chromeウェブストアから拡張をインストールする。セルフホスト先のoriginがストア版に含まれない場合は、`npm run build`を実行して`dist/extension`をChromeへ読み込む
 7. Battlegraphの「Bucklerから再取得・同期」を押す
 
 Chrome拡張の詳しい導入・更新方法は[Chrome connector](docs/chrome-extension.md)を参照してください。
@@ -48,6 +48,7 @@ npm run dev
 ```sh
 npm run check
 npm test
+npm run test:store
 npm run test:rules
 npm run typecheck
 npm run build

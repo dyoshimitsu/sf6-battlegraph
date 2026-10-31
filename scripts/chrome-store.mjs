@@ -47,6 +47,7 @@ export async function submitStoreUpdate({
   version,
   zip,
   wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  onWarning = (message) => console.warn(message),
 }) {
   if (!token || !/^[a-zA-Z0-9_-]+$/.test(publisherId) || !/^[a-p]{32}$/.test(itemId))
     throw new Error("Invalid store configuration");
@@ -98,8 +99,19 @@ export async function submitStoreUpdate({
   const result = await request("publish", `${endpoint}:publish`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ blockOnWarnings: true }),
+    body: JSON.stringify({ blockOnWarnings: false }),
   });
+  if (result.warningInfo) {
+    const warnings = Array.isArray(result.warningInfo.warnings) ? result.warningInfo.warnings : [];
+    if (warnings.length === 0)
+      onWarning("Chrome Web Store returned warning information; inspect the dashboard.");
+    for (const warning of warnings) {
+      const reason = warning?.reason;
+      const safeReason =
+        typeof reason === "string" && /^[A-Z][A-Z0-9_]{0,99}$/.test(reason) ? reason : "UNKNOWN";
+      onWarning(`Chrome Web Store warning: ${safeReason}; inspect the dashboard.`);
+    }
+  }
   if (result.itemId !== itemId || result.state !== "PENDING_REVIEW")
     throw new Error("Submission response was unexpected; inspect the dashboard");
   return "submitted";

@@ -4,6 +4,8 @@ SF6 Battlegraphは、BucklerのログインCookieを外部サーバーへ保存�
 
 ## Installation
 
+[Chromeウェブストア](https://chromewebstore.google.com/detail/ihjpclgibnpcnddoieikhnapmfnkdfkc)からインストールできる。ストア版の対応originには制約があり、セルフホスト先が含まれない場合は以下の手順でビルドする。
+
 開発環境では次の手順で一度だけ導入する。
 
 1. `npm run build`を実行する
@@ -55,4 +57,4 @@ Buckler認証が切れている場合、拡張は認証画面への遷移を検�
 - bundleは一時的に対応付けたBattlegraphタブへだけ返信し、拡張ストレージへ保存しない
 - Battlegraph側はprotocol versionと完全なbundle schemaを再検証する
 
-Chrome Web Storeへの提出を準備中。ストア配布では承認されたoriginがビルドに含まれるため、セルフホスト先のoriginを利用者が追加できるかは別途検証が必要。個人サイト向けのプライバシーポリシーは`public/privacy.html`を参照する。
+ストア配布では承認されたoriginがビルドに含まれるため、セルフホスト先のoriginを利用者が追加できるかは別途検証が必要。個人サイト向けのプライバシーポリシーは`public/privacy.html`を参照する。

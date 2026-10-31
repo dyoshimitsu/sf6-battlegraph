@@ -1,12 +1,12 @@
 # Release procedure
 
-このプロジェクトのリリースは`master`から作成する。バージョンタグ、GitHub Release、Chrome connector ZIPは必ず同じバージョンに揃える。
+このプロジェクトのリリースは`master`から作成する。GitHub Releaseのタグとアプリのバージョンは揃える。Chrome connectorは独立して更新でき、ZIP名は`extension/manifest.json`のバージョンに従う。
 
 ## 1. リリース内容を確定する
 
 1. `git status --short`で意図しない変更がないことを確認する。
 2. [CHANGELOG](../CHANGELOG.md)の`Unreleased`を`[x.y.z] - YYYY-MM-DD`へ移し、利用者に見える変更を`Added`、`Changed`、`Fixed`、`Security`へ整理する。
-3. `package.json`、`package-lock.json`、`extension/manifest.json`のversionを同じ`x.y.z`に更新する。拡張のversionはZIP名、導入済み拡張の更新検知、Release添付ファイル名に使われる。
+3. アプリのリリース時は`package.json`と`package-lock.json`のversionを更新する。拡張を更新する場合は`extension/manifest.json`のversionをストア公開済みより上げる。拡張のversionはZIP名と導入済み拡張の更新検知に使われる。
 4. READMEの最新安定版表記と、変更されたセットアップ・機能説明を更新する。
 
 ## 2. 検証と配布ZIPの作成
@@ -17,13 +17,14 @@ Node.js 26以降で実行する。
 npm run format
 npm run check
 npm test
+npm run test:store
 npm run test:rules
 npm run typecheck
 npm run build
 sha256sum dist/sf6-battlegraph-connector-vx.y.z.zip
 ```
 
-`npm run build`はWebアプリ、Chrome connector、`dist/sf6-battlegraph-connector-vx.y.z.zip`を生成する。ReleaseにはこのZIPを添付し、SHA-256をリリース本文に記録する。
+`npm run build`はWebアプリとChrome connectorのZIPを生成する。上記の`x.y.z`は拡張のversionを指す。ReleaseにはこのZIPを添付し、SHA-256をリリース本文に記録する。
 
 ## 3. コミット・タグ・push
 
@@ -52,10 +53,12 @@ Release本文は[v1.0.0](https://github.com/dyoshimitsu/sf6-battlegraph/releases
 例:
 
 ```sh
-gh release create vx.y.z dist/sf6-battlegraph-connector-vx.y.z.zip \
+gh release create v<アプリのversion> dist/sf6-battlegraph-connector-v<拡張のversion>.zip \
   --title "vx.y.z" \
   --notes-file /tmp/sf6-battlegraph-release/vx.y.z-notes.md
 ```
+
+実行時は`<アプリのversion>`と`<拡張のversion>`をそれぞれ実際の値に置き換える。
 
 既存Releaseの本文を修正するときは`gh release edit vx.y.z --notes-file ...`を使う。Release作成前にタグをpushしておく。
 
@@ -63,13 +66,15 @@ gh release create vx.y.z dist/sf6-battlegraph-connector-vx.y.z.zip \
 
 1. `gh release view vx.y.z`でtag、公開状態、添付ZIPを確認する。
 2. pushで起動したGitHub Actionsの`verify`と`deploy`が成功したことを確認する。
-3. Pages上で拡張の更新リンクと配布ZIP名が`x.y.z`になっていることを確認する。
+3. Pages上で拡張の更新リンクと配布ZIP名が、拡張のmanifest versionに対応していることを確認する。
 
 修正リリースでも、Chrome拡張に変更がある場合は新しいZIPを添付する。unpacked extensionは自動更新されないため、Release本文で利用者に手動更新が必要なことを明記する。
 
 ## Chromeウェブストアの自動申請（任意）
 
-自動申請は初期状態で無効。masterへのpush後、検証とビルドが成功した場合のみ、同じrunでビルドしたストア用ZIPを使用する。公開済みversionと同じなら何もしない。新しいversionだけをアップロード・審査申請し、審査通過後に公開される。古いversion、審査中の更新、ポリシー警告、アップロード未確認などでは停止する。Chrome本体の自動更新は公開後に行われる。
+自動申請は初期状態で無効。masterへのpush後、検証とビルドが成功した場合のみ、同じrunでビルドしたストア用ZIPを使用する。公開済みversionと同じなら何もしない。新しいversionだけをアップロード・審査申請し、審査通過後に公開される。古いversion、審査中の更新、ストアのポリシー警告、アップロード未確認などでは停止する。Chrome本体の自動更新は公開後に行われる。
+
+申請APIは`blockOnWarnings: false`で呼び出すため、申請時の非ブロッキング警告は審査提出を止めない。警告のreasonをActionsログに出力するので、ダッシュボードで内容を確認する。これはストアのポリシー警告を無視する設定でも審査を省略する設定でもない。`MANUAL_CONFIRMATION_REQUIRED`など必須の手動確認は引き続き申請を妨げる可能性があり、実際に自動提出されるか確認が必要。
 
 初回設定:
 
