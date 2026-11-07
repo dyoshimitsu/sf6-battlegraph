@@ -169,43 +169,42 @@ export function streaks(matches: NormalizedMatch[]): Streaks {
 export interface OpponentRecord {
   userCode: number;
   fighterId?: string;
-  characterSlugs: string[];
+  characterSlug: string;
+  characterName?: string;
   lastPlayedAtEpoch: number;
   record: RecordSummary;
 }
 
-/** Opponents met at least `minMatches` times, most frequent first. */
+function opponentCharacterSlug(match: NormalizedMatch): string {
+  return (
+    match.opponent.playing_character_tool_name ?? match.opponent.character_tool_name ?? "unknown"
+  );
+}
+
+/** Opponent and character pairs met at least `minMatches` times, most frequent first. */
 export function frequentOpponents(
   matches: NormalizedMatch[],
   minMatches = 3,
   limit = 10,
 ): OpponentRecord[] {
-  const groups = new Map<number, NormalizedMatch[]>();
+  const groups = new Map<string, NormalizedMatch[]>();
   for (const match of matches) {
     const code = match.opponent.player.short_id;
     if (!Number.isSafeInteger(code) || code <= 0) continue;
-    const group = groups.get(code);
+    const key = `${code}:${opponentCharacterSlug(match)}`;
+    const group = groups.get(key);
     if (group) group.push(match);
-    else groups.set(code, [match]);
+    else groups.set(key, [match]);
   }
-  return [...groups]
-    .filter(([, games]) => games.length >= minMatches)
-    .map(([userCode, games]) => {
-      const ordered = chronological(games);
-      const latest = ordered[ordered.length - 1];
+  return [...groups.values()]
+    .filter((games) => games.length >= minMatches)
+    .map((games) => {
+      const latest = chronological(games).at(-1) as NormalizedMatch;
       return {
-        userCode,
+        userCode: latest.opponent.player.short_id,
         fighterId: latest.opponent.player.fighter_id,
-        characterSlugs: [
-          ...new Set(
-            ordered.map(
-              (game) =>
-                game.opponent.playing_character_tool_name ??
-                game.opponent.character_tool_name ??
-                "unknown",
-            ),
-          ),
-        ],
+        characterSlug: opponentCharacterSlug(latest),
+        characterName: latest.opponent.playing_character_name ?? latest.opponent.character_name,
         lastPlayedAtEpoch: latest.playedAtEpoch,
         record: summary(games),
       };

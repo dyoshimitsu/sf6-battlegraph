@@ -157,21 +157,28 @@ describe("streaks", () => {
 });
 
 describe("frequentOpponents", () => {
-  it("lists repeat opponents by match count", () => {
+  it("lists repeat opponents per character by match count", () => {
     const games = [
       match(0, "win", { opponent: 7 }),
       match(1, "loss", { opponent: 7 }),
       match(2, "win", { opponent: 7 }),
       match(3, "win", { opponent: 8 }),
       match(4, "win", { opponent: 8 }),
+      match(5, "loss", { opponent: 8 }),
     ];
+    games[5].opponent = { ...games[5].opponent, character_tool_name: "ken" };
     const opponents = frequentOpponents(games, 2);
-    expect(opponents.map((item) => [item.userCode, item.record.matches, item.record.wins])).toEqual(
-      [
-        [7, 3, 2],
-        [8, 2, 2],
-      ],
-    );
+    expect(
+      opponents.map((item) => [
+        item.userCode,
+        item.characterSlug,
+        item.record.matches,
+        item.record.wins,
+      ]),
+    ).toEqual([
+      [7, "ryu", 3, 2],
+      [8, "ryu", 2, 2],
+    ]);
     expect(opponents[0].fighterId).toBe("Opponent7");
   });
 });

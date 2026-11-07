@@ -247,14 +247,16 @@ export function AdvancedInsights({
           )}
         </section>
         <section>
-          <h4>{ja ? "よく当たる相手（3戦以上）" : "Frequent opponents (3+ games)"}</h4>
+          <h4>
+            {ja
+              ? "よく当たる相手（同じキャラで3戦以上）"
+              : "Frequent opponents (3+ games with one character)"}
+          </h4>
           {patterns.opponents.length ? (
             patterns.opponents.map((opponent) => (
-              <div key={opponent.userCode}>
+              <div key={`${opponent.userCode}:${opponent.characterSlug}`}>
                 {statRow(
-                  `${opponent.fighterId ?? opponent.userCode} · ${opponent.characterSlugs
-                    .map((slug) => getCharacterNameBySlug(slug, locale))
-                    .join(" / ")}`,
+                  `${opponent.fighterId ?? opponent.userCode} · ${getCharacterNameBySlug(opponent.characterSlug, locale, opponent.characterName)}`,
                   opponent.record,
                 )}
               </div>
