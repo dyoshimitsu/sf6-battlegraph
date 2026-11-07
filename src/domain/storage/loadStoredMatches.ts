@@ -14,6 +14,14 @@ export interface StoredManifest {
   sourceSyncId?: string;
   syncedAtEpoch?: number;
   currentRatings?: CurrentRatings | null;
+  rankingLeaders?: StoredRankingLeaders | null;
+}
+
+/** The sync whose raw snapshot holds the latest ranking leader profiles. */
+export interface StoredRankingLeaders {
+  syncId: string;
+  characterSlug: string;
+  fetchedAt: string;
 }
 
 export interface StoredMatchReadPort {

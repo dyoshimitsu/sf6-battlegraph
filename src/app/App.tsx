@@ -374,7 +374,22 @@ export function App() {
     const knownReplayIds = (archivedMatches ?? imported?.preview.matches ?? [])
       .slice(0, 20)
       .map((match) => match.replayId);
-    const url = buildBucklerLaunchUrl(INITIAL_USER_CODE, window.location.origin, knownReplayIds);
+    const leaders = storedManifest?.rankingLeaders;
+    const fetchedAtEpoch = leaders ? Math.floor(Date.parse(leaders.fetchedAt) / 1000) : Number.NaN;
+    const url = buildBucklerLaunchUrl(
+      INITIAL_USER_CODE,
+      window.location.origin,
+      knownReplayIds,
+      leaders && Number.isSafeInteger(fetchedAtEpoch)
+        ? {
+            characterSlug: leaders.characterSlug,
+            fetchedAtEpoch,
+            matchesSince: (archivedMatches ?? []).filter(
+              (match) => match.playedAtEpoch > fetchedAtEpoch,
+            ).length,
+          }
+        : undefined,
+    );
     window.postMessage(createCollectorStartMessage(url), window.location.origin);
     setError(null);
     setIsCollecting(true);
@@ -1097,6 +1112,7 @@ export function App() {
                     userCode={INITIAL_USER_CODE}
                     locale={locale}
                     matches={imported.preview.matches}
+                    leadersSyncId={storedManifest?.rankingLeaders?.syncId}
                   />
                 )}
               </section>

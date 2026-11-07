@@ -12,6 +12,7 @@ import {
   readCollectorStatusMessage,
   readConnectorReadyMessage,
   readKnownReplayIds,
+  readRankingState,
 } from "./bridge";
 
 const bundle = {
@@ -112,5 +113,16 @@ describe("collector bridge", () => {
         "https://owner.github.io",
       ),
     ).toBeNull();
+  });
+
+  it("round-trips the stored ranking state and rejects malformed values", () => {
+    const state = { characterSlug: "jamie", fetchedAtEpoch: 1_786_000_000, matchesSince: 42 };
+    const url = new URL(
+      buildBucklerLaunchUrl(bundle.userCode, "https://owner.github.io", [], state),
+    );
+    expect(readRankingState(url.hash)).toEqual(state);
+    expect(readRankingState("#sf6-battlegraph-ranking=Jamie.1.2")).toBeNull();
+    expect(readRankingState("#sf6-battlegraph-ranking=jamie.-1.2")).toBeNull();
+    expect(readRankingState("")).toBeNull();
   });
 });

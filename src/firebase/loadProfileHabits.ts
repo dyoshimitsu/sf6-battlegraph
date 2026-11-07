@@ -77,17 +77,24 @@ async function readLeaders(db: Firestore, pagesPath: string): Promise<RankingLea
     : null;
 }
 
+/**
+ * Loads the latest profile snapshots and the ranking leaders. `leadersSyncId` comes from the
+ * manifest; without it, the leaders are looked up in the latest complete sync only.
+ */
 export async function loadProfileHabits(
   db: Firestore,
   userCode: number,
+  leadersSyncId?: string,
 ): Promise<ProfileHabitsHistory> {
   const base = `players/${userCode}/snapshots`;
   const snapshots = await getDocs(
     query(collection(db, base), orderBy(documentId(), "desc"), limit(10)),
   );
   const result: ProfileHabits[] = [];
-  let leaders: RankingLeaders | null = null;
-  let checkedLeaders = false;
+  let leaders: RankingLeaders | null = leadersSyncId
+    ? await readLeaders(db, `${base}/${leadersSyncId}/pages`)
+    : null;
+  let checkedLeaders = leadersSyncId !== undefined;
   for (const snapshot of snapshots.docs) {
     if (snapshot.data().status !== "complete") continue;
     const pagesPath = `${base}/${snapshot.id}/pages`;

@@ -5,6 +5,7 @@ import {
   createCollectorStartedMessage,
   readBattlegraphTargetOrigin,
   readKnownReplayIds,
+  readRankingState,
 } from "./bridge";
 import { collectBattleLogs } from "./collectBattleLogs";
 import { collectOpponentPeaks } from "./collectOpponentPeaks";
@@ -83,6 +84,10 @@ async function run() {
       window.fetch.bind(window),
       window.location.origin,
       locale,
+      {
+        previous: readRankingState(window.location.hash),
+        knownReplayIds: readKnownReplayIds(window.location.hash),
+      },
     );
   } catch (error) {
     console.warn("[SF6 Battlegraph] Ranking collection failed", error);

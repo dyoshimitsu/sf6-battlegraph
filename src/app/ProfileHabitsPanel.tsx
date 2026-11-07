@@ -16,7 +16,9 @@ export function ProfileHabitsPanel({
   userCode,
   locale,
   matches,
+  leadersSyncId,
 }: {
+  leadersSyncId?: string;
   db: Firestore;
   userCode: number;
   locale: "ja" | "en";
@@ -112,7 +114,7 @@ export function ProfileHabitsPanel({
     let active = true;
     setLoading(true);
     setError(null);
-    void loadProfileHabits(db, userCode)
+    void loadProfileHabits(db, userCode, leadersSyncId)
       .then((value) => {
         if (active) setHistory(value);
       })
@@ -125,7 +127,7 @@ export function ProfileHabitsPanel({
     return () => {
       active = false;
     };
-  }, [db, userCode]);
+  }, [db, userCode, leadersSyncId]);
   return (
     <section className="insights-card habits-card ui-card">
       <h3 className="ui-title">{ja ? "プレイ傾向の変化" : "Playstyle changes"}</h3>
@@ -156,8 +158,8 @@ export function ProfileHabitsPanel({
             <p className="ui-note habits-leaders">
               {leaders
                 ? ja
-                  ? `比較：${getCharacterNameBySlug(leaders.characterSlug, locale)}のMRランキング上位${leaders.profiles.length}人（${new Date(leaders.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得）の直近100戦平均。Bucklerの値がキャラクター別か全キャラクター合算かは未検証です。`
-                  : `Compared with the top ${leaders.profiles.length} ${getCharacterNameBySlug(leaders.characterSlug, locale)} players in the MR ranking (captured ${new Date(leaders.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })}), last 100 games. Whether Buckler averages per character or across characters is unverified.`
+                  ? `比較：${getCharacterNameBySlug(leaders.characterSlug, locale)}のMRランキング上位${leaders.profiles.length}人（${new Date(leaders.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得）の直近100戦平均。値はキャラクター別ではなくプレイヤー単位と推定。キャラクター変更か100試合ごとに更新します。`
+                  : `Compared with the top ${leaders.profiles.length} ${getCharacterNameBySlug(leaders.characterSlug, locale)} players in the MR ranking (captured ${new Date(leaders.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })}), last 100 games. Values are presumed per player, not per character. Refreshed after a character change or every 100 matches.`
                 : ja
                   ? "ランキング上位との比較は、次回の同期でランキングを取得すると表示されます。"
                   : "The ranking comparison appears after a sync collects the ranking."}

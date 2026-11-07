@@ -9,6 +9,15 @@ export const CONNECTOR_READY_MESSAGE_TYPE = "sf6-battlegraph.connector-ready";
 export const BUCKLER_ORIGIN = "https://www.streetfighter.com";
 export const BATTLEGRAPH_ORIGIN_PARAMETER = "sf6-battlegraph-origin";
 export const KNOWN_REPLAYS_PARAMETER = "sf6-battlegraph-known-replays";
+export const RANKING_STATE_PARAMETER = "sf6-battlegraph-ranking";
+
+/** What Battlegraph knows about the last ranking leaders it stored. */
+export interface RankingState {
+  characterSlug: string;
+  fetchedAtEpoch: number;
+  /** Stored matches played after the ranking was fetched. */
+  matchesSince: number;
+}
 
 export interface CollectorResultMessage {
   type: typeof COLLECTOR_MESSAGE_TYPE;
@@ -123,6 +132,7 @@ export function buildBucklerLaunchUrl(
   userCode: number,
   battlegraphOrigin: string,
   knownReplayIds: string[] = [],
+  rankingState?: RankingState,
 ): string {
   const url = new URL(`/6/buckler/ja-jp/profile/${userCode}/battlelog`, BUCKLER_ORIGIN);
   const hash = new URLSearchParams({ [BATTLEGRAPH_ORIGIN_PARAMETER]: battlegraphOrigin });
@@ -131,6 +141,13 @@ export function buildBucklerLaunchUrl(
     20,
   );
   if (known.length) hash.set(KNOWN_REPLAYS_PARAMETER, known.join(","));
+  if (rankingState && isRankingState(rankingState))
+    hash.set(
+      RANKING_STATE_PARAMETER,
+      [rankingState.characterSlug, rankingState.fetchedAtEpoch, rankingState.matchesSince].join(
+        ".",
+      ),
+    );
   url.hash = hash.toString();
   return url.toString();
 }
@@ -159,4 +176,26 @@ export function readBattlegraphTargetOrigin(hash: string): string | null {
   } catch {
     return null;
   }
+}
+
+function isRankingState(state: RankingState): boolean {
+  return (
+    /^[a-z0-9_]{1,32}$/.test(state.characterSlug) &&
+    Number.isSafeInteger(state.fetchedAtEpoch) &&
+    state.fetchedAtEpoch > 0 &&
+    Number.isSafeInteger(state.matchesSince) &&
+    state.matchesSince >= 0
+  );
+}
+
+export function readRankingState(hash: string): RankingState | null {
+  const value = new URLSearchParams(hash.replace(/^#/, "")).get(RANKING_STATE_PARAMETER);
+  const match = value?.match(/^([a-z0-9_]{1,32})\.(\d{1,12})\.(\d{1,9})$/);
+  if (!match) return null;
+  const state = {
+    characterSlug: match[1],
+    fetchedAtEpoch: Number(match[2]),
+    matchesSince: Number(match[3]),
+  };
+  return isRankingState(state) ? state : null;
 }

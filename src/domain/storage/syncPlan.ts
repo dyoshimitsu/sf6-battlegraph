@@ -6,7 +6,7 @@ import type {
   NormalizedMatch,
 } from "../buckler/types";
 import { toTokyoDate } from "../statistics/aggregateMatches";
-import type { StoredManifest } from "./loadStoredMatches";
+import type { StoredManifest, StoredRankingLeaders } from "./loadStoredMatches";
 import { mergeStoredMatches } from "./mergeStoredMatches";
 import { buildQueryChunkGeneration, type QueryChunk } from "./queryChunks";
 import { buildRawPageWrites } from "./rawPageWrites";
@@ -220,6 +220,11 @@ export function buildSyncPlan(
     ? parseCurrentRatings(bundle.profileSnapshot, userCode)
     : undefined;
   const pages = rawPages(source);
+  const ranking = bundle?.rankingSnapshot;
+  const rankingLeaders: StoredRankingLeaders | null =
+    ranking?.topProfiles.length && Number.isFinite(Date.parse(ranking.fetchedAt))
+      ? { syncId, characterSlug: ranking.characterSlug, fetchedAt: ranking.fetchedAt }
+      : (previousManifest?.rankingLeaders ?? null);
   const allMatches = mergeStoredMatches(archivedMatches, preview.matches);
   const chunks = buildQueryChunkGeneration(allMatches, generation);
   const latestPlayer = playerInfo(preview);
@@ -325,6 +330,8 @@ export function buildSyncPlan(
       sourceSyncId: syncId,
       syncedAtEpoch: Math.floor(Date.now() / 1000),
       currentRatings: currentRatings ?? null,
+      // Leaders are refreshed only now and then, so keep pointing at the last sync that stored them.
+      rankingLeaders,
       previousGeneration: previousManifest
         ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks }
         : null,

@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { BucklerCollectorBundle } from "../domain/buckler/types";
-import { collectRankingProfiles, latestRankedCharacterSlug } from "./collectRankingProfiles";
+import {
+  collectRankingProfiles,
+  latestCharacterSlug,
+  shouldRefreshRanking,
+} from "./collectRankingProfiles";
 
 const SUBJECT = 1000000001;
 
@@ -46,8 +50,32 @@ function leader(order: number, shortId: number) {
 }
 
 describe("ranking leader collection", () => {
-  it("uses the character from the latest ranked match", () => {
-    expect(latestRankedCharacterSlug(bundle)).toBe("jamie");
+  it("uses the character from the latest match in any mode", () => {
+    expect(latestCharacterSlug(bundle)).toBe("ken");
+  });
+
+  it("refreshes only after a character change or enough new matches", () => {
+    const previous = { characterSlug: "ken", fetchedAtEpoch: 15, matchesSince: 97 };
+    expect(shouldRefreshRanking(bundle, "ken", null, [])).toBe(true);
+    expect(shouldRefreshRanking(bundle, "ken", { ...previous, characterSlug: "jamie" }, [])).toBe(
+      true,
+    );
+    // R20 and R30 were played after the fetch; R20 is already stored and counted in matchesSince.
+    expect(shouldRefreshRanking(bundle, "ken", previous, ["R20"])).toBe(false);
+    expect(shouldRefreshRanking(bundle, "ken", { ...previous, matchesSince: 98 }, [])).toBe(true);
+  });
+
+  it("skips the ranking requests when no refresh is needed", async () => {
+    const fetcher = vi.fn();
+    const snapshot = await collectRankingProfiles(
+      bundle,
+      fetcher,
+      "https://www.streetfighter.com",
+      "ja-jp",
+      { previous: { characterSlug: "ken", fetchedAtEpoch: 40, matchesSince: 0 }, delayMs: 0 },
+    );
+    expect(snapshot).toBeUndefined();
+    expect(fetcher).not.toHaveBeenCalled();
   });
 
   it("fetches the top profiles in ranking order, skipping the subject", async () => {
@@ -76,11 +104,10 @@ describe("ranking leader collection", () => {
       fetcher,
       "https://www.streetfighter.com",
       "ja-jp",
-      () => new Date("2026-08-13T00:00:00Z"),
-      0,
+      { now: () => new Date("2026-08-13T00:00:00Z"), delayMs: 0 },
     );
-    expect(String(fetcher.mock.calls[0][0])).toContain("character_id=jamie");
-    expect(snapshot?.characterSlug).toBe("jamie");
+    expect(String(fetcher.mock.calls[0][0])).toContain("character_id=ken");
+    expect(snapshot?.characterSlug).toBe("ken");
     expect(snapshot?.topProfiles.map((item) => [item.order, item.userCode])).toEqual([
       [2, 12],
       [4, 14],

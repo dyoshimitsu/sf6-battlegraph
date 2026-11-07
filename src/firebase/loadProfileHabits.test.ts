@@ -87,4 +87,16 @@ describe("loadProfileHabits", () => {
     expect(leaders?.characterSlug).toBe("jamie");
     expect(leaders?.profiles.map((item) => item.values.drive_parry)).toEqual([4, 6]);
   });
+
+  it("reads the leaders from the sync the manifest points to", async () => {
+    store(`${PAGES}/profile_play`, profile(1, 2));
+    store("players/1/snapshots/older/pages/ranking_profile_001", profile(9, 8), {
+      rankingUserCode: 9,
+      characterSlug: "ken",
+    });
+    const { snapshots, leaders } = await loadProfileHabits({} as never, 1, "older");
+    expect(snapshots).toHaveLength(1);
+    expect(leaders?.characterSlug).toBe("ken");
+    expect(leaders?.profiles[0].values.drive_parry).toBe(8);
+  });
 });

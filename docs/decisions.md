@@ -162,9 +162,9 @@ UIは日本語と英語に対応する。初回はブラウザ言語から選択
 
 観察：ログイン済みのBucklerで、`/ranking/master`のNext.js JSON（`character_filter=4&character_id=<tool_name>&platform=1&home_filter=1&home_category_id=0&home_id=0&page=1&season_type=1`）は`pageProps.master_rating_ranking`に`current_page`、`total_page`、`total_count`、`my_ranking_info`、`ranking_fighter_list`を返した。各要素には`order`、`rating`、`master_rating_ranking`と、`fighter_banner_info.personal_info.short_id`が含まれた。未ログインではこのデータを取得できなかった。上位プレイヤーの`/profile/<short_id>/play.json`も、自分のプロフィールと同じキーの`play.battle_stats`を返した。
 
-推測・未検証：クエリの各パラメーター（`platform`、`home_filter`、`season_type`など）の意味は、ユーザーが提示したURLをそのまま使っており確認していない。`battle_stats`がキャラクター別か全キャラクター合算の直近100戦かは確認していない。
+推測・未検証：クエリの各パラメーター（`platform`、`home_filter`、`season_type`など）の意味は、ユーザーが提示したURLをそのまま使っており確認していない。`battle_stats`はキャラクター別ではなくプレイヤー単位の直近100戦だとユーザーは推定しており、その前提で扱う（未検証）。
 
-コレクターは最新のランクマッチで使用したキャラクターのランキング1ページ目を取得し、自分を除く`order`順の上位3人の`play.json`を取得する。取得に失敗しても対戦ログの同期は継続する。ランキングと上位3人のプロフィールは生レスポンスのまま同期スナップショットへ保存し、画面では最新の完了済み同期にある上位プロフィールの平均と、自分の最新値との差をプレイ傾向に表示する。上位プレイヤーのプロフィールは他のプレイヤーのデータであり、`public`構成では閲覧者も読み取れる。
+コレクターは最新の試合（モードを問わない）で使用したキャラクターのランキング1ページ目を取得し、自分を除く`order`順の上位3人の`play.json`を取得する。上位の値は頻繁に変わらないため、manifestの`rankingLeaders`に記録した前回取得からキャラクターが変わった場合、または前回取得後の試合が100試合以上になった場合だけ取得する。Battlegraphは前回のキャラクター、取得時刻、取得後の保存済み試合数をBucklerを開くURL fragmentで渡し、コレクターは今回取得した試合のうち既知IDを除いた取得後の試合を加えて判定する。取得に失敗しても対戦ログの同期は継続し、前回の上位データを使い続ける。ランキングと上位3人のプロフィールは生レスポンスのまま同期スナップショットへ保存し、画面では`rankingLeaders`が指す同期の上位プロフィールの平均と、自分の最新値との差をプレイ傾向に表示する。上位プレイヤーのプロフィールは他のプレイヤーのデータであり、`public`構成では閲覧者も読み取れる。
 
 ## Act and game-version filters
 

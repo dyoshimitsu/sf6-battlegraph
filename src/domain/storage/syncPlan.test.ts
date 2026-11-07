@@ -152,6 +152,21 @@ describe("buildSyncPlan", () => {
       characterSlug: "jamie",
       storage: "inline",
     });
+    expect(plan.manifest.data.rankingLeaders).toEqual({
+      syncId: "sync-r",
+      characterSlug: "jamie",
+      fetchedAt: "2025-02-01T00:00:00Z",
+    });
+    const previous = {
+      activeGeneration: "generation-r",
+      chunks: [],
+      totalMatches: 1,
+      rankingLeaders: plan.manifest.data.rankingLeaders as StoredManifest["rankingLeaders"],
+    };
+    expect(
+      buildSyncPlan({}, preview(), "sync-next", "generation-next", "private", [], previous).manifest
+        .data.rankingLeaders,
+    ).toEqual(previous.rankingLeaders);
     expect(page("ranking_profile_001")).toMatchObject({
       sourceType: "ranking-profile",
       rankingUserCode: 7,

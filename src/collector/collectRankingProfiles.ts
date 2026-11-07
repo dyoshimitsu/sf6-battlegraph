@@ -1,4 +1,3 @@
-import { inferBattleMode } from "../domain/buckler/battleModes";
 import type {
   BucklerCollectorBundle,
   BucklerPageResponse,
@@ -6,7 +5,11 @@ import type {
   RankingSnapshot,
 } from "../domain/buckler/types";
 
+import type { RankingState } from "./bridge";
+
 export const RANKING_PROFILE_COUNT = 3;
+/** Refresh the leaders after this many matches since the last ranking was stored. */
+export const RANKING_REFRESH_MATCHES = 100;
 
 /** Query observed on the Buckler master rating ranking page; the meaning of each flag is unverified. */
 export function rankingQuery(characterSlug: string): Record<string, string> {
@@ -22,12 +25,11 @@ export function rankingQuery(characterSlug: string): Record<string, string> {
   };
 }
 
-/** The character the subject used in the latest ranked match of the bundle. */
-export function latestRankedCharacterSlug(bundle: BucklerCollectorBundle): string | undefined {
+/** The character the subject used in the latest match of the bundle, in any mode. */
+export function latestCharacterSlug(bundle: BucklerCollectorBundle): string | undefined {
   let latest: { at: number; slug: string } | undefined;
   for (const page of bundle.pages) {
     for (const replay of (page.response as BucklerPageResponse).pageProps.replay_list) {
-      if (inferBattleMode(replay, page.sourceType) !== "ranked") continue;
       const subject =
         replay.player1_info.player.short_id === bundle.userCode
           ? replay.player1_info
@@ -40,6 +42,26 @@ export function latestRankedCharacterSlug(bundle: BucklerCollectorBundle): strin
     }
   }
   return latest?.slug;
+}
+
+/**
+ * Leaders change slowly, so they are refreshed only when the subject switches character or
+ * has played enough matches since the stored ranking. Without a stored ranking, always fetch.
+ */
+export function shouldRefreshRanking(
+  bundle: BucklerCollectorBundle,
+  characterSlug: string,
+  previous: RankingState | null,
+  knownReplayIds: Iterable<string>,
+): boolean {
+  if (!previous || previous.characterSlug !== characterSlug) return true;
+  const known = new Set(knownReplayIds);
+  const newSince = new Set<string>();
+  for (const page of bundle.pages)
+    for (const replay of (page.response as BucklerPageResponse).pageProps.replay_list)
+      if (replay.uploaded_at > previous.fetchedAtEpoch && !known.has(replay.replay_id))
+        newSince.add(replay.replay_id);
+  return previous.matchesSince + newSince.size >= RANKING_REFRESH_MATCHES;
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {
@@ -79,16 +101,28 @@ async function fetchJson(fetcher: typeof fetch, url: string): Promise<unknown> {
   return response.json();
 }
 
+export interface RankingCollectionOptions {
+  previous?: RankingState | null;
+  knownReplayIds?: Iterable<string>;
+  now?: () => Date;
+  delayMs?: number;
+}
+
 export async function collectRankingProfiles(
   bundle: BucklerCollectorBundle,
   fetcher: typeof fetch,
   origin: string,
   locale: string,
-  now: () => Date = () => new Date(),
-  delayMs = 200,
+  {
+    previous = null,
+    knownReplayIds = [],
+    now = () => new Date(),
+    delayMs = 200,
+  }: RankingCollectionOptions = {},
 ): Promise<RankingSnapshot | undefined> {
-  const characterSlug = latestRankedCharacterSlug(bundle);
-  if (!characterSlug) return undefined;
+  const characterSlug = latestCharacterSlug(bundle);
+  if (!characterSlug || !shouldRefreshRanking(bundle, characterSlug, previous, knownReplayIds))
+    return undefined;
   const base = `/6/buckler/_next/data/${encodeURIComponent(bundle.buildId)}/${encodeURIComponent(locale)}`;
   const query = rankingQuery(characterSlug);
   const rankingUrl = new URL(`${base}/ranking/master.json`, origin);
