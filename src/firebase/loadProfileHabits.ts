@@ -47,7 +47,6 @@ export async function loadProfileHabits(db: Firestore, userCode: number): Promis
     } else continue;
     const parsed = parseProfileHabits(raw, data.fetchedAt, userCode);
     if (parsed) result.push(parsed);
-    if (result.length === 2) break;
   }
   return result;
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { NormalizedMatch } from "../buckler/types";
 import { advancedInsights } from "./advancedInsights";
-import { parseProfileHabits } from "./profileHabits";
+import { bestProfileHabits, parseProfileHabits } from "./profileHabits";
 
 function match(id: string, time: number): NormalizedMatch {
   const subject = { player: { short_id: 1 }, master_rating: 1500, round_results: [1, 0, 1] };
@@ -39,12 +39,21 @@ describe("advanced insights", () => {
       pageProps: {
         sid: 1,
         common: { statusCode: 200 },
-        play: { battle_stats: { drive_parry: 0, drive_impact: 0.6 } },
+        play: {
+          battle_stats: {
+            drive_parry: 0,
+            drive_impact: 0.6,
+            gauge_rate_drive_guard: 0.1144,
+            gauge_rate_drive_other: 0.2829,
+          },
+        },
       },
     };
     expect(parseProfileHabits(raw, "2026-01-01T00:00:00Z", 1)?.values).toEqual({
       drive_impact: 0.6,
       drive_parry: 0,
+      gauge_rate_drive_guard: 0.1144,
+      gauge_rate_drive_other: 0.2829,
     });
     expect(parseProfileHabits(raw, "2026-01-01T00:00:00Z", 2)).toBeNull();
   });
@@ -62,5 +71,20 @@ describe("advanced insights", () => {
       draws: 1,
       winRate: 50,
     });
+  });
+  it("compares only recorded 100-game windows available before each snapshot", () => {
+    const games = Array.from({ length: 110 }, (_, index) => ({
+      ...match(`r${index}`, index + 1),
+      result: index < 50 ? ("loss" as const) : ("win" as const),
+    }));
+    const snapshots = [
+      { fetchedAt: new Date(110_000).toISOString(), values: { gauge_rate_drive_guard: 0.2 } },
+      { fetchedAt: new Date(100_000).toISOString(), values: { gauge_rate_drive_guard: 0.1 } },
+      { fetchedAt: new Date(99_000).toISOString(), values: { gauge_rate_drive_guard: 0.3 } },
+    ];
+    const best = bestProfileHabits(snapshots, games);
+    expect(best?.snapshot).toEqual(snapshots[0]);
+    expect(best?.record).toMatchObject({ matches: 100, wins: 60, losses: 40, winRate: 60 });
+    expect(bestProfileHabits(snapshots.slice(2), games)).toBeUndefined();
   });
 });

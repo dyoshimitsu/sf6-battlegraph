@@ -27,7 +27,7 @@ import { completeOpponentRoster } from "../domain/statistics/completeOpponentRos
 import { buildDailyWindow } from "../domain/statistics/dailyWindow";
 import { recentRankedMatchupPriorities } from "../domain/statistics/matchupPriorities";
 import { movingAverage } from "../domain/statistics/movingAverage";
-import type { ProfileHabits } from "../domain/statistics/profileHabits";
+import { bestProfileHabits, type ProfileHabits } from "../domain/statistics/profileHabits";
 import {
   latestRatingCharacterKey,
   ratingCharacterKey,
@@ -1138,6 +1138,7 @@ export function App() {
                     db={firebaseRuntime.services.db}
                     userCode={INITIAL_USER_CODE}
                     locale={locale}
+                    matches={imported.preview.matches}
                   />
                 )}
               </section>
@@ -1187,22 +1188,81 @@ function ProfileHabitsPanel({
   db,
   userCode,
   locale,
+  matches,
 }: {
   db: import("firebase/firestore/lite").Firestore;
   userCode: number;
   locale: "ja" | "en";
+  matches: NormalizedMatch[];
 }) {
   const [snapshots, setSnapshots] = useState<ProfileHabits[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const ja = locale === "ja";
-  const fields = [
-    ["drive_impact", ja ? "ドライブインパクト" : "Drive impact"],
-    ["drive_parry", ja ? "ドライブパリィ" : "Drive parry"],
-    ["just_parry", ja ? "ジャストパリィ" : "Perfect parry"],
-    ["throw_count", ja ? "投げ" : "Throws"],
-    ["corner_time", ja ? "相手を画面端に追い詰めた時間" : "Corner time"],
-  ] as const;
+  const groups: {
+    title: string;
+    percent?: boolean;
+    fields: [keyof ProfileHabits["values"], string][];
+  }[] = [
+    {
+      title: ja ? "攻防の行動" : "Actions",
+      fields: [
+        ["drive_impact", ja ? "インパクト成功" : "Impacts landed"],
+        ["drive_parry", ja ? "パリィ成功" : "Parries"],
+        ["just_parry", ja ? "ジャストパリィ" : "Perfect parries"],
+        ["drive_reversal", ja ? "ドライブリバーサル" : "Drive reversals"],
+        ["throw_count", ja ? "投げ成功" : "Throws landed"],
+        ["throw_tech", ja ? "投げ抜け" : "Throw escapes"],
+        ["throw_drive_parry", ja ? "相手パリィを投げた" : "Throws vs parry"],
+        ["punish_counter", ja ? "インパクトのパニッシュ成功" : "Impact punish counters"],
+        ["drive_impact_to_drive_impact", ja ? "インパクト返し成功" : "Impact counters"],
+        ["stun", ja ? "スタンさせた" : "Stuns inflicted"],
+      ],
+    },
+    {
+      title: ja ? "受けた行動・画面端" : "Defense and corner",
+      fields: [
+        ["received_drive_impact", ja ? "インパクトを受けた" : "Impacts received"],
+        [
+          "received_drive_impact_to_drive_impact",
+          ja ? "インパクトを返された" : "Impacts countered",
+        ],
+        ["received_punish_counter", ja ? "インパクトのパニッシュ被弾" : "Impact punish received"],
+        ["received_throw_count", ja ? "投げを受けた" : "Throws received"],
+        ["received_throw_drive_parry", ja ? "パリィを投げられた" : "Parries thrown"],
+        ["received_stun", ja ? "スタンさせられた" : "Stuns received"],
+        ["corner_time", ja ? "相手を画面端に" : "Opponent in corner"],
+        ["cornered_time", ja ? "自分が画面端に" : "Own time in corner"],
+      ],
+    },
+    {
+      title: ja ? "ドライブゲージ使用実績" : "Drive gauge usage",
+      percent: true,
+      fields: [
+        ["gauge_rate_drive_guard", ja ? "ドライブパリィ" : "Drive parry"],
+        ["gauge_rate_drive_impact", ja ? "ドライブインパクト" : "Drive impact"],
+        ["gauge_rate_drive_arts", ja ? "オーバードライブアーツ" : "Overdrive arts"],
+        ["gauge_rate_drive_rush_from_parry", ja ? "パリィドライブラッシュ" : "Parry drive rush"],
+        [
+          "gauge_rate_drive_rush_from_cancel",
+          ja ? "キャンセルドライブラッシュ" : "Cancel drive rush",
+        ],
+        ["gauge_rate_drive_reversal", ja ? "ドライブリバーサル" : "Drive reversal"],
+        ["gauge_rate_drive_other", ja ? "ダメージ" : "Damage"],
+      ],
+    },
+    {
+      title: ja ? "SAゲージ使用割合" : "Super gauge usage",
+      percent: true,
+      fields: [
+        ["gauge_rate_sa_lv1", "SA1"],
+        ["gauge_rate_sa_lv2", "SA2"],
+        ["gauge_rate_sa_lv3", "SA3"],
+        ["gauge_rate_ca", "CA"],
+      ],
+    },
+  ];
+  const best = useMemo(() => bestProfileHabits(snapshots ?? [], matches), [snapshots, matches]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -1239,7 +1299,7 @@ function ProfileHabitsPanel({
         (snapshots.length ? (
           <>
             <div className="habits-dates">
-              {snapshots.map((snapshot, index) => (
+              {snapshots.slice(0, 2).map((snapshot, index) => (
                 <span key={snapshot.fetchedAt}>
                   {index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"}:{" "}
                   {new Date(snapshot.fetchedAt).toLocaleString(ja ? "ja-JP" : "en-US", {
@@ -1249,26 +1309,76 @@ function ProfileHabitsPanel({
               ))}
               <span>{ja ? "※100戦平均は重複あり" : "Overlapping 100-game averages"}</span>
             </div>
-            <div className="habits-grid">
-              {fields.map(([key, label]) => {
-                const value = snapshots[0]?.values[key],
-                  previous = snapshots[1]?.values[key];
-                return (
-                  <article key={key}>
-                    <span className="ui-label">{label}</span>
-                    <strong className="ui-value ui-value--accent">{value ?? "—"}</strong>
-                    {value !== undefined && previous !== undefined ? (
-                      <small>
-                        {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
-                        {(value - previous).toFixed(1)}
-                      </small>
-                    ) : (
-                      ""
-                    )}
-                  </article>
-                );
-              })}
-            </div>
+            {[groups[2], groups[3], groups[0], groups[1]].map((group) => (
+              <section className="habits-group" key={group.title}>
+                <h4>{group.title}</h4>
+                <div className="habits-grid">
+                  {group.fields.map(([key, label]) => {
+                    const value = snapshots[0]?.values[key],
+                      previous = snapshots[1]?.values[key];
+                    const multiplier = group.percent ? 100 : 1;
+                    const bestValue = best?.snapshot.values[key];
+                    return (
+                      <article key={key}>
+                        <span className="ui-label">{label}</span>
+                        <strong className="ui-value ui-value--accent">
+                          {value === undefined
+                            ? "—"
+                            : group.percent
+                              ? `${(value * 100).toFixed(2)}%`
+                              : value}
+                        </strong>
+                        {group.title === (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") &&
+                        value !== undefined &&
+                        bestValue !== undefined ? (
+                          <small>
+                            {ja ? "高勝率時" : "Best window"} {(bestValue * 100).toFixed(2)}% ·{" "}
+                            {value - bestValue >= 0 ? "+" : ""}
+                            {((value - bestValue) * 100).toFixed(2)}pt
+                          </small>
+                        ) : value !== undefined && previous !== undefined ? (
+                          <small>
+                            {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
+                            {((value - previous) * multiplier).toFixed(group.percent ? 2 : 1)}
+                            {group.percent ? "pt" : ""}
+                          </small>
+                        ) : (
+                          ""
+                        )}
+                        {group.percent && value !== undefined && (
+                          <div className="habits-meter" aria-hidden="true">
+                            <i style={{ width: `${Math.min(100, value * 100)}%` }} />
+                            {group.title ===
+                              (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") &&
+                              bestValue !== undefined && (
+                                <b style={{ left: `${Math.min(100, bestValue * 100)}%` }} />
+                              )}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+                {group.title === (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") && (
+                  <small>
+                    {best
+                      ? ja
+                        ? `線：高勝率時 ${new Date(best.snapshot.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })} · 勝率 ${formatWinRate(best.record.winRate)}（直近10同期から、取得前の保存済み100戦）`
+                        : `Marker: best window ${new Date(best.snapshot.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })} · ${formatWinRate(best.record.winRate)} (100 saved matches before capture, among the latest 10 syncs)`
+                      : ja
+                        ? "比較には保存済み100戦と、その後に取得したプロフィールが必要です。"
+                        : "Comparison needs 100 saved matches before a captured profile."}
+                  </small>
+                )}
+                {group.title === (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") && (
+                  <small>
+                    {ja
+                      ? " ※パリィ・ダメージの項目対応はBuckler表示との照合待ち。履歴欠落があると100戦の対象が一致しない場合があります。"
+                      : " Parry/damage field mappings need verification; missing history may change the 100-game window."}
+                  </small>
+                )}
+              </section>
+            ))}
           </>
         ) : (
           <p>{ja ? "対象のプロフィール記録がありません。" : "No profile snapshots found."}</p>
@@ -1321,30 +1431,35 @@ function AdvancedInsights({
         <section>
           <h4>{ja ? "ラウンド成績" : "Round record"}</h4>
           <div className="round-overview">
-            <strong>
-              {formatWinRate(
-                data.rounds.won + data.rounds.lost
-                  ? (data.rounds.won * 100) / (data.rounds.won + data.rounds.lost)
-                  : null,
-              )}
-            </strong>
-            <span>
-              {data.rounds.won}–{data.rounds.lost}
-            </span>
-            <span>
-              {data.rounds.won - data.rounds.lost >= 0 ? "+" : ""}
-              {data.rounds.won - data.rounds.lost}
-            </span>
+            <div>
+              <span>{ja ? "取得率" : "Won"}</span>
+              <strong>
+                {formatWinRate(
+                  data.rounds.won + data.rounds.lost
+                    ? (data.rounds.won * 100) / (data.rounds.won + data.rounds.lost)
+                    : null,
+                )}
+              </strong>
+            </div>
+            <div>
+              <span>{ja ? "取得 / 喪失" : "Won / lost"}</span>
+              <strong>
+                {data.rounds.won}–{data.rounds.lost}
+              </strong>
+            </div>
+            <div>
+              <span>{ja ? "得失差" : "Difference"}</span>
+              <strong>
+                {data.rounds.won - data.rounds.lost >= 0 ? "+" : ""}
+                {data.rounds.won - data.rounds.lost}
+              </strong>
+            </div>
           </div>
           <div className="round-bar" aria-hidden="true">
             <i style={{ flexGrow: data.rounds.won }} />
             <b style={{ flexGrow: data.rounds.lost }} />
           </div>
-          <small>
-            {ja
-              ? "取得率 · 得失 · 差（記録完備分）"
-              : "Won % · won/lost · difference (complete records)"}
-          </small>
+          <small>{ja ? "記録完備のラウンドのみ" : "Complete round records only"}</small>
         </section>
         <section>
           <h4>{ja ? "ラウンド先取と接戦" : "First round and close games"}</h4>
