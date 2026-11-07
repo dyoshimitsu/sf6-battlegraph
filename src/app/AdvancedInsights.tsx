@@ -89,7 +89,7 @@ export function AdvancedInsights({
   };
   const summary = (record: ReturnType<typeof recentMatchSummary>) =>
     `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
-  const estimate = <small className="estimate-tag">{ja ? "推定" : "estimated"}</small>;
+  const estimate = <small className="heading-tag">{ja ? "推定" : "estimated"}</small>;
   const statRow = (label: ReactNode, item: ReturnType<typeof recentMatchSummary>) => (
     <div className="insight-row">
       <span>{label}</span>
@@ -224,9 +224,10 @@ export function AdvancedInsights({
         </section>
         <section>
           <h4>
-            {ja
-              ? "よく当たる相手（同じキャラで4戦以上・上位10人）"
-              : "Frequent opponents (4+ games with one character, top 10)"}
+            {ja ? "よく当たる相手" : "Frequent opponents"}
+            <small className="heading-tag">
+              {ja ? "同じキャラで4戦以上・上位10人" : "4+ games with one character · top 10"}
+            </small>
           </h4>
           {patterns.opponents.length ? (
             patterns.opponents.map((opponent) => (
@@ -242,31 +243,15 @@ export function AdvancedInsights({
           )}
         </section>
         <section>
-          <h4>{ja ? "同じ相手との連戦" : "Games against the same opponent"}</h4>
+          <h4>{ja ? "ランクマッチの連戦" : "Ranked sets"}</h4>
           {data.rankedSets.map((item, i) => {
-            const label = ja ? `ランクマッチ ${i + 1}戦目` : `Ranked game ${i + 1}`;
+            const label = ja ? `同じ相手と${i + 1}戦目` : `Game ${i + 1} against the same opponent`;
             return <div key={label}>{statRow(label, item)}</div>;
           })}
-          {data.otherSets.some((item) => item.matches > 0) &&
-            data.otherSets.map((item, i) => {
-              const label = ja ? `その他のモード ${i + 1}戦目` : `Other modes game ${i + 1}`;
-              if (item.matches === 0) return null;
-              return (
-                <div key={label}>
-                  {statRow(
-                    <>
-                      {label}
-                      {estimate}
-                    </>,
-                    item,
-                  )}
-                </div>
-              );
-            })}
           <small>
             {ja
-              ? "ランクマッチは同じ相手と最大2戦なので、直前が同じ相手の1戦目なら2戦目として数える。その他のモードは同じ相手・モードで10分以内を連戦とみなす"
-              : "Ranked sets are at most two games, so a game right after a first game against the same opponent is game 2. In other modes, the same opponent and mode within 10 minutes counts as a rematch"}
+              ? "ランクマッチは同じ相手と最大2戦なので、直前が同じ相手の1戦目なら2戦目として数える"
+              : "Ranked sets are at most two games, so a game right after a first game against the same opponent is game 2"}
           </small>
         </section>
       </div>
@@ -291,8 +276,8 @@ export function AdvancedInsights({
         </h4>
         <span className="ui-note">
           {ja
-            ? "勝率 · 対戦数（薄色：勝敗判明5戦未満）"
-            : "Win rate · games (muted: fewer than 5 decided)"}
+            ? "勝率 · 対戦数 · 薄色：勝敗判明5戦未満"
+            : "Win rate · games · muted: fewer than 5 decided"}
         </span>
         <div className="insights-scroll">
           <table>

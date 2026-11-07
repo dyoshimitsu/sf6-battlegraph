@@ -222,8 +222,8 @@ export function RatingChart({
                         {labels.latest}
                         <strong>{number.format(item.latest)}</strong>
                         {item.coordinates.at(-1)?.snapshot && (
-                          <small className="rating-snapshot">
-                            {locale === "ja" ? "（同期時点）" : " (at sync)"}
+                          <small className="heading-tag">
+                            {locale === "ja" ? "同期時点" : "at sync"}
                           </small>
                         )}
                       </span>
@@ -287,7 +287,7 @@ export function RatingChart({
                 >
                   <title>
                     {number.format(point.value)} {item.kind.toUpperCase()}
-                    {point.snapshot ? (locale === "ja" ? "（同期時点）" : " (at sync)") : ""}
+                    {point.snapshot ? (locale === "ja" ? " · 同期時点" : " · at sync") : ""}
                   </title>
                 </circle>
               ))}
