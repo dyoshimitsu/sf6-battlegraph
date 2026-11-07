@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { NormalizedMatch } from "../buckler/types";
 import type { CharacterRecord } from "./aggregateMatches";
-import { matchupPriorities, recentRankedMatchupPriorities } from "./matchupPriorities";
+import {
+  matchupHighlights,
+  matchupPriorities,
+  recentRankedMatchupPriorities,
+} from "./matchupPriorities";
 
 function record(characterSlug: string, wins: number, losses: number, unknown = 0): CharacterRecord {
   return {
@@ -66,5 +70,22 @@ describe("matchupPriorities", () => {
     games.push(makeMatch(200, "casual"));
     const priorities = recentRankedMatchupPriorities(games);
     expect(priorities.map((item) => [item.characterSlug, item.matches])).toEqual([["ken", 100]]);
+  });
+});
+
+describe("matchupHighlights", () => {
+  it("names the lowest win rate with enough games and the most played losing matchup", () => {
+    const highlights = matchupHighlights([
+      record("ryu", 0, 2),
+      record("ken", 1, 5),
+      record("luke", 20, 30),
+      record("jamie", 40, 10),
+    ]);
+    expect(highlights.lowestWinRate?.characterSlug).toBe("ken");
+    expect(highlights.mostPlayedLosing?.characterSlug).toBe("luke");
+    expect(matchupHighlights([record("jamie", 3, 1)])).toEqual({
+      lowestWinRate: undefined,
+      mostPlayedLosing: undefined,
+    });
   });
 });

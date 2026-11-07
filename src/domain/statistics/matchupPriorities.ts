@@ -27,3 +27,31 @@ export function matchupPriorities(records: CharacterRecord[]): CharacterRecord[]
     )
     .slice(0, 3);
 }
+
+export interface MatchupHighlights {
+  /** Lowest win rate among characters with at least `minDecided` decided games. */
+  lowestWinRate?: CharacterRecord;
+  /** Most matches among characters with a losing record. */
+  mostPlayedLosing?: CharacterRecord;
+}
+
+export function matchupHighlights(records: CharacterRecord[], minDecided = 5): MatchupHighlights {
+  const decided = (record: CharacterRecord) => record.wins + record.losses;
+  const lowestWinRate = records
+    .filter((record) => record.winRate !== null && decided(record) >= minDecided)
+    .sort(
+      (left, right) =>
+        (left.winRate ?? 0) - (right.winRate ?? 0) ||
+        right.matches - left.matches ||
+        compareCharacterSlugs(left.characterSlug, right.characterSlug),
+    )[0];
+  const mostPlayedLosing = records
+    .filter((record) => record.losses > record.wins)
+    .sort(
+      (left, right) =>
+        right.matches - left.matches ||
+        (left.winRate ?? 0) - (right.winRate ?? 0) ||
+        compareCharacterSlugs(left.characterSlug, right.characterSlug),
+    )[0];
+  return { lowestWinRate, mostPlayedLosing };
+}

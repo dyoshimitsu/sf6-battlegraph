@@ -5,7 +5,9 @@ import {
   finishMethodBreakdown,
   frequentOpponents,
   opponentInputTypeRecords,
-  sessionPositionRecords,
+  sessionPositionPoints,
+  sessionTrend,
+  smoothedWinRates,
   streaks,
 } from "./matchPatterns";
 
@@ -78,19 +80,30 @@ describe("dailyRatingChanges", () => {
   });
 });
 
-describe("sessionPositionRecords", () => {
-  it("restarts the count after a long break", () => {
-    const games = [
-      ...Array.from({ length: 12 }, (_, index) => match(index, index < 10 ? "win" : "loss")),
-      match(20, "loss", { at: NOON + 12 * 300 + 3600 }),
-    ];
-    const buckets = sessionPositionRecords(games, 1800, 10, 3);
-    expect(buckets.map((bucket) => [bucket.from, bucket.to, bucket.record.matches])).toEqual([
-      [1, 10, 11],
-      [11, 20, 2],
-      [21, null, 0],
-    ]);
-    expect(buckets[1].record.losses).toBe(2);
+describe("session position", () => {
+  const games = [
+    ...Array.from({ length: 12 }, (_, index) => match(index, index < 10 ? "win" : "loss")),
+    match(20, "loss", { at: NOON + 12 * 300 + 3600 }),
+  ];
+
+  it("restarts the count after a long break and folds later games into the last point", () => {
+    const points = sessionPositionPoints(games, 1800, 11);
+    expect(points[0].record.matches).toBe(2);
+    expect(points[10]).toMatchObject({ position: 11, openEnded: true });
+    expect(points[10].record.losses).toBe(2);
+  });
+
+  it("smooths neighbouring points by their decided games", () => {
+    const points = sessionPositionPoints(games, 1800, 12);
+    expect(smoothedWinRates(points, 1)[0]).toBeCloseTo(66.7, 1);
+  });
+
+  it("reports the win-rate slope per ten games with its error", () => {
+    const trend = sessionTrend(sessionPositionPoints(games, 1800, 12));
+    expect(trend?.decidedGames).toBe(13);
+    expect(trend?.perTenGames).toBeLessThan(0);
+    expect(trend?.standardError).toBeGreaterThan(0);
+    expect(sessionTrend(sessionPositionPoints([match(0, "win")]))).toBeNull();
   });
 });
 

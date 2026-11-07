@@ -843,11 +843,7 @@ th {
 .insights-time {
   margin-top: var(--space-6);
 }
-.insights-scatter {
-  display: block;
-  width: 100%;
-  height: 150px;
-}
+
 .insights-scroll {
   overflow-x: auto;
 }
@@ -1927,5 +1923,84 @@ strong.ui-value {
 .estimate-tag {
   margin-left: var(--space-2);
   color: var(--muted);
+  font: 400 var(--ui-text-xs) var(--ui-font-label);
+}
+.session-trend text {
+  fill: var(--muted);
+  font: 400 var(--ui-text-sm) var(--ui-font-label);
+}
+.session-trend-grid {
+  stroke: var(--line);
+  stroke-dasharray: 3 4;
+}
+.session-trend-dot {
+  fill: var(--win);
+  opacity: 0.6;
+}
+.session-trend-dot.is-losing {
+  fill: var(--loss);
+}
+.session-trend-dot.is-low-sample {
+  opacity: 0.25;
+}
+.session-trend-line {
+  fill: none;
+  stroke: var(--text-strong);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.session-trend-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-2);
+}
+.session-trend-summary strong {
+  color: var(--text-strong);
+  font: 600 var(--ui-text-xl) var(--ui-font-display);
+}
+.session-trend-summary span {
+  color: var(--muted);
+  font-size: var(--ui-note-size);
+}
+.matchup-scatter,
+.session-trend svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.matchup-scatter text {
+  fill: var(--muted);
+  font: 400 var(--ui-text-sm) var(--ui-font-label);
+}
+.matchup-scatter-grid {
+  stroke: var(--line);
+}
+.matchup-scatter-even {
+  stroke: #4a5059;
+  stroke-dasharray: 4 4;
+}
+.matchup-scatter .matchup-scatter-axis {
+  fill: var(--text-strong);
+}
+.matchup-scatter-dot {
+  fill: var(--win);
+  opacity: 0.75;
+}
+.matchup-scatter-dot.is-losing {
+  fill: var(--loss);
+}
+.matchup-scatter-callout circle {
+  fill: none;
+  stroke: var(--text-strong);
+  stroke-width: 1.5;
+}
+.matchup-scatter .matchup-scatter-callout text {
+  fill: var(--text-strong);
+  font: 600 var(--ui-text-md) var(--ui-font-body);
+}
+.matchup-scatter .matchup-scatter-callout .matchup-scatter-tag {
+  fill: var(--muted);
   font: 400 var(--ui-text-xs) var(--ui-font-label);
 }

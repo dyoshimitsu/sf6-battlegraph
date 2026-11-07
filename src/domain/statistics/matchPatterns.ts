@@ -48,38 +48,87 @@ export function dailyRatingChanges(matches: NormalizedMatch[]): Map<string, Dail
   return days;
 }
 
-export interface SessionPositionRecord {
-  /** First game number in the bucket, starting at 1. */
-  from: number;
-  /** Last game number, or null for the open-ended final bucket. */
-  to: number | null;
+export interface SessionPositionPoint {
+  /** Game number within a play session, starting at 1. */
+  position: number;
+  /** True for the last point, which also holds every later game. */
+  openEnded: boolean;
   record: RecordSummary;
 }
 
 /**
- * Win rate by position within a play session. A session ends when the next match starts more
- * than `gapSeconds` after the previous one.
+ * Record by game number within a play session. A session ends when the next match starts more
+ * than `gapSeconds` after the previous one. Games after `maxPosition` share the last point.
  */
-export function sessionPositionRecords(
+export function sessionPositionPoints(
   matches: NormalizedMatch[],
   gapSeconds = 30 * 60,
-  bucketSize = 10,
-  bucketCount = 5,
-): SessionPositionRecord[] {
-  const buckets = Array.from({ length: bucketCount }, () => [] as NormalizedMatch[]);
+  maxPosition = 40,
+): SessionPositionPoint[] {
+  const groups = Array.from({ length: maxPosition }, () => [] as NormalizedMatch[]);
   let previous: NormalizedMatch | undefined;
   let position = 0;
   for (const match of chronological(matches)) {
     position =
       previous && match.playedAtEpoch - previous.playedAtEpoch <= gapSeconds ? position + 1 : 0;
-    buckets[Math.min(bucketCount - 1, Math.floor(position / bucketSize))].push(match);
+    groups[Math.min(maxPosition - 1, position)].push(match);
     previous = match;
   }
-  return buckets.map((games, index) => ({
-    from: index * bucketSize + 1,
-    to: index === bucketCount - 1 ? null : (index + 1) * bucketSize,
+  return groups.map((games, index) => ({
+    position: index + 1,
+    openEnded: index === maxPosition - 1,
     record: summary(games),
   }));
+}
+
+function decided(record: RecordSummary): number {
+  return record.wins + record.losses;
+}
+
+/** Win rate averaged over neighbouring points, weighted by their decided games. */
+export function smoothedWinRates(points: SessionPositionPoint[], radius = 3): (number | null)[] {
+  return points.map((_, index) => {
+    let wins = 0;
+    let games = 0;
+    for (let offset = -radius; offset <= radius; offset += 1) {
+      const point = points[index + offset];
+      if (!point) continue;
+      wins += point.record.wins;
+      games += decided(point.record);
+    }
+    return games > 0 ? (wins / games) * 100 : null;
+  });
+}
+
+export interface SessionTrend {
+  /** Change in win rate, in percentage points, per ten more games in a session. */
+  perTenGames: number;
+  /** Standard error of `perTenGames`, from the binomial variance of the overall win rate. */
+  standardError: number;
+  decidedGames: number;
+}
+
+/** Least-squares slope of win (1) or loss (0) against the game number within a session. */
+export function sessionTrend(points: SessionPositionPoint[]): SessionTrend | null {
+  const total = points.reduce((sum, point) => sum + decided(point.record), 0);
+  if (total < 2) return null;
+  const meanX =
+    points.reduce((sum, point) => sum + point.position * decided(point.record), 0) / total;
+  const wins = points.reduce((sum, point) => sum + point.record.wins, 0);
+  const meanY = wins / total;
+  let sxx = 0;
+  let sxy = 0;
+  for (const point of points) {
+    const dx = point.position - meanX;
+    sxx += decided(point.record) * dx * dx;
+    sxy += dx * (point.record.wins - meanY * decided(point.record));
+  }
+  if (sxx === 0) return null;
+  return {
+    perTenGames: (sxy / sxx) * 10 * 100,
+    standardError: Math.sqrt((meanY * (1 - meanY)) / sxx) * 10 * 100,
+    decidedGames: total,
+  };
 }
 
 /** Round result codes that end a round, in display order. Draws (4) are excluded. */

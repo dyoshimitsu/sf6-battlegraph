@@ -9,10 +9,14 @@ import {
   finishMethodBreakdown,
   frequentOpponents,
   opponentInputTypeRecords,
-  sessionPositionRecords,
+  sessionPositionPoints,
+  sessionTrend,
+  smoothedWinRates,
 } from "../domain/statistics/matchPatterns";
 import { CATEGORICAL_COLORS, DonutChart, formatShare } from "./DonutChart";
 import { formatWinRate } from "./format";
+import { MatchupScatter } from "./MatchupScatter";
+import { SessionTrendChart } from "./SessionTrendChart";
 import { WinRateColumns } from "./WinRateColumns";
 
 export function AdvancedInsights({
@@ -25,10 +29,10 @@ export function AdvancedInsights({
   const data = useMemo(() => advancedInsights(matches), [matches]);
   const patterns = useMemo(
     () => ({
-      sessionPositions: sessionPositionRecords(matches),
+      sessionPositions: sessionPositionPoints(matches),
       finishMethods: finishMethodBreakdown(matches),
       inputTypes: opponentInputTypeRecords(matches),
-      opponents: frequentOpponents(matches),
+      opponents: frequentOpponents(matches, 4, 10),
     }),
     [matches],
   );
@@ -180,41 +184,14 @@ export function AdvancedInsights({
           <small>{ja ? "記録時点は未検証" : "Recorded timing unverified"}</small>
         </section>
         <section>
-          <h4>{ja ? "対面：遭遇数と勝率" : "Matchups: frequency and win rate"}</h4>
-          <svg
-            className="insights-scatter"
-            viewBox="0 0 400 160"
-            role="img"
-            aria-label={
-              ja ? "横軸は勝率、縦軸は対戦数" : "Horizontal axis: win rate; vertical axis: matches"
-            }
-          >
-            <line x1="20" y1="140" x2="390" y2="140" stroke="#747b84" />
-            <line x1="205" y1="10" x2="205" y2="140" stroke="#747b84" strokeDasharray="4 4" />
-            {data.matchups
-              .filter((item) => item.winRate !== null)
-              .map((item) => (
-                <circle
-                  key={`${item.characterId}-${item.characterSlug}`}
-                  cx={20 + (item.winRate ?? 0) * 3.7}
-                  cy={
-                    140 -
-                    (item.matches / Math.max(1, ...data.matchups.map((entry) => entry.matches))) *
-                      125
-                  }
-                  r="5"
-                  style={{ fill: (item.winRate ?? 0) < 50 ? "var(--loss)" : "var(--win)" }}
-                >
-                  <title>
-                    {item.characterName}: {summary(item)}
-                  </title>
-                </circle>
-              ))}
-          </svg>
+          <h4>
+            {ja ? "相手キャラ別の対戦数と勝率" : "Matches and win rate by opponent character"}
+          </h4>
+          <MatchupScatter records={data.matchups} locale={locale} />
           <small>
             {ja
-              ? "勝率 → · 試合数 ↑ · 点にカーソルでキャラクター名 · 少数は参考値"
-              : "Win rate → · games ↑ · hover a dot for the character · small samples are indicative"}
+              ? "点にカーソルで詳細 · 名前付きは勝敗5戦以上で最低勝率のキャラと、負け越しで最も対戦数が多いキャラ"
+              : "Hover a dot for details · labelled: lowest win rate with 5+ decided games, and the most played losing matchup"}
           </small>
         </section>
         <section>
@@ -222,24 +199,16 @@ export function AdvancedInsights({
             {ja ? "連続プレイ中の試合順" : "Position in a play session"}
             {estimate}
           </h4>
-          {patterns.sessionPositions.map(({ from, to, record: item }) => (
-            <div key={from}>
-              {statRow(
-                to === null
-                  ? ja
-                    ? `${from}試合目以降`
-                    : `Game ${from}+`
-                  : ja
-                    ? `${from}〜${to}試合目`
-                    : `Games ${from}–${to}`,
-                item,
-              )}
-            </div>
-          ))}
+          <SessionTrendChart
+            points={patterns.sessionPositions}
+            smoothed={smoothedWinRates(patterns.sessionPositions)}
+            trend={sessionTrend(patterns.sessionPositions)}
+            locale={locale}
+          />
           <small>
             {ja
-              ? "前の試合から30分以上空いたら新しいプレイとして数え直す"
-              : "A gap of more than 30 minutes starts a new session"}
+              ? "前の試合から30分以上空いたら新しいプレイとして数え直す · 点の大きさは試合数 · 線は前後3試合でならした勝率 · 40試合目以降は1点にまとめる"
+              : "A gap of more than 30 minutes starts a new session · dot size shows games · the line averages three games on each side · games 40+ share one dot"}
           </small>
         </section>
         <section>
@@ -255,8 +224,8 @@ export function AdvancedInsights({
         <section>
           <h4>
             {ja
-              ? "よく当たる相手（同じキャラで3戦以上）"
-              : "Frequent opponents (3+ games with one character)"}
+              ? "よく当たる相手（同じキャラで4戦以上・上位10人）"
+              : "Frequent opponents (4+ games with one character, top 10)"}
           </h4>
           {patterns.opponents.length ? (
             patterns.opponents.map((opponent) => (
