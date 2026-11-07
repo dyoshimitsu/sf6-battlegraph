@@ -42,7 +42,7 @@ a {
 .site-header,
 main,
 footer {
-  width: min(1180px, calc(100% - 48px));
+  width: min(1680px, calc(100% - 48px));
   margin-inline: auto;
 }
 .site-header {
@@ -363,7 +363,7 @@ h3 {
   position: fixed;
   z-index: 30;
   top: 92px;
-  right: max(24px, calc((100vw - 1180px) / 2));
+  right: max(24px, calc((100vw - 1680px) / 2));
   width: min(420px, calc(100vw - 48px));
   pointer-events: none;
 }
@@ -720,6 +720,72 @@ th {
   border: 1px solid var(--line);
   border-radius: 16px;
 }
+.insights-card {
+  margin-top: 14px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #171a1f;
+}
+.insights-card > summary {
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+}
+.insights-card p,
+.insights-card small {
+  color: #c4c9d0;
+  font-size: 12px;
+}
+.insights-card h4 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.insights-grid section {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #101217;
+}
+.insights-grid p {
+  margin: 7px 0;
+}
+.insights-time {
+  margin-top: 22px;
+}
+.insights-scatter {
+  display: block;
+  width: 100%;
+  height: 150px;
+}
+.insights-scroll {
+  overflow-x: auto;
+}
+.insights-scroll table {
+  min-width: 850px;
+  border-collapse: collapse;
+}
+.insights-scroll th,
+.insights-scroll td {
+  padding: 6px 3px;
+  text-align: center;
+}
+.insights-hours {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 6px;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .recent-form {
   margin-top: 14px;
   padding: 20px 24px;
@@ -771,6 +837,23 @@ th {
 .daily-card h3 {
   margin: 0;
   font-size: 23px;
+}
+.daily-trend-chart {
+  margin-top: 18px;
+}
+.daily-trend-chart p {
+  color: #c4c9d0;
+  font-size: 12px;
+}
+.daily-trend-chart svg {
+  display: block;
+  width: 100%;
+  height: 160px;
+  overflow: visible;
+}
+.daily-trend-chart text {
+  fill: #b9bec6;
+  font-size: 10px;
 }
 .daily-legend {
   display: flex;

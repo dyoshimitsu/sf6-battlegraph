@@ -17,6 +17,7 @@ import {
   BucklerValidationError,
   type NormalizedMatch,
 } from "../domain/buckler/types";
+import { advancedInsights } from "../domain/statistics/advancedInsights";
 import {
   aggregateMatches,
   filterMatches,
@@ -26,6 +27,7 @@ import { completeOpponentRoster } from "../domain/statistics/completeOpponentRos
 import { buildDailyWindow } from "../domain/statistics/dailyWindow";
 import { recentRankedMatchupPriorities } from "../domain/statistics/matchupPriorities";
 import { movingAverage } from "../domain/statistics/movingAverage";
+import type { ProfileHabits } from "../domain/statistics/profileHabits";
 import {
   latestRatingCharacterKey,
   ratingCharacterKey,
@@ -48,6 +50,7 @@ import { createFirestoreMatchSidePort } from "../firebase/firestoreMatchSidePort
 import { createFirestoreReadPort } from "../firebase/firestoreReadPort";
 import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
+import { loadProfileHabits } from "../firebase/loadProfileHabits";
 import { useAdminAuth } from "../firebase/useAdminAuth";
 import { useI18n } from "../i18n/useI18n";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
@@ -1089,6 +1092,14 @@ export function App() {
                     activeDays: (count) => t("activeDays", { count }),
                   }}
                 />
+                <AdvancedInsights matches={filteredMatches} locale={locale} />
+                {firebaseRuntime.status === "ready" && (
+                  <ProfileHabitsPanel
+                    db={firebaseRuntime.services.db}
+                    userCode={INITIAL_USER_CODE}
+                    locale={locale}
+                  />
+                )}
                 <div className="character-sections">
                   <CharacterPanel
                     eyebrow={t("yourFighters")}
@@ -1157,6 +1168,293 @@ export function App() {
   );
 }
 
+function ProfileHabitsPanel({
+  db,
+  userCode,
+  locale,
+}: {
+  db: import("firebase/firestore/lite").Firestore;
+  userCode: number;
+  locale: "ja" | "en";
+}) {
+  const [snapshots, setSnapshots] = useState<ProfileHabits[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const ja = locale === "ja";
+  const fields = [
+    ["drive_impact", ja ? "ドライブインパクト" : "Drive impact"],
+    ["drive_parry", ja ? "ドライブパリィ" : "Drive parry"],
+    ["just_parry", ja ? "ジャストパリィ" : "Perfect parry"],
+    ["throw_count", ja ? "投げ" : "Throws"],
+    ["corner_time", ja ? "相手を画面端に追い詰めた時間" : "Corner time"],
+  ] as const;
+  async function load() {
+    setLoading(true);
+    setError(false);
+    try {
+      setSnapshots(await loadProfileHabits(db, userCode));
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <section className="insights-card">
+      <h3>{ja ? "プレイ傾向の変化" : "Playstyle changes"}</h3>
+      <p>
+        {ja
+          ? "保存済みの直近10回の同期から最大2件を読み込みます。追加のFirestore読み取りが発生します。"
+          : "Loads up to two profiles from the latest 10 syncs; additional Firestore reads apply."}
+      </p>
+      <button type="button" disabled={loading} onClick={() => void load()}>
+        {loading ? (ja ? "読み込み中…" : "Loading…") : ja ? "傾向を読み込む" : "Load trends"}
+      </button>
+      {error && <p>{ja ? "読み込みに失敗しました。" : "Unable to load profiles."}</p>}
+      {snapshots &&
+        (snapshots.length ? (
+          <>
+            <p>
+              {ja
+                ? "Bucklerの過去100戦平均。取得時点の値で、前回との差は期間内の成績ではありません。現在の絞り込みは適用されません。"
+                : "Buckler's last-100-match averages at capture; differences are not period-only statistics. Current filters do not apply."}
+            </p>
+            {snapshots.map((snapshot, index) => (
+              <p key={snapshot.fetchedAt}>
+                {index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"}:{" "}
+                {new Date(snapshot.fetchedAt).toLocaleString(ja ? "ja-JP" : "en-US", {
+                  timeZone: "Asia/Tokyo",
+                })}
+              </p>
+            ))}
+            {fields.map(([key, label]) => {
+              const value = snapshots[0]?.values[key],
+                previous = snapshots[1]?.values[key];
+              return (
+                <p key={key}>
+                  {label}: {value ?? "—"}
+                  {value !== undefined && previous !== undefined
+                    ? ` (${value - previous >= 0 ? "+" : ""}${(value - previous).toFixed(1)})`
+                    : ""}
+                </p>
+              );
+            })}
+          </>
+        ) : (
+          <p>{ja ? "対象のプロフィール記録がありません。" : "No profile snapshots found."}</p>
+        ))}
+    </section>
+  );
+}
+
+function AdvancedInsights({
+  matches,
+  locale,
+}: {
+  matches: NormalizedMatch[];
+  locale: "ja" | "en";
+}) {
+  const data = useMemo(() => advancedInsights(matches), [matches]);
+  const ja = locale === "ja";
+  const summary = (record: ReturnType<typeof recentMatchSummary>) =>
+    `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
+  const record = (items: NormalizedMatch[]) => recentMatchSummary(items, items.length);
+  const days = ja
+    ? ["日", "月", "火", "水", "木", "金", "土"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const maxHour = Math.max(1, ...data.weekdays.flat());
+  const hourLabels = Array.from({ length: 24 }, (_, hour) => String(hour));
+  const gameLabels = ja ? ["1試合目", "2試合目", "3試合目"] : ["Game 1", "Game 2", "Game 3"];
+  return (
+    <details className="insights-card">
+      <summary>
+        {ja
+          ? "詳細分析：ラウンド・対戦相手・時間帯"
+          : "Detailed analysis: rounds, opponents and time"}
+      </summary>
+      <p>
+        {ja
+          ? "すべて現在の絞り込みに基づく参考値です。引分・不明は勝率の分母から除きます。"
+          : "All figures use the current filters. Draws and unknown results are excluded from win rates."}
+      </p>
+      <div className="insights-grid">
+        <section>
+          <h4>{ja ? "ラウンド成績" : "Round record"}</h4>
+          <p>
+            {ja ? "取得率" : "Win rate"}:{" "}
+            {formatWinRate(
+              data.rounds.won + data.rounds.lost
+                ? (data.rounds.won * 100) / (data.rounds.won + data.rounds.lost)
+                : null,
+            )}
+          </p>
+          <p>
+            {data.rounds.won}–{data.rounds.lost} · {ja ? "得失差" : "Difference"}{" "}
+            {data.rounds.won - data.rounds.lost >= 0 ? "+" : ""}
+            {data.rounds.won - data.rounds.lost}
+          </p>
+          <small>
+            {ja ? "両者のラウンド記録が揃った試合のみ" : "Only matches with both round records"}
+          </small>
+        </section>
+        <section>
+          <h4>{ja ? "ラウンド先取と接戦" : "First round and close games"}</h4>
+          <p>
+            {ja ? "先取" : "Won first"}: {summary(record(data.rounds.firstWon))}
+          </p>
+          <p>
+            {ja ? "先取された" : "Lost first"}: {summary(record(data.rounds.firstLost))}
+          </p>
+          <p>
+            {ja ? "3ラウンド接戦（推定）" : "Three-round close games (estimated)"}:{" "}
+            {summary(record(data.rounds.deciding))}
+          </p>
+        </section>
+        <section>
+          <h4>{ja ? "相手MR帯" : "Opponent MR"}</h4>
+          {data.bands.length ? (
+            data.bands.map(({ band, record: item }) => (
+              <p key={band}>
+                {band}–{band + 99}: {summary(item)}
+              </p>
+            ))
+          ) : (
+            <p>—</p>
+          )}
+          <small>
+            {ja
+              ? "履歴に記録されたMR。試合前後の時点は未検証"
+              : "Recorded MR; pre/post-match timing unverified"}
+          </small>
+        </section>
+        <section>
+          <h4>{ja ? "MR差別" : "Relative MR"}</h4>
+          {(ja
+            ? ["相手が50以上低い", "差±49", "相手が50以上高い"]
+            : ["Opponent −50 or less", "Within ±49", "Opponent +50 or more"]
+          ).map((label, i) => (
+            <p key={label}>
+              {label}: {summary(data.relative[i])}
+            </p>
+          ))}
+        </section>
+        <section>
+          <h4>{ja ? "対面：遭遇数と勝率" : "Matchups: frequency and win rate"}</h4>
+          <svg
+            className="insights-scatter"
+            viewBox="0 0 400 160"
+            role="img"
+            aria-label={
+              ja ? "横軸は勝率、縦軸は対戦数" : "Horizontal axis: win rate; vertical axis: matches"
+            }
+          >
+            <line x1="20" y1="140" x2="390" y2="140" stroke="#747b84" />
+            <line x1="205" y1="10" x2="205" y2="140" stroke="#747b84" strokeDasharray="4 4" />
+            {data.matchups
+              .filter((item) => item.winRate !== null)
+              .map((item) => (
+                <circle
+                  key={`${item.characterId}-${item.characterSlug}`}
+                  cx={20 + (item.winRate ?? 0) * 3.7}
+                  cy={
+                    140 -
+                    (item.matches / Math.max(1, ...data.matchups.map((entry) => entry.matches))) *
+                      125
+                  }
+                  r="5"
+                  fill="#c7ff4a"
+                >
+                  <title>
+                    {item.characterName}: {summary(item)}
+                  </title>
+                </circle>
+              ))}
+          </svg>
+          <small>
+            {ja
+              ? "横：勝率 0–100% ／ 縦：対戦数（多いほど上）"
+              : "Horizontal: win rate 0–100%; vertical: number of matches"}
+          </small>
+          {data.matchups.slice(0, 10).map((item) => (
+            <p key={item.characterSlug}>
+              {item.characterName}: {summary(item)}
+            </p>
+          ))}
+          <small>
+            {ja
+              ? "遭遇数の多い順。少数の結果は変動しやすい"
+              : "Most frequent first; small samples vary widely"}
+          </small>
+        </section>
+        <section>
+          <h4>{ja ? "同じ相手との連戦（推定）" : "Consecutive games (estimated)"}</h4>
+          {gameLabels.map((label, i) => (
+            <p key={label}>
+              {label}: {summary(data.sessions[i])}
+            </p>
+          ))}
+          <small>
+            {ja
+              ? "同一相手・同一モード・前試合から10分以内。履歴欠落やキャラ変更は考慮しません。"
+              : "Same opponent and mode within 10 minutes; missing history and character changes are not accounted for."}
+          </small>
+        </section>
+      </div>
+      <section className="insights-time">
+        <h4>
+          {ja ? "曜日・時間帯別の試合数（日本時間）" : "Games by weekday and hour (Japan time)"}
+        </h4>
+        <div className="insights-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>{ja ? "曜日" : "Day"}</th>
+                {hourLabels.map((hour) => (
+                  <th key={hour}>{hour}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((day, dayIndex) => (
+                <tr key={day}>
+                  <th>{day}</th>
+                  {hourLabels.map((hour) => {
+                    const count = data.weekdays[dayIndex][Number(hour)];
+                    return (
+                      <td
+                        key={hour}
+                        style={{
+                          backgroundColor: `rgba(199, 255, 74, ${count ? 0.12 + (0.55 * count) / maxHour : 0})`,
+                        }}
+                      >
+                        {count || "–"}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p>{ja ? "時間別勝率（全曜日）" : "Win rate by hour (all weekdays)"}</p>
+        <div className="insights-hours">
+          {hourLabels.map((hour) => {
+            const item = data.hours[Number(hour)];
+            return (
+              <span key={hour}>
+                {hour}:00{" "}
+                {item.wins + item.losses >= 10
+                  ? summary(item)
+                  : `${item.matches} ${ja ? "試合・参考不足" : "games · insufficient"}`}
+              </span>
+            );
+          })}
+        </div>
+      </section>
+    </details>
+  );
+}
+
 type DailyRecord = ReturnType<typeof aggregateMatches>["byDay"][number];
 function DailyTrend({
   records,
@@ -1186,6 +1484,15 @@ function DailyTrend({
     day: "numeric",
     timeZone: "Asia/Tokyo",
   });
+  const trendSegments: string[][] = [];
+  let segment: string[] = [];
+  for (const [index, record] of recent.entries()) {
+    if (record.winRate === null) {
+      if (segment.length) trendSegments.push(segment);
+      segment = [];
+    } else segment.push(`${30 + index * 40},${110 - record.winRate}`);
+  }
+  if (segment.length) trendSegments.push(segment);
   return (
     <article className="daily-card">
       <div className="card-heading">
@@ -1197,6 +1504,66 @@ function DailyTrend({
       </div>
       {recent.length > 0 && (
         <>
+          <div className="daily-trend-chart">
+            <p>
+              {locale === "ja"
+                ? "日別勝率の推移（試合なし・勝敗不明の日は途切れます）"
+                : "Daily win rate (gaps indicate no decided games)"}
+            </p>
+            <svg
+              viewBox="0 0 590 140"
+              role="img"
+              aria-label={locale === "ja" ? "日別勝率の推移" : "Daily win-rate trend"}
+              preserveAspectRatio="none"
+            >
+              {[0, 50, 100].map((value) => (
+                <g key={value}>
+                  <line
+                    x1="30"
+                    x2="570"
+                    y1={110 - value}
+                    y2={110 - value}
+                    stroke="#454c55"
+                    strokeDasharray="4 4"
+                  />
+                  <text x="0" y={114 - value}>
+                    {value}%
+                  </text>
+                </g>
+              ))}
+              {trendSegments.map((points) => (
+                <polyline
+                  key={points[0]}
+                  points={points.join(" ")}
+                  fill="none"
+                  stroke="#c7ff4a"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+              {recent.map((item, index) =>
+                item.winRate === null ? null : (
+                  <circle
+                    key={item.date}
+                    cx={30 + index * 40}
+                    cy={110 - item.winRate}
+                    r="3"
+                    fill="#c7ff4a"
+                  >
+                    <title>
+                      {item.date}: {formatWinRate(item.winRate)} ({item.matches} {labels.matches})
+                    </title>
+                  </circle>
+                ),
+              )}
+              <text x="30" y="135">
+                {recent[0]?.date.slice(5)}
+              </text>
+              <text x="570" y="135" textAnchor="end">
+                {recent.at(-1)?.date.slice(5)}
+              </text>
+            </svg>
+          </div>
           <div className="daily-legend" aria-hidden="true">
             <span className="daily-key-win">{labels.wins}</span>
             <span className="daily-key-loss">{labels.losses}</span>
@@ -1344,7 +1711,8 @@ function RatingChart({
     const values = points.map((point) => point.value);
     const highest = Math.max(...values),
       lowest = Math.min(...values);
-    const scaleValues = allCharacterMatches
+    const scaleValues = chronologicalHistory
+      .slice(-100)
       .map((match) => (kind === "lp" ? match.subject.league_point : match.subject.master_rating))
       .filter((value): value is number => typeof value === "number" && value > 0);
     const current = currentRatings?.ratings.find(
@@ -1352,7 +1720,7 @@ function RatingChart({
     );
     const currentScaleValue = kind === "lp" ? current?.leaguePoint : current?.masterRating;
     if (currentScaleValue && currentScaleValue > 0) scaleValues.push(currentScaleValue);
-    const { min, max, step } = ratingScale([...scaleValues, ...values], kind === "lp" ? 1000 : 100);
+    const { min, max, step } = ratingScale([...scaleValues, ...values], kind === "lp" ? 100 : 10);
     const y = (value: number) => padY + ((max - value) * (height - padY * 2)) / (max - min);
     const coordinates = points.map((point) => ({
       x:
@@ -1533,6 +1901,11 @@ function RatingChart({
             : "Dashed: 10-match MR moving average (using unfiltered history)"}
         </p>
       )}
+      <p className="rating-average-legend">
+        {locale === "ja"
+          ? "縦軸は直近100試合を基準に、表示中の過去データが範囲外なら拡張します。"
+          : "Scale is based on the latest 100 matches and expands when older displayed data falls outside it."}
+      </p>
     </article>
   );
 }
