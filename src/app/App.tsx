@@ -1238,19 +1238,17 @@ function ProfileHabitsPanel({
       {snapshots &&
         (snapshots.length ? (
           <>
-            <small>
-              {ja
-                ? "取得時点の値。前回との差は期間内だけの成績ではありません。"
-                : "Snapshot differences are not period-only statistics."}
-            </small>
-            {snapshots.map((snapshot, index) => (
-              <p key={snapshot.fetchedAt}>
-                {index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"}:{" "}
-                {new Date(snapshot.fetchedAt).toLocaleString(ja ? "ja-JP" : "en-US", {
-                  timeZone: "Asia/Tokyo",
-                })}
-              </p>
-            ))}
+            <div className="habits-dates">
+              {snapshots.map((snapshot, index) => (
+                <span key={snapshot.fetchedAt}>
+                  {index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"}:{" "}
+                  {new Date(snapshot.fetchedAt).toLocaleString(ja ? "ja-JP" : "en-US", {
+                    timeZone: "Asia/Tokyo",
+                  })}
+                </span>
+              ))}
+              <span>{ja ? "※100戦平均は重複あり" : "Overlapping 100-game averages"}</span>
+            </div>
             <div className="habits-grid">
               {fields.map(([key, label]) => {
                 const value = snapshots[0]?.values[key],
@@ -1293,6 +1291,9 @@ function AdvancedInsights({
   const statRow = (label: string, item: ReturnType<typeof recentMatchSummary>) => (
     <div className="insight-row">
       <span>{label}</span>
+      <div className="insight-row-bar" aria-hidden="true">
+        <i style={{ width: `${item.winRate ?? 0}%` }} />
+      </div>
       <strong>{formatWinRate(item.winRate)}</strong>
       <small>
         {item.wins}–{item.losses} · n={item.matches}
@@ -1319,21 +1320,30 @@ function AdvancedInsights({
       <div className="insights-grid">
         <section>
           <h4>{ja ? "ラウンド成績" : "Round record"}</h4>
-          <p>
-            {ja ? "取得率" : "Win rate"}:{" "}
-            {formatWinRate(
-              data.rounds.won + data.rounds.lost
-                ? (data.rounds.won * 100) / (data.rounds.won + data.rounds.lost)
-                : null,
-            )}
-          </p>
-          <p>
-            {data.rounds.won}–{data.rounds.lost} · {ja ? "得失差" : "Difference"}{" "}
-            {data.rounds.won - data.rounds.lost >= 0 ? "+" : ""}
-            {data.rounds.won - data.rounds.lost}
-          </p>
+          <div className="round-overview">
+            <strong>
+              {formatWinRate(
+                data.rounds.won + data.rounds.lost
+                  ? (data.rounds.won * 100) / (data.rounds.won + data.rounds.lost)
+                  : null,
+              )}
+            </strong>
+            <span>
+              {data.rounds.won}–{data.rounds.lost}
+            </span>
+            <span>
+              {data.rounds.won - data.rounds.lost >= 0 ? "+" : ""}
+              {data.rounds.won - data.rounds.lost}
+            </span>
+          </div>
+          <div className="round-bar" aria-hidden="true">
+            <i style={{ flexGrow: data.rounds.won }} />
+            <b style={{ flexGrow: data.rounds.lost }} />
+          </div>
           <small>
-            {ja ? "両者のラウンド記録が揃った試合のみ" : "Only matches with both round records"}
+            {ja
+              ? "取得率 · 得失 · 差（記録完備分）"
+              : "Won % · won/lost · difference (complete records)"}
           </small>
         </section>
         <section>
@@ -1354,11 +1364,7 @@ function AdvancedInsights({
           ) : (
             <p>—</p>
           )}
-          <small>
-            {ja
-              ? "履歴に記録されたMR。試合前後の時点は未検証"
-              : "Recorded MR; pre/post-match timing unverified"}
-          </small>
+          <small>{ja ? "記録時点は未検証" : "Recorded timing unverified"}</small>
         </section>
         <section>
           <h4>{ja ? "MR差別" : "Relative MR"}</h4>
@@ -1401,18 +1407,12 @@ function AdvancedInsights({
                 </circle>
               ))}
           </svg>
-          <small>
-            {ja
-              ? "横：勝率 0–100% ／ 縦：対戦数（多いほど上）"
-              : "Horizontal: win rate 0–100%; vertical: number of matches"}
-          </small>
+          <small>{ja ? "勝率 → · 試合数 ↑" : "Win rate → · games ↑"}</small>
           {data.matchups.slice(0, 10).map((item) => (
             <div key={item.characterSlug}>{statRow(item.characterName, item)}</div>
           ))}
           <small>
-            {ja
-              ? "遭遇数の多い順。少数の結果は変動しやすい"
-              : "Most frequent first; small samples vary widely"}
+            {ja ? "遭遇数順 · 少数は参考値" : "Most frequent · small samples are indicative"}
           </small>
         </section>
         <section>
@@ -1422,8 +1422,8 @@ function AdvancedInsights({
           ))}
           <small>
             {ja
-              ? "同一相手・同一モード・前試合から10分以内。履歴欠落やキャラ変更は考慮しません。"
-              : "Same opponent and mode within 10 minutes; missing history and character changes are not accounted for."}
+              ? "同一相手・モード、10分以内（欠落・キャラ変更は未考慮）"
+              : "Same opponent/mode within 10 min; gaps and character changes ignored"}
           </small>
         </section>
       </div>
@@ -1436,8 +1436,8 @@ function AdvancedInsights({
         </h4>
         <span className="ui-note">
           {ja
-            ? "勝率と試合数 · 勝敗判明5戦未満は薄く表示 · 曜日は暦日"
-            : "Win rate and games · fewer than five decided games are muted · calendar weekdays"}
+            ? "勝率 · 対戦数（薄色：勝敗判明5戦未満）"
+            : "Win rate · games (muted: fewer than 5 decided)"}
         </span>
         <div className="insights-scroll">
           <table>
@@ -1519,9 +1519,7 @@ function AdvancedInsights({
           </ul>
         </div>
         <small className="ui-note">
-          {ja
-            ? "薄い棒は勝敗判明10戦未満。数字は勝率と対戦数です。"
-            : "Muted bars have fewer than 10 decided games; labels show win rate and games."}
+          {ja ? "薄色：勝敗判明10戦未満" : "Muted: fewer than 10 decided games"}
         </small>
       </section>
     </section>

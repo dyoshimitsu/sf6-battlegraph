@@ -799,11 +799,53 @@ th {
 }
 .insight-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(80px, 1fr) minmax(50px, 1.2fr) auto auto;
   align-items: baseline;
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.insight-row-bar,
+.round-bar {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  background: #303640;
+  border-radius: 999px;
+}
+.insight-row-bar i,
+.round-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.round-bar b {
+  display: block;
+  height: 100%;
+  background: #f08270;
+}
+.round-overview {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font: 400 12px var(--ui-font-label);
+}
+.round-overview strong {
+  color: var(--accent);
+  font: 600 var(--ui-value-size) var(--ui-font-display);
+}
+.round-bar {
+  margin-bottom: var(--space-2);
+}
+.habits-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  color: var(--muted);
+  font: 400 10px var(--ui-font-label);
 }
 .insight-row span {
   color: #c4c9d0;
@@ -979,6 +1021,10 @@ th {
 @media (max-width: 700px) {
   .insights-grid {
     columns: 1;
+  }
+  .insight-row {
+    grid-template-columns: minmax(55px, 1fr) minmax(24px, 0.6fr) auto auto;
+    gap: var(--space-2);
   }
 }
 .recent-form {
