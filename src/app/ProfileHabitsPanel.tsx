@@ -1,8 +1,13 @@
 import type { Firestore } from "firebase/firestore/lite";
 import { useEffect, useMemo, useState } from "react";
+import { getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import type { NormalizedMatch } from "../domain/buckler/types";
-import { bestProfileHabits, type ProfileHabits } from "../domain/statistics/profileHabits";
-import { loadProfileHabits } from "../firebase/loadProfileHabits";
+import {
+  averageProfileHabits,
+  bestProfileHabits,
+  type ProfileHabits,
+} from "../domain/statistics/profileHabits";
+import { loadProfileHabits, type ProfileHabitsHistory } from "../firebase/loadProfileHabits";
 import { CATEGORICAL_COLORS, DonutChart } from "./DonutChart";
 import { formatWinRate } from "./format";
 
@@ -17,7 +22,9 @@ export function ProfileHabitsPanel({
   locale: "ja" | "en";
   matches: NormalizedMatch[];
 }) {
-  const [snapshots, setSnapshots] = useState<ProfileHabits[] | null>(null);
+  const [history, setHistory] = useState<ProfileHabitsHistory | null>(null);
+  const snapshots = history?.snapshots ?? null;
+  const leaders = history?.leaders ?? null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const ja = locale === "ja";
@@ -84,13 +91,30 @@ export function ProfileHabitsPanel({
     },
   ];
   const best = useMemo(() => bestProfileHabits(snapshots ?? [], matches), [snapshots, matches]);
+  const leaderAverage = useMemo(
+    () => (leaders ? averageProfileHabits(leaders.profiles) : {}),
+    [leaders],
+  );
+  const leaderLabel = leaders
+    ? ja
+      ? `上位${leaders.profiles.length}人`
+      : `Top ${leaders.profiles.length}`
+    : "";
+  const leaderDiff = (field: keyof ProfileHabits["values"], value: number, percent: boolean) => {
+    const average = leaderAverage[field]?.value;
+    if (average === undefined) return undefined;
+    const scale = percent ? 100 : 1;
+    const digits = percent ? 1 : 2;
+    const difference = (value - average) * scale;
+    return `${leaderLabel} ${(average * scale).toFixed(digits)}${percent ? "%" : ""} · ${ja ? "差" : "diff"} ${difference >= 0 ? "+" : ""}${difference.toFixed(digits)}${percent ? "pt" : ""}`;
+  };
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
     void loadProfileHabits(db, userCode)
       .then((value) => {
-        if (active) setSnapshots(value);
+        if (active) setHistory(value);
       })
       .catch((cause: unknown) => {
         if (active) setError(cause instanceof Error ? cause.message : "Unknown error");
@@ -129,6 +153,15 @@ export function ProfileHabitsPanel({
               ))}
               <span>{ja ? "※100戦平均は重複あり" : "Overlapping 100-game averages"}</span>
             </div>
+            <p className="ui-note habits-leaders">
+              {leaders
+                ? ja
+                  ? `比較：${getCharacterNameBySlug(leaders.characterSlug, locale)}のMRランキング上位${leaders.profiles.length}人（${new Date(leaders.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得）の直近100戦平均。Bucklerの値がキャラクター別か全キャラクター合算かは未検証です。`
+                  : `Compared with the top ${leaders.profiles.length} ${getCharacterNameBySlug(leaders.characterSlug, locale)} players in the MR ranking (captured ${new Date(leaders.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })}), last 100 games. Whether Buckler averages per character or across characters is unverified.`
+                : ja
+                  ? "ランキング上位との比較は、次回の同期でランキングを取得すると表示されます。"
+                  : "The ranking comparison appears after a sync collects the ranking."}
+            </p>
             <div className="habits-share">
               {[groups[2], groups[3]].map((group) => {
                 const latest = snapshots[0];
@@ -145,9 +178,14 @@ export function ProfileHabitsPanel({
                     color: CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length],
                     figure: value === undefined ? "—" : `${(value * 100).toFixed(1)}%`,
                     detail:
-                      value !== undefined && comparison !== undefined
-                        ? `${group.compareWithBest ? (ja ? "高勝率時" : "Best window") : ja ? "前回" : "Previous"} ${(comparison * 100).toFixed(1)}% · ${value - comparison >= 0 ? "+" : ""}${((value - comparison) * 100).toFixed(1)}pt`
-                        : undefined,
+                      [
+                        value !== undefined && comparison !== undefined
+                          ? `${group.compareWithBest ? (ja ? "高勝率時" : "Best window") : ja ? "前回" : "Previous"} ${(comparison * 100).toFixed(1)}% · ${value - comparison >= 0 ? "+" : ""}${((value - comparison) * 100).toFixed(1)}pt`
+                          : undefined,
+                        value !== undefined ? leaderDiff(key, value, true) : undefined,
+                      ]
+                        .filter(Boolean)
+                        .join(" / ") || undefined,
                   };
                 });
                 const top = [...segments].sort((a, b) => b.value - a.value)[0];
@@ -191,6 +229,9 @@ export function ProfileHabitsPanel({
                             {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
                             {(value - previous).toFixed(1)}
                           </small>
+                        )}
+                        {value !== undefined && leaderDiff(key, value, false) && (
+                          <small className="ui-note">{leaderDiff(key, value, false)}</small>
                         )}
                       </article>
                     );

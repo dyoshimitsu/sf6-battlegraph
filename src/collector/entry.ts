@@ -8,6 +8,7 @@ import {
 } from "./bridge";
 import { collectBattleLogs } from "./collectBattleLogs";
 import { collectOpponentPeaks } from "./collectOpponentPeaks";
+import { collectRankingProfiles } from "./collectRankingProfiles";
 
 interface NextData {
   buildId?: string;
@@ -75,6 +76,16 @@ async function run() {
     );
   } catch (error) {
     console.warn("[SF6 Battlegraph] Opponent peak collection failed", error);
+  }
+  try {
+    bundle.rankingSnapshot = await collectRankingProfiles(
+      bundle,
+      window.fetch.bind(window),
+      window.location.origin,
+      locale,
+    );
+  } catch (error) {
+    console.warn("[SF6 Battlegraph] Ranking collection failed", error);
   }
   sendToBattlegraph(bundle);
   console.info("[SF6 Battlegraph] Collection complete", {

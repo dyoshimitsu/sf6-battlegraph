@@ -158,6 +158,14 @@ UIは日本語と英語に対応する。初回はブラウザ言語から選択
 
 ユーザー提供のplayレスポンスでは`play.character_league_infos`のケンとジェイミーのLPが画面上の現在値と一致し、`league_point: -1`は画面上「--- LP」だった。同期時のプロフィール全体を生データとして保存し、キャラクター別の正のLP・MRを取得時点の値としてmanifestにも保存する。グラフの末尾に取得時点の点を加えるが、試合直後の確定値とはみなさず、フィルターがそのキャラクターの保存済み最新ランクマッチを含まない場合は表示しない。プロフィール取得失敗時は古い現在値を引き継がない。
 
+## Master rating ranking leaders
+
+観察：ログイン済みのBucklerで、`/ranking/master`のNext.js JSON（`character_filter=4&character_id=<tool_name>&platform=1&home_filter=1&home_category_id=0&home_id=0&page=1&season_type=1`）は`pageProps.master_rating_ranking`に`current_page`、`total_page`、`total_count`、`my_ranking_info`、`ranking_fighter_list`を返した。各要素には`order`、`rating`、`master_rating_ranking`と、`fighter_banner_info.personal_info.short_id`が含まれた。未ログインではこのデータを取得できなかった。上位プレイヤーの`/profile/<short_id>/play.json`も、自分のプロフィールと同じキーの`play.battle_stats`を返した。
+
+推測・未検証：クエリの各パラメーター（`platform`、`home_filter`、`season_type`など）の意味は、ユーザーが提示したURLをそのまま使っており確認していない。`battle_stats`がキャラクター別か全キャラクター合算の直近100戦かは確認していない。
+
+コレクターは最新のランクマッチで使用したキャラクターのランキング1ページ目を取得し、自分を除く`order`順の上位3人の`play.json`を取得する。取得に失敗しても対戦ログの同期は継続する。ランキングと上位3人のプロフィールは生レスポンスのまま同期スナップショットへ保存し、画面では最新の完了済み同期にある上位プロフィールの平均と、自分の最新値との差をプレイ傾向に表示する。上位プレイヤーのプロフィールは他のプレイヤーのデータであり、`public`構成では閲覧者も読み取れる。
+
 ## Act and game-version filters
 
 BucklerのバトルログにはAct番号が含まれない。そのためActは`uploaded_at`と、`Asia/Tokyo`で定義したMaster League Act開始日時のマスターからクライアント側で導出する。日付だけではなく、各メンテナンス終了日時を境界にして、開始時刻以上・次のAct開始時刻未満をそのActとして扱う。期間外の試合はActフィルターの対象外にする。

@@ -45,6 +45,16 @@ interface RawPage {
   response: unknown;
   opponentUserCode?: number;
   actId?: number;
+  characterSlug?: string;
+  rankingUserCode?: number;
+  rankingOrder?: number;
+}
+
+export const RANKING_PROFILE_PAGE_COUNT = 3;
+
+/** Raw page ID of the n-th (1-based) ranking leader profile in a snapshot. */
+export function rankingProfilePageId(position: number): string {
+  return `ranking_profile_${String(position).padStart(3, "0")}`;
 }
 
 function rawPages(source: unknown): RawPage[] {
@@ -73,9 +83,35 @@ function rawPages(source: unknown): RawPage[] {
       actId: item.actId,
     }));
     const profile = bundle.profileSnapshot;
+    const ranking = bundle.rankingSnapshot;
+    const rankingPages: RawPage[] = ranking
+      ? [
+          {
+            id: "ranking_master",
+            sourceType: "ranking",
+            sourcePath: "/ranking/master",
+            page: 1,
+            fetchedAt: ranking.fetchedAt,
+            response: ranking.response,
+            characterSlug: ranking.characterSlug,
+          },
+          ...ranking.topProfiles.map((item, index) => ({
+            id: rankingProfilePageId(index + 1),
+            sourceType: "ranking-profile",
+            sourcePath: "/play",
+            page: index + 1,
+            fetchedAt: item.fetchedAt,
+            response: item.response,
+            characterSlug: ranking.characterSlug,
+            rankingUserCode: item.userCode,
+            rankingOrder: item.order,
+          })),
+        ]
+      : [];
     return [
       ...pages,
       ...peaks,
+      ...rankingPages,
       ...(profile
         ? [
             {
@@ -241,9 +277,12 @@ export function buildSyncPlan(
           fetchedAt: page.fetchedAt,
           opponentUserCode: page.opponentUserCode,
           actId: page.actId,
+          characterSlug: page.characterSlug,
+          rankingUserCode: page.rankingUserCode,
+          rankingOrder: page.rankingOrder,
         },
         raw: page.response,
-        forceParts: page.sourceType === "profile",
+        forceParts: page.sourceType === "profile" || page.sourceType === "ranking-profile",
       }),
     ),
     ...allMatches

@@ -124,6 +124,42 @@ describe("buildSyncPlan", () => {
     expect(plan.writeCount).toBe(10);
   });
 
+  it("stores the ranking page and leader profiles as split raw pages", () => {
+    const source = {
+      format: "sf6-battlegraph.collector",
+      version: 1,
+      userCode: 100,
+      buildId: "build",
+      exportedAt: "2025-02-01T00:00:00Z",
+      pages: [],
+      rankingSnapshot: {
+        characterSlug: "jamie",
+        query: { character_id: "jamie" },
+        fetchedAt: "2025-02-01T00:00:00Z",
+        response: { pageProps: {} },
+        topProfiles: [
+          { userCode: 7, order: 1, fetchedAt: "2025-02-01T00:00:01Z", response: { a: 1 } },
+        ],
+      },
+    };
+    const plan = buildSyncPlan(source, preview(), "sync-r", "generation-r");
+    const page = (id: string) =>
+      plan.writesBeforeManifest.find(
+        (write) => write.path === `players/100/snapshots/sync-r/pages/${id}`,
+      )?.data;
+    expect(page("ranking_master")).toMatchObject({
+      sourceType: "ranking",
+      characterSlug: "jamie",
+      storage: "inline",
+    });
+    expect(page("ranking_profile_001")).toMatchObject({
+      sourceType: "ranking-profile",
+      rankingUserCode: 7,
+      rankingOrder: 1,
+      storage: "parts",
+    });
+  });
+
   it("keeps the complete replay object in the match document", () => {
     const plan = buildSyncPlan({}, preview(), "sync-2", "generation-2");
     const complete = plan.writesBeforeManifest.find((write) =>

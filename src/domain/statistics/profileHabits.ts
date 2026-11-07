@@ -32,6 +32,8 @@ const fields = [
   "gauge_rate_sa_lv3",
   "gauge_rate_ca",
 ] as const;
+export type HabitField = (typeof fields)[number];
+
 export type ProfileHabits = {
   fetchedAt: string;
   values: Partial<Record<(typeof fields)[number], number>>;
@@ -81,4 +83,29 @@ export function bestProfileHabits(snapshots: ProfileHabits[], matches: Normalize
       (b.record.winRate ?? 0) - (a.record.winRate ?? 0) ||
       Date.parse(b.snapshot.fetchedAt) - Date.parse(a.snapshot.fetchedAt),
   )[0];
+}
+
+export interface RankingLeaders {
+  characterSlug: string;
+  fetchedAt: string;
+  profiles: ProfileHabits[];
+}
+
+/** Mean of each field over the profiles that report it. */
+export function averageProfileHabits(
+  profiles: ProfileHabits[],
+): Partial<Record<HabitField, { value: number; count: number }>> {
+  const result: Partial<Record<HabitField, { value: number; count: number }>> = {};
+  for (const field of fields) {
+    const values = profiles.flatMap((profile) => {
+      const value = profile.values[field];
+      return value === undefined ? [] : [value];
+    });
+    if (values.length)
+      result[field] = {
+        value: values.reduce((sum, value) => sum + value, 0) / values.length,
+        count: values.length,
+      };
+  }
+  return result;
 }

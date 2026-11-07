@@ -86,9 +86,27 @@ export interface BucklerCollectorBundle {
   pages: BucklerCollectorPage[];
   opponentPeaks?: OpponentPeakSnapshot[];
   profileSnapshot?: { fetchedAt: string; response: unknown };
+  rankingSnapshot?: RankingSnapshot;
   stopReason?: "known-replay";
   stoppedAtKnownReplayId?: string;
   knownReplayBoundaryCount?: number;
+}
+
+/** Master rating ranking page for the subject's character and the profiles of its leaders. */
+export interface RankingSnapshot {
+  characterSlug: string;
+  query: Record<string, string>;
+  fetchedAt: string;
+  response: unknown;
+  topProfiles: RankingProfileSnapshot[];
+}
+
+export interface RankingProfileSnapshot {
+  userCode: number;
+  /** Position in the fetched ranking list, starting at 1. */
+  order: number;
+  fetchedAt: string;
+  response: unknown;
 }
 
 export interface OpponentPeakSnapshot {
