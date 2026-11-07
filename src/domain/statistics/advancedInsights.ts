@@ -1,7 +1,7 @@
 import { getRoundDetails } from "../buckler/roundResults";
 import type { NormalizedMatch } from "../buckler/types";
 import { aggregateMatches, recentMatchSummary } from "./aggregateMatches";
-import { ratingMatches } from "./ratingMatches";
+import { isRankedMatch, ratingMatches } from "./ratingMatches";
 
 export function advancedInsights(matches: NormalizedMatch[]) {
   const rounds = {
@@ -56,21 +56,35 @@ export function advancedInsights(matches: NormalizedMatch[]) {
     hours[local.getUTCHours()].push(match);
     weekdays[local.getUTCDay()][local.getUTCHours()].push(match);
   }
-  const sessions = [[], [], []] as NormalizedMatch[][];
+  // Ranked sets are at most two games against the same opponent with the same characters, so the
+  // second game is the one right after a first game against that opponent. Other modes have no
+  // known set rule; the same opponent and mode within ten minutes is treated as a rematch.
+  const rankedSets = [[], []] as NormalizedMatch[][];
+  const otherSets = [[], [], []] as NormalizedMatch[][];
   const chronological = [...matches].sort(
     (a, b) => a.playedAtEpoch - b.playedAtEpoch || a.replayId.localeCompare(b.replayId),
   );
   let previous: NormalizedMatch | undefined,
     position = 0;
   for (const match of chronological) {
-    const same =
-      previous &&
+    const ranked = isRankedMatch(match);
+    const sameOpponent =
+      previous !== undefined &&
       match.opponent.player.short_id > 0 &&
-      previous.opponent.player.short_id === match.opponent.player.short_id &&
-      match.playedAtEpoch - previous.playedAtEpoch <= 600 &&
-      match.mode === previous.mode;
-    position = same ? position + 1 : 0;
-    if (position < 3) sessions[position].push(match);
+      previous.opponent.player.short_id === match.opponent.player.short_id;
+    if (ranked) {
+      position = sameOpponent && previous && isRankedMatch(previous) && position === 0 ? 1 : 0;
+      rankedSets[position].push(match);
+    } else {
+      const rematch =
+        sameOpponent &&
+        previous !== undefined &&
+        !isRankedMatch(previous) &&
+        match.mode === previous.mode &&
+        match.playedAtEpoch - previous.playedAtEpoch <= 600;
+      position = rematch ? position + 1 : 0;
+      if (position < 3) otherSets[position].push(match);
+    }
     previous = match;
   }
   return {
@@ -81,7 +95,8 @@ export function advancedInsights(matches: NormalizedMatch[]) {
     relative: relative.map((games) => recentMatchSummary(games, games.length)),
     hours: hours.map((games) => recentMatchSummary(games, games.length)),
     weekdays: weekdays.map((day) => day.map((games) => recentMatchSummary(games, games.length))),
-    sessions: sessions.map((games) => recentMatchSummary(games, games.length)),
+    rankedSets: rankedSets.map((games) => recentMatchSummary(games, games.length)),
+    otherSets: otherSets.map((games) => recentMatchSummary(games, games.length)),
     matchups: aggregateMatches(matches).byOpponentCharacter,
   };
 }

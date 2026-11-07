@@ -32,7 +32,27 @@ describe("advanced insights", () => {
     expect(result.rounds.lost).toBe(2);
     expect(result.rounds.deciding).toHaveLength(2);
     expect(result.relative[2].wins).toBe(2);
-    expect(result.sessions.map((item) => item.matches)).toEqual([1, 1, 0]);
+    expect(result.rankedSets.map((item) => item.matches)).toEqual([1, 1]);
+    expect(result.otherSets.map((item) => item.matches)).toEqual([0, 0, 0]);
+  });
+
+  it("counts ranked sets as at most two games regardless of the time between them", () => {
+    const first = Date.parse("2026-08-12T15:00:00Z") / 1000;
+    const casual = {
+      ...match("d", first + 7200),
+      mode: "casual" as const,
+      battleType: 2,
+      sourceTypes: ["all" as const],
+    };
+    const result = advancedInsights([
+      match("a", first),
+      match("b", first + 3600),
+      match("c", first + 3700),
+      casual,
+      { ...casual, replayId: "e", playedAtEpoch: first + 7300 },
+    ]);
+    expect(result.rankedSets.map((item) => item.matches)).toEqual([2, 1]);
+    expect(result.otherSets.map((item) => item.matches)).toEqual([1, 1, 0]);
   });
   it("validates profile ownership and preserves zero measurements", () => {
     const raw = {

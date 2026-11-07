@@ -110,7 +110,6 @@ export function AdvancedInsights({
     ? ["日", "月", "火", "水", "木", "金", "土"]
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + 6) % 24));
-  const gameLabels = ja ? ["1試合目", "2試合目", "3試合目"] : ["Game 1", "Game 2", "Game 3"];
   return (
     <section className="insights-card ui-card">
       <h3 className="insights-title ui-title">
@@ -241,17 +240,31 @@ export function AdvancedInsights({
           )}
         </section>
         <section>
-          <h4>
-            {ja ? "同じ相手との連戦" : "Consecutive games"}
-            {estimate}
-          </h4>
-          {gameLabels.map((label, i) => (
-            <div key={label}>{statRow(label, data.sessions[i])}</div>
-          ))}
+          <h4>{ja ? "同じ相手との連戦" : "Games against the same opponent"}</h4>
+          {data.rankedSets.map((item, i) => {
+            const label = ja ? `ランクマッチ ${i + 1}戦目` : `Ranked game ${i + 1}`;
+            return <div key={label}>{statRow(label, item)}</div>;
+          })}
+          {data.otherSets.some((item) => item.matches > 0) &&
+            data.otherSets.map((item, i) => {
+              const label = ja ? `その他のモード ${i + 1}戦目` : `Other modes game ${i + 1}`;
+              if (item.matches === 0) return null;
+              return (
+                <div key={label}>
+                  {statRow(
+                    <>
+                      {label}
+                      {estimate}
+                    </>,
+                    item,
+                  )}
+                </div>
+              );
+            })}
           <small>
             {ja
-              ? "同一相手・モード、10分以内（欠落・キャラ変更は未考慮）"
-              : "Same opponent/mode within 10 min; gaps and character changes ignored"}
+              ? "ランクマッチは同じ相手と最大2戦なので、直前が同じ相手の1戦目なら2戦目として数える。その他のモードは同じ相手・モードで10分以内を連戦とみなす"
+              : "Ranked sets are at most two games, so a game right after a first game against the same opponent is game 2. In other modes, the same opponent and mode within 10 minutes counts as a rematch"}
           </small>
         </section>
       </div>
