@@ -175,7 +175,9 @@ export function buildQueryChunkGeneration(
       left.playedAtEpoch - right.playedAtEpoch || left.replayId.localeCompare(right.replayId),
   )) {
     const yearMonth = toTokyoDate(match.playedAtEpoch).slice(0, 7);
-    grouped.set(yearMonth, [...(grouped.get(yearMonth) ?? []), toQueryMatch(match)]);
+    const monthMatches = grouped.get(yearMonth);
+    if (monthMatches) monthMatches.push(toQueryMatch(match));
+    else grouped.set(yearMonth, [toQueryMatch(match)]);
   }
 
   const chunks: QueryChunk[] = [];

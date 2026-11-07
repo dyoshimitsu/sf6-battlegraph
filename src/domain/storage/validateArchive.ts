@@ -47,6 +47,16 @@ export function validateFirestoreArchive(value: unknown): FirestoreArchive {
   requireDocument(documents, `players/${archive.userCode}`);
   requireDocument(documents, `players/${archive.userCode}/manifests/matches`);
 
+  const partsByPage = new Map<string, ArchiveDocument[]>();
+  for (const document of documents.values()) {
+    const separator = document.path.lastIndexOf("/parts/");
+    if (separator < 0) continue;
+    const pagePath = document.path.slice(0, separator);
+    const pageParts = partsByPage.get(pagePath);
+    if (pageParts) pageParts.push(document);
+    else partsByPage.set(pagePath, [document]);
+  }
+
   for (const page of documents.values()) {
     if (!/\/snapshots\/[^/]+\/pages\/[^/]+$/.test(page.path)) continue;
     if (page.data.storage === undefined) continue; // Legacy inline page saved before integrity metadata.
@@ -63,9 +73,9 @@ export function validateFirestoreArchive(value: unknown): FirestoreArchive {
     }
     if (page.data.storage !== "parts" || !Number.isSafeInteger(page.data.partCount))
       throw new ArchiveValidationError(`Unknown raw storage format: ${page.path}`);
-    const parts = [...documents.values()]
-      .filter((document) => document.path.startsWith(`${page.path}/parts/`))
-      .sort((left, right) => Number(left.data.index) - Number(right.data.index));
+    const parts = [...(partsByPage.get(page.path) ?? [])].sort(
+      (left, right) => Number(left.data.index) - Number(right.data.index),
+    );
     if (
       parts.length !== page.data.partCount ||
       parts.some((part, index) => part.data.index !== index || typeof part.data.data !== "string")

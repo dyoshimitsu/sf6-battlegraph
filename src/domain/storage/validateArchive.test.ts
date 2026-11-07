@@ -39,6 +39,19 @@ describe("validateFirestoreArchive", () => {
     expect(validateFirestoreArchive(archive(pages)).documentCount).toBe(pages.length + 2);
   });
 
+  it("keeps parts of different pages apart and rejects a missing part", () => {
+    const split = (path: string) =>
+      buildRawPageWrites({ path, metadata: {}, raw: { payload: "x" }, forceParts: true });
+    const first = split("players/100/snapshots/S1/pages/P1");
+    const second = split("players/100/snapshots/S1/pages/P2");
+    expect(validateFirestoreArchive(archive([...first, ...second])).documentCount).toBe(
+      first.length + second.length + 2,
+    );
+    expect(() => validateFirestoreArchive(archive([...first, second[0]]))).toThrow(
+      /Raw parts are incomplete: players\/100\/snapshots\/S1\/pages\/P2/,
+    );
+  });
+
   it("rejects duplicate paths and corrupted raw data", () => {
     const duplicate = archive([{ path: "players/100", data: {} }]);
     expect(() => validateFirestoreArchive(duplicate)).toThrow(ArchiveValidationError);
