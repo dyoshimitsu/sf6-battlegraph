@@ -48,11 +48,13 @@ export function advancedInsights(matches: NormalizedMatch[]) {
       relative[theirs - ours >= 50 ? 2 : theirs - ours <= -50 ? 0 : 1].push(match);
   }
   const hours = Array.from({ length: 24 }, () => [] as NormalizedMatch[]);
-  const weekdays = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+  const weekdays = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => [] as NormalizedMatch[]),
+  );
   for (const match of matches) {
     const local = new Date((match.playedAtEpoch + 9 * 3600) * 1000);
     hours[local.getUTCHours()].push(match);
-    weekdays[local.getUTCDay()][local.getUTCHours()]++;
+    weekdays[local.getUTCDay()][local.getUTCHours()].push(match);
   }
   const sessions = [[], [], []] as NormalizedMatch[][];
   const chronological = [...matches].sort(
@@ -78,7 +80,7 @@ export function advancedInsights(matches: NormalizedMatch[]) {
       .map(([band, games]) => ({ band, record: recentMatchSummary(games, games.length) })),
     relative: relative.map((games) => recentMatchSummary(games, games.length)),
     hours: hours.map((games) => recentMatchSummary(games, games.length)),
-    weekdays,
+    weekdays: weekdays.map((day) => day.map((games) => recentMatchSummary(games, games.length))),
     sessions: sessions.map((games) => recentMatchSummary(games, games.length)),
     matchups: aggregateMatches(matches).byOpponentCharacter,
   };

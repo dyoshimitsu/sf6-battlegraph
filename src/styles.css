@@ -872,11 +872,57 @@ th {
   padding: 6px 3px;
   text-align: center;
 }
+.insights-scroll td small {
+  display: block;
+  margin-top: 2px;
+  color: #b8bdc5;
+  font-size: 9px;
+}
+.insights-scroll td.heatmap-low-sample {
+  color: #a4aab1;
+  opacity: 0.65;
+}
+.insights-scroll td {
+  min-width: 44px;
+  font:
+    600 10px "DM Mono",
+    monospace;
+}
 .insights-hours {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 6px;
   font-size: 12px;
+}
+@media (min-width: 1200px) {
+  .analysis-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+  }
+  .analysis-overview .record-banner {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .analysis-overview .record-banner article {
+    padding: 16px;
+  }
+  .analysis-overview .record-banner article:nth-child(4) {
+    border-left: 0;
+  }
+  .analysis-overview .recent-form {
+    margin-top: 0;
+  }
+  .analysis-trends {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .character-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
 }
 @media (max-width: 700px) {
   .insights-grid {
@@ -956,7 +1002,9 @@ th {
 .daily-trend-chart svg {
   display: block;
   width: 100%;
-  height: 120px;
+  max-width: 720px;
+  height: auto;
+  margin-inline: auto;
   overflow: visible;
 }
 .daily-trend-chart text {

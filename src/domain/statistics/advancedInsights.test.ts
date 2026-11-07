@@ -26,7 +26,8 @@ describe("advanced insights", () => {
   it("groups Tokyo hours, rounds, rating differences, and estimated sessions", () => {
     const first = Date.parse("2026-08-12T15:00:00Z") / 1000;
     const result = advancedInsights([match("a", first), match("b", first + 60)]);
-    expect(result.weekdays[4][0]).toBe(2);
+    expect(result.weekdays[4][0]).toMatchObject({ matches: 2, wins: 2, winRate: 100 });
+    expect(result.weekdays[4][1]).toMatchObject({ matches: 0, winRate: null });
     expect(result.rounds.won).toBe(4);
     expect(result.rounds.lost).toBe(2);
     expect(result.rounds.deciding).toHaveLength(2);
@@ -46,5 +47,20 @@ describe("advanced insights", () => {
       drive_parry: 0,
     });
     expect(parseProfileHabits(raw, "2026-01-01T00:00:00Z", 2)).toBeNull();
+  });
+  it("keeps draws and unknown results out of weekday/hour win rates", () => {
+    const first = Date.parse("2026-08-12T15:00:00Z") / 1000;
+    const result = advancedInsights([
+      match("a", first),
+      { ...match("b", first + 60), result: "draw" },
+      { ...match("c", first + 120), result: "loss" },
+    ]);
+    expect(result.weekdays[4][0]).toMatchObject({
+      matches: 3,
+      wins: 1,
+      losses: 1,
+      draws: 1,
+      winRate: 50,
+    });
   });
 });

@@ -1006,100 +1006,106 @@ export function App() {
                     {t("reset")}
                   </button>
                 </div>
-                <div className="record-banner">
-                  <article>
-                    <span>{t("winRate")}</span>
-                    <strong>{formatWinRate(statistics.overall.winRate)}</strong>
-                  </article>
-                  {statistics.bySide.map((record) => (
-                    <article key={record.side}>
-                      <span>{t(record.side === 1 ? "playerOneWinRate" : "playerTwoWinRate")}</span>
-                      <strong>{formatWinRate(record.winRate)}</strong>
-                      <small>
-                        {t("sideRecord", { wins: record.wins, matches: record.matches })}
-                      </small>
+                <div className="analysis-overview">
+                  <div className="record-banner">
+                    <article>
+                      <span>{t("winRate")}</span>
+                      <strong>{formatWinRate(statistics.overall.winRate)}</strong>
                     </article>
-                  ))}
-                  <article>
-                    <span>{t("wins")}</span>
-                    <strong>{statistics.overall.wins}</strong>
-                  </article>
-                  <article>
-                    <span>{t("losses")}</span>
-                    <strong>{statistics.overall.losses}</strong>
-                  </article>
-                  <article>
-                    <span>{t("undecided")}</span>
-                    <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
-                  </article>
+                    {statistics.bySide.map((record) => (
+                      <article key={record.side}>
+                        <span>
+                          {t(record.side === 1 ? "playerOneWinRate" : "playerTwoWinRate")}
+                        </span>
+                        <strong>{formatWinRate(record.winRate)}</strong>
+                        <small>
+                          {t("sideRecord", { wins: record.wins, matches: record.matches })}
+                        </small>
+                      </article>
+                    ))}
+                    <article>
+                      <span>{t("wins")}</span>
+                      <strong>{statistics.overall.wins}</strong>
+                    </article>
+                    <article>
+                      <span>{t("losses")}</span>
+                      <strong>{statistics.overall.losses}</strong>
+                    </article>
+                    <article>
+                      <span>{t("undecided")}</span>
+                      <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
+                    </article>
+                  </div>
+                  <section className="recent-form ui-card" aria-label={t("recentForm")}>
+                    <div className="recent-form-heading">
+                      <h3 className="ui-title">{t("recentForm")}</h3>
+                      <span>
+                        {locale === "ja"
+                          ? "絞込後 · 勝率は勝敗のみ"
+                          : "Filtered · decided games only"}
+                      </span>
+                    </div>
+                    <div className="recent-form-grid">
+                      {[10, 100].map((limit) => {
+                        const record = recentMatchSummary(filteredMatches, limit);
+                        return (
+                          <article className="recent-form-card" key={limit}>
+                            <span className="ui-label">
+                              {t("recentGames", { limit, count: record.matches })}
+                            </span>
+                            <strong className="ui-value ui-value--accent">
+                              {formatWinRate(record.winRate)}
+                            </strong>
+                            <small className="ui-note">
+                              {t("recentRecord", {
+                                wins: record.wins,
+                                losses: record.losses,
+                                other: record.draws + record.unknown,
+                              })}
+                            </small>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
                 </div>
-                <section className="recent-form ui-card" aria-label={t("recentForm")}>
-                  <div className="recent-form-heading">
-                    <h3 className="ui-title">{t("recentForm")}</h3>
-                    <span>
-                      {locale === "ja"
-                        ? "絞込後 · 勝率は勝敗のみ"
-                        : "Filtered · decided games only"}
-                    </span>
-                  </div>
-                  <div className="recent-form-grid">
-                    {[10, 100].map((limit) => {
-                      const record = recentMatchSummary(filteredMatches, limit);
-                      return (
-                        <article className="recent-form-card" key={limit}>
-                          <span className="ui-label">
-                            {t("recentGames", { limit, count: record.matches })}
-                          </span>
-                          <strong className="ui-value ui-value--accent">
-                            {formatWinRate(record.winRate)}
-                          </strong>
-                          <small className="ui-note">
-                            {t("recentRecord", {
-                              wins: record.wins,
-                              losses: record.losses,
-                              other: record.draws + record.unknown,
-                            })}
-                          </small>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-                <RatingChart
-                  matches={filteredMatches}
-                  allMatches={imported.preview.matches}
-                  currentRatings={storedManifest?.currentRatings ?? null}
-                  allowCurrent={!toDate && !actId && !battleVersion}
-                  locale={locale}
-                  labels={{
-                    eyebrow: t("ratingHistory"),
-                    title: t("ratingChartTitle"),
-                    character: t("ratingCharacter"),
-                    latest: t("latestRating"),
-                    highest: t("highestRating"),
-                    lowest: t("lowestRating"),
-                    change: t("ratingChange"),
-                    noData: t("noRatingData"),
-                    firstMatch: t("firstMatch"),
-                    latestMatch: t("latestMatch"),
-                  }}
-                />
-                <DailyTrend
-                  records={statistics.byDay}
-                  locale={locale}
-                  labels={{
-                    eyebrow: t("dailyTrend"),
-                    title: t("dailyTrendTitle"),
-                    matches: t("dailyMatches"),
-                    winRate: t("winRate"),
-                    wins: t("wins"),
-                    losses: t("losses"),
-                    other: t("dailyOther"),
-                    noMatches: t("dailyNoMatches"),
-                    empty: t("noRecords"),
-                    activeDays: (count) => t("activeDays", { count }),
-                  }}
-                />
+                <div className="analysis-trends">
+                  <RatingChart
+                    matches={filteredMatches}
+                    allMatches={imported.preview.matches}
+                    currentRatings={storedManifest?.currentRatings ?? null}
+                    allowCurrent={!toDate && !actId && !battleVersion}
+                    locale={locale}
+                    labels={{
+                      eyebrow: t("ratingHistory"),
+                      title: t("ratingChartTitle"),
+                      character: t("ratingCharacter"),
+                      latest: t("latestRating"),
+                      highest: t("highestRating"),
+                      lowest: t("lowestRating"),
+                      change: t("ratingChange"),
+                      noData: t("noRatingData"),
+                      firstMatch: t("firstMatch"),
+                      latestMatch: t("latestMatch"),
+                    }}
+                  />
+                  <DailyTrend
+                    records={statistics.byDay}
+                    locale={locale}
+                    labels={{
+                      eyebrow: t("dailyTrend"),
+                      title: t("dailyTrendTitle"),
+                      matches: t("dailyMatches"),
+                      winRate: t("winRate"),
+                      wins: t("wins"),
+                      losses: t("losses"),
+                      other: t("dailyOther"),
+                      noMatches: t("dailyNoMatches"),
+                      empty: t("noRecords"),
+                      activeDays: (count) => t("activeDays", { count }),
+                    }}
+                  />
+                </div>
                 <div className="character-sections">
                   <CharacterPanel
                     eyebrow={t("yourFighters")}
@@ -1297,7 +1303,6 @@ function AdvancedInsights({
   const days = ja
     ? ["日", "月", "火", "水", "木", "金", "土"]
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const maxHour = Math.max(1, ...data.weekdays.flat());
   const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + 6) % 24));
   const gameLabels = ja ? ["1試合目", "2試合目", "3試合目"] : ["Game 1", "Game 2", "Game 3"];
   return (
@@ -1425,9 +1430,14 @@ function AdvancedInsights({
       <section className="insights-time">
         <h4>
           {ja
-            ? "曜日・時間帯別の試合数（日本時間・6時始まり、曜日は暦日）"
-            : "Games by calendar weekday and hour (Japan time, starting at 06:00)"}
+            ? "曜日・時間帯別の勝率（日本時間・6時始まり）"
+            : "Win rate by weekday and hour (Japan time, starting at 06:00)"}
         </h4>
+        <span className="ui-note">
+          {ja
+            ? "勝率と試合数 · 勝敗判明5戦未満は薄く表示 · 曜日は暦日"
+            : "Win rate and games · fewer than five decided games are muted · calendar weekdays"}
+        </span>
         <div className="insights-scroll">
           <table>
             <thead>
@@ -1443,15 +1453,28 @@ function AdvancedInsights({
                 <tr key={day}>
                   <th>{day}</th>
                   {hourLabels.map((hour) => {
-                    const count = data.weekdays[dayIndex][Number(hour)];
+                    const item = data.weekdays[dayIndex][Number(hour)];
                     return (
                       <td
                         key={hour}
+                        className={item.wins + item.losses < 5 ? "heatmap-low-sample" : ""}
+                        title={`${days[dayIndex]} ${hour}:00 · ${summary(item)} · ${ja ? "引分・不明" : "draw / unknown"}: ${item.draws + item.unknown}`}
                         style={{
-                          backgroundColor: `rgba(199, 255, 74, ${count ? 0.12 + (0.55 * count) / maxHour : 0})`,
+                          backgroundColor:
+                            item.winRate === null
+                              ? undefined
+                              : item.winRate >= 50
+                                ? `rgba(199, 255, 74, ${0.12 + (item.winRate - 50) / 200})`
+                                : `rgba(255, 118, 95, ${0.12 + (50 - item.winRate) / 200})`,
                         }}
                       >
-                        {count || "–"}
+                        {item.winRate === null ? "–" : `${Math.round(item.winRate)}%`}
+                        {item.matches > 0 && (
+                          <small>
+                            {item.matches}
+                            {ja ? "戦" : "g"}
+                          </small>
+                        )}
                       </td>
                     );
                   })}
@@ -1538,7 +1561,7 @@ function DailyTrend({
               viewBox="0 0 590 140"
               role="img"
               aria-label={locale === "ja" ? "日別勝率の推移" : "Daily win-rate trend"}
-              preserveAspectRatio="none"
+              preserveAspectRatio="xMidYMid meet"
             >
               {[0, 50, 100].map((value) => (
                 <g key={value}>
