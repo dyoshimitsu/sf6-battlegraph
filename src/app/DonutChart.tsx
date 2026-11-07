@@ -22,11 +22,14 @@ export function DonutChart({
   centerValue,
   centerLabel,
   ariaLabel,
+  legend = true,
 }: {
   segments: DonutSegment[];
   centerValue: string;
   centerLabel: string;
   ariaLabel: string;
+  /** Hide the legend when a nearby table already names each segment. */
+  legend?: boolean;
 }) {
   const total = segments.reduce((sum, segment) => sum + Math.max(0, segment.value), 0);
   const visible = segments.filter((segment) => segment.value > 0);
@@ -43,7 +46,7 @@ export function DonutChart({
     return arc;
   });
   return (
-    <div className="donut">
+    <div className={legend ? "donut" : "donut donut--bare"}>
       <div className="donut-figure">
         <svg viewBox="0 0 120 120" role="img" aria-label={ariaLabel}>
           <circle className="donut-track" cx="60" cy="60" r={RADIUS} strokeWidth={STROKE} />
@@ -72,16 +75,18 @@ export function DonutChart({
           <span>{centerLabel}</span>
         </div>
       </div>
-      <ul className="donut-legend">
-        {segments.map((segment) => (
-          <li key={segment.key}>
-            <i style={{ background: segment.color }} aria-hidden="true" />
-            <span className="donut-legend-label">{segment.label}</span>
-            <strong>{segment.figure}</strong>
-            {segment.detail && <small>{segment.detail}</small>}
-          </li>
-        ))}
-      </ul>
+      {legend && (
+        <ul className="donut-legend">
+          {segments.map((segment) => (
+            <li key={segment.key}>
+              <i style={{ background: segment.color }} aria-hidden="true" />
+              <span className="donut-legend-label">{segment.label}</span>
+              <strong>{segment.figure}</strong>
+              {segment.detail && <small>{segment.detail}</small>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

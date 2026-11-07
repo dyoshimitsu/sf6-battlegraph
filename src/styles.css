@@ -776,27 +776,11 @@ th {
   color: #e8e9eb;
   font-size: var(--ui-text-xl);
 }
-.habits-group {
-  margin-top: var(--space-6);
-}
-.habits-group h4 {
-  margin: 0;
-  font: 600 var(--ui-text-lg) var(--ui-font-display);
-}
-.habits-group .habits-grid {
-  margin-top: var(--space-3);
-}
+
 .round-bar {
   margin-bottom: var(--space-2);
 }
-.habits-dates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-3);
-  color: var(--muted);
-  font: 400 var(--ui-text-xs) var(--ui-font-label);
-}
+
 .insight-row span {
   color: #c4c9d0;
   font-size: var(--ui-text-md);
@@ -813,30 +797,7 @@ th {
 .habits-card h3 {
   font: 600 var(--ui-title-size) var(--ui-font-display);
 }
-.habits-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-.habits-grid article {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background: #101216;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
-.habits-grid span,
-.habits-grid small {
-  color: var(--muted);
-  font: 400 var(--ui-text-xs) var(--ui-font-label);
-}
-.habits-grid strong {
-  color: var(--text-strong);
-  font: 600 var(--ui-value-size) var(--ui-font-display);
-}
+
 .insights-grid p {
   margin: var(--space-2) 0;
 }
@@ -1666,12 +1627,10 @@ table,
   gap: var(--space-3);
   padding-block: var(--space-2);
 }
-.habits-grid,
 .recent-form-grid {
   gap: var(--space-2);
   margin-top: var(--space-4);
 }
-.habits-grid article,
 .recent-form-card {
   gap: var(--space-2);
   padding: var(--space-4);
@@ -2011,4 +1970,92 @@ strong.ui-value {
 }
 .share-card .insight-row {
   grid-column: 1 / -1;
+}
+.habit-share {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+}
+@media (max-width: 480px) {
+  .habit-share {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+.donut--bare {
+  display: block;
+}
+.habit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ui-text-md);
+}
+.habit-table th,
+.habit-table td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+.habit-table thead th {
+  color: var(--muted);
+  font: 400 var(--ui-text-xs) var(--ui-font-label);
+}
+.habit-table th[scope="row"],
+.habit-table thead th:first-child {
+  text-align: left;
+  white-space: normal;
+}
+.habit-table th[scope="row"] {
+  color: #d8dce1;
+  font: 400 var(--ui-text-md) var(--ui-font-body);
+}
+.habits-card .habits-dates {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font: 400 var(--ui-text-xs) var(--ui-font-label);
+}
+.habit-table th[scope="row"] i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-2);
+  border-radius: 3px;
+}
+.habit-table td {
+  color: var(--muted);
+  font-family: var(--ui-font-display);
+}
+.habit-table .habit-table-own {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+.habit-table-diff {
+  display: grid;
+  grid-template-columns: auto 72px;
+  align-items: center;
+  justify-content: end;
+  gap: var(--space-2);
+  color: var(--text-strong);
+}
+.habit-table-bar {
+  position: relative;
+  height: 8px;
+  background: #252a30;
+  border-radius: 2px;
+}
+.habit-table-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #7d848e;
+  border-radius: 2px;
+}
+.habit-table-bar b {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text-strong);
 }

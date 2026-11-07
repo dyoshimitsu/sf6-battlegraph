@@ -10,6 +10,7 @@ import {
 import { loadProfileHabits, type ProfileHabitsHistory } from "../firebase/loadProfileHabits";
 import { CATEGORICAL_COLORS, DonutChart } from "./DonutChart";
 import { formatWinRate } from "./format";
+import { HabitComparisonTable } from "./HabitComparisonTable";
 
 export function ProfileHabitsPanel({
   db,
@@ -102,14 +103,6 @@ export function ProfileHabitsPanel({
       ? `上位${leaders.profiles.length}人`
       : `Top ${leaders.profiles.length}`
     : "";
-  const leaderDiff = (field: keyof ProfileHabits["values"], value: number, percent: boolean) => {
-    const average = leaderAverage[field]?.value;
-    if (average === undefined) return undefined;
-    const scale = percent ? 100 : 1;
-    const digits = percent ? 1 : 2;
-    const difference = (value - average) * scale;
-    return `${leaderLabel} ${(average * scale).toFixed(digits)}${percent ? "%" : ""} · ${ja ? "差" : "diff"} ${difference >= 0 ? "+" : ""}${difference.toFixed(digits)}${percent ? "pt" : ""}`;
-  };
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -144,103 +137,104 @@ export function ProfileHabitsPanel({
       {snapshots &&
         (snapshots.length ? (
           <>
-            <div className="habits-dates">
-              {snapshots.slice(0, 2).map((snapshot, index) => (
-                <span key={snapshot.fetchedAt}>
-                  {index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"}:{" "}
-                  {new Date(snapshot.fetchedAt).toLocaleString(ja ? "ja-JP" : "en-US", {
-                    timeZone: "Asia/Tokyo",
-                  })}
-                </span>
-              ))}
-              <span>{ja ? "※100戦平均は重複あり" : "Overlapping 100-game averages"}</span>
-            </div>
-            <p className="ui-note habits-leaders">
-              {leaders
-                ? ja
-                  ? `比較：${getCharacterNameBySlug(leaders.characterSlug, locale)}のMRランキング上位${leaders.profiles.length}人（${new Date(leaders.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得）の直近100戦平均。値はキャラクター別ではなくプレイヤー単位と推定。キャラクター変更か100試合ごとに更新します。`
-                  : `Compared with the top ${leaders.profiles.length} ${getCharacterNameBySlug(leaders.characterSlug, locale)} players in the MR ranking (captured ${new Date(leaders.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })}), last 100 games. Values are presumed per player, not per character. Refreshed after a character change or every 100 matches.`
-                : ja
-                  ? "ランキング上位との比較は、次回の同期でランキングを取得すると表示されます。"
-                  : "The ranking comparison appears after a sync collects the ranking."}
+            <p className="ui-caption habits-dates">
+              {snapshots
+                .slice(0, 2)
+                .map(
+                  (snapshot, index) =>
+                    `${index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"} ${new Date(snapshot.fetchedAt).toLocaleString(ja ? "ja-JP" : "en-US", { timeZone: "Asia/Tokyo" })}`,
+                )
+                .join(" · ")}
+              {leaders &&
+                ` · ${leaderLabel}：${getCharacterNameBySlug(leaders.characterSlug, locale)}${ja ? "のMRランキング" : " MR ranking"} ${new Date(leaders.fetchedAt).toLocaleDateString(ja ? "ja-JP" : "en-US", { timeZone: "Asia/Tokyo" })}`}
             </p>
             <div className="share-pair">
               {[groups[2], groups[3]].map((group) => {
                 const latest = snapshots[0];
-                const previousValues = snapshots[1]?.values;
-                const segments = group.fields.map(([key, label], index) => {
-                  const value = latest?.values[key];
-                  const comparison = group.compareWithBest
-                    ? best?.snapshot.values[key]
-                    : previousValues?.[key];
-                  return {
-                    key,
-                    label,
-                    value: value ?? 0,
-                    color: CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length],
-                    figure: value === undefined ? "—" : `${(value * 100).toFixed(1)}%`,
-                    detail:
-                      [
-                        value !== undefined && comparison !== undefined
-                          ? `${group.compareWithBest ? (ja ? "高勝率時" : "Best window") : ja ? "前回" : "Previous"} ${(comparison * 100).toFixed(1)}% · ${value - comparison >= 0 ? "+" : ""}${((value - comparison) * 100).toFixed(1)}pt`
-                          : undefined,
-                        value !== undefined ? leaderDiff(key, value, true) : undefined,
-                      ]
-                        .filter(Boolean)
-                        .join(" / ") || undefined,
-                  };
-                });
+                const reference = group.compareWithBest
+                  ? best?.snapshot.values
+                  : snapshots[1]?.values;
+                const rows = group.fields.map(([key, label], index) => ({
+                  key,
+                  label,
+                  color: CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length],
+                  value: latest?.values[key],
+                  reference: reference?.[key],
+                  leaders: leaderAverage[key]?.value,
+                }));
+                const segments = rows.map((row) => ({
+                  key: row.key,
+                  label: row.label,
+                  value: row.value ?? 0,
+                  color: row.color,
+                  figure: row.value === undefined ? "—" : `${(row.value * 100).toFixed(1)}%`,
+                }));
                 const top = [...segments].sort((a, b) => b.value - a.value)[0];
                 return (
                   <section className="share-card" key={group.title}>
                     <h4 className="ui-subtitle">{group.title}</h4>
-                    <DonutChart
-                      segments={segments}
-                      centerValue={top?.figure ?? "—"}
-                      centerLabel={top?.label ?? ""}
-                      ariaLabel={`${group.title}: ${segments.map((segment) => `${segment.label} ${segment.figure}`).join(", ")}`}
-                    />
+                    <div className="habit-share">
+                      <DonutChart
+                        legend={false}
+                        segments={segments}
+                        centerValue={top?.figure ?? "—"}
+                        centerLabel={top?.label ?? ""}
+                        ariaLabel={`${group.title}: ${segments.map((segment) => `${segment.label} ${segment.figure}`).join(", ")}`}
+                      />
+                      <HabitComparisonTable
+                        rows={rows}
+                        percent
+                        locale={locale}
+                        referenceLabel={
+                          group.compareWithBest ? (ja ? "高勝率時" : "Best") : ja ? "前回" : "Prev."
+                        }
+                        leadersLabel={leaders ? leaderLabel : undefined}
+                      />
+                    </div>
                     {group.compareWithBest && (
                       <small className="ui-note">
                         {best
                           ? ja
-                            ? `高勝率時：${new Date(best.snapshot.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得 · 勝率 ${formatWinRate(best.record.winRate)}（直近10同期のうち、取得前の保存済み100戦が最も高いもの）。パリィ・ダメージの項目対応はBuckler表示との照合待ち。`
-                            : `Best window: captured ${new Date(best.snapshot.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })} · ${formatWinRate(best.record.winRate)} (highest 100 saved matches before capture among the latest 10 syncs). Parry/damage mappings need verification.`
+                            ? `高勝率時：直近10同期のうち、取得前の保存済み100戦の勝率が最も高い${new Date(best.snapshot.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得分 · 勝率 ${formatWinRate(best.record.winRate)} · パリィ・ダメージの項目対応はBuckler表示との照合待ち`
+                            : `Best: the capture on ${new Date(best.snapshot.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })} with the highest win rate over the 100 saved matches before it, among the latest 10 syncs · ${formatWinRate(best.record.winRate)} · parry/damage mappings need verification`
                           : ja
-                            ? "高勝率時との比較には、保存済み100戦とその後に取得したプロフィールが必要です。"
-                            : "Comparison needs 100 saved matches before a captured profile."}
+                            ? "高勝率時との比較には、保存済み100戦とその後に取得したプロフィールが必要です"
+                            : "The best-window comparison needs 100 saved matches before a captured profile"}
                       </small>
                     )}
                   </section>
                 );
               })}
             </div>
-            {[groups[0], groups[1]].map((group) => (
-              <section className="habits-group" key={group.title}>
-                <h4 className="ui-subtitle">{group.title}</h4>
-                <div className="habits-grid">
-                  {group.fields.map(([key, label]) => {
-                    const value = snapshots[0]?.values[key],
-                      previous = snapshots[1]?.values[key];
-                    return (
-                      <article key={key}>
-                        <span className="ui-label">{label}</span>
-                        <strong className="ui-value">{value ?? "—"}</strong>
-                        {value !== undefined && previous !== undefined && (
-                          <small className="ui-note">
-                            {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
-                            {(value - previous).toFixed(1)}
-                          </small>
-                        )}
-                        {value !== undefined && leaderDiff(key, value, false) && (
-                          <small className="ui-note">{leaderDiff(key, value, false)}</small>
-                        )}
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+            <div className="share-pair">
+              {[groups[0], groups[1]].map((group) => (
+                <section className="share-card" key={group.title}>
+                  <h4 className="ui-subtitle">{group.title}</h4>
+                  <HabitComparisonTable
+                    rows={group.fields.map(([key, label]) => ({
+                      key,
+                      label,
+                      value: snapshots[0]?.values[key],
+                      reference: snapshots[1]?.values[key],
+                      leaders: leaderAverage[key]?.value,
+                    }))}
+                    percent={false}
+                    locale={locale}
+                    referenceLabel={ja ? "前回" : "Prev."}
+                    leadersLabel={leaders ? leaderLabel : undefined}
+                  />
+                </section>
+              ))}
+            </div>
+            <p className="ui-note habits-leaders">
+              {leaders
+                ? ja
+                  ? `直近100戦平均で、期間が重なるため前回との差は期間中だけの変化ではありません。${leaderLabel}はMRランキング上位のプレイヤーの平均で、値はキャラクター別ではなくプレイヤー単位と推定。キャラクター変更か100試合ごとに更新します。棒は自分、線は${leaderLabel}。`
+                  : `Last-100-game averages overlap, so the change from the previous capture is not limited to that period. ${leaderLabel} is the average of the MR ranking leaders, presumed per player rather than per character, refreshed after a character change or every 100 matches. Bar: you; line: ${leaderLabel}.`
+                : ja
+                  ? "直近100戦平均で、期間が重なるため前回との差は期間中だけの変化ではありません。ランキング上位との比較は、次回の同期でランキングを取得すると表示されます。"
+                  : "Last-100-game averages overlap, so the change from the previous capture is not limited to that period. The ranking comparison appears after a sync collects the ranking."}
+            </p>
           </>
         ) : (
           <p>{ja ? "対象のプロフィール記録がありません。" : "No profile snapshots found."}</p>
