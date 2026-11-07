@@ -74,8 +74,8 @@ export function DailyTrend({
           />
           <small className="ui-note">
             {ja
-              ? "薄色：勝敗判明5戦未満 · LP/MR：ランクマッチで同キャラの前試合からの増減（推定）"
-              : "Muted: fewer than 5 decided games · LP/MR: change from the previous ranked match of the same character (estimate)"}
+              ? "薄色：勝敗判明5戦未満 · LP/MR：ランクマッチで同キャラの前試合からの推定増減"
+              : "Muted: fewer than 5 decided games · LP/MR: estimated change from the previous ranked match of the same character"}
           </small>
         </>
       )}

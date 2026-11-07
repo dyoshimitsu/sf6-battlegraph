@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import { getRoundDetails } from "../domain/buckler/roundResults";
 import type { NormalizedMatch } from "../domain/buckler/types";
@@ -85,7 +85,8 @@ export function AdvancedInsights({
   };
   const summary = (record: ReturnType<typeof recentMatchSummary>) =>
     `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
-  const statRow = (label: string, item: ReturnType<typeof recentMatchSummary>) => (
+  const estimate = <small className="estimate-tag">{ja ? "推定" : "estimated"}</small>;
+  const statRow = (label: ReactNode, item: ReturnType<typeof recentMatchSummary>) => (
     <div className="insight-row">
       <span>{label}</span>
       <div className="insight-row-bar" aria-hidden="true">
@@ -148,14 +149,16 @@ export function AdvancedInsights({
             <i style={{ flexGrow: data.rounds.won }} />
             <b style={{ flexGrow: data.rounds.lost }} />
           </div>
-          <small>{ja ? "記録完備のラウンドのみ" : "Complete round records only"}</small>
         </section>
         <section>
           <h4>{ja ? "ラウンド先取と接戦" : "First round and close games"}</h4>
           {statRow(ja ? "先取" : "Won first", record(data.rounds.firstWon))}
           {statRow(ja ? "先取された" : "Lost first", record(data.rounds.firstLost))}
           {statRow(
-            ja ? "3ラウンド接戦（推定）" : "Three-round close games (estimated)",
+            <>
+              {ja ? "3ラウンド接戦" : "Three-round close games"}
+              {estimate}
+            </>,
             record(data.rounds.deciding),
           )}
         </section>
@@ -215,7 +218,10 @@ export function AdvancedInsights({
           </small>
         </section>
         <section>
-          <h4>{ja ? "連続プレイ中の試合順（推定）" : "Position in a play session (estimated)"}</h4>
+          <h4>
+            {ja ? "連続プレイ中の試合順" : "Position in a play session"}
+            {estimate}
+          </h4>
           {patterns.sessionPositions.map(({ from, to, record: item }) => (
             <div key={from}>
               {statRow(
@@ -266,7 +272,10 @@ export function AdvancedInsights({
           )}
         </section>
         <section>
-          <h4>{ja ? "同じ相手との連戦（推定）" : "Consecutive games (estimated)"}</h4>
+          <h4>
+            {ja ? "同じ相手との連戦" : "Consecutive games"}
+            {estimate}
+          </h4>
           {gameLabels.map((label, i) => (
             <div key={label}>{statRow(label, data.sessions[i])}</div>
           ))}
