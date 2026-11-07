@@ -1691,16 +1691,6 @@ function RatingChart({
   const chronologicalHistory = [...allCharacterMatches].sort(
     (a, b) => a.playedAtEpoch - b.playedAtEpoch,
   );
-  const averages = movingAverage(
-    chronologicalHistory.map((match) => {
-      const value = match.subject.master_rating;
-      return typeof value === "number" && value > 0 ? value : null;
-    }),
-    10,
-  );
-  const averagesByReplay = new Map(
-    chronologicalHistory.map((match, index) => [match.replayId, averages[index]]),
-  );
   const latestAll = [...allCharacterMatches].sort((a, b) => b.playedAtEpoch - a.playedAtEpoch)[0];
   const latestShown = ordered.at(-1);
   const snapshotRating =
@@ -1717,6 +1707,16 @@ function RatingChart({
     padX = 22,
     padY = 18;
   function series(kind: "lp" | "mr") {
+    const averages = movingAverage(
+      chronologicalHistory.map((match) => {
+        const value = kind === "lp" ? match.subject.league_point : match.subject.master_rating;
+        return typeof value === "number" && value > 0 ? value : null;
+      }),
+      10,
+    );
+    const averagesByReplay = new Map(
+      chronologicalHistory.map((match, index) => [match.replayId, averages[index]]),
+    );
     const points = ordered
       .map((match, matchIndex) => ({
         match,
@@ -1743,6 +1743,10 @@ function RatingChart({
     );
     const currentScaleValue = kind === "lp" ? current?.leaguePoint : current?.masterRating;
     if (currentScaleValue && currentScaleValue > 0) scaleValues.push(currentScaleValue);
+    for (const match of ordered) {
+      const average = averagesByReplay.get(match.replayId);
+      if (average != null) scaleValues.push(average);
+    }
     const { min, max, step } = ratingScale([...scaleValues, ...values], kind === "lp" ? 100 : 10);
     const y = (value: number) => padY + ((max - value) * (height - padY * 2)) / (max - min);
     const coordinates = points.map((point) => ({
@@ -1758,7 +1762,7 @@ function RatingChart({
       snapshot: point.matchIndex === ordered.length,
     }));
     const averageSegments: string[][] = [];
-    if (kind === "mr") {
+    {
       let segment: string[] = [];
       for (let index = 0; index < ordered.length; index++) {
         const average = averagesByReplay.get(ordered[index].replayId);
@@ -1825,6 +1829,11 @@ function RatingChart({
         <div>
           <p className="eyebrow">{labels.eyebrow}</p>
           <h3>{labels.title}</h3>
+          <span className="rating-line-key">
+            {locale === "ja"
+              ? "実線：実績 · 破線：10試合平均"
+              : "Solid: recorded · dashed: 10-game average"}
+          </span>
         </div>
         <div className="rating-controls">
           {characterSelector}
@@ -1838,7 +1847,9 @@ function RatingChart({
                       {labels.latest}
                       <strong>{number.format(item.latest)}</strong>
                       {item.coordinates.at(-1)?.snapshot && (
-                        <small>{locale === "ja" ? "（同期時点）" : " (at sync)"}</small>
+                        <small className="rating-snapshot">
+                          {locale === "ja" ? "（同期時点）" : " (at sync)"}
+                        </small>
                       )}
                     </span>
                     <small>
@@ -1906,9 +1917,15 @@ function RatingChart({
               ))}
             </g>
           ))}
-          {mr?.averageSegments.map((segment) => (
-            <polyline className="rating-average-line" points={segment.join(" ")} key={segment[0]} />
-          ))}
+          {seriesList.flatMap((item) =>
+            item.averageSegments.map((segment) => (
+              <polyline
+                className={`rating-average-line ${item.kind}`}
+                points={segment.join(" ")}
+                key={`${item.kind}-${segment[0]}`}
+              />
+            )),
+          )}
         </svg>
         <div className="match-axis">
           <span>{labels.firstMatch}</span>
@@ -1917,18 +1934,6 @@ function RatingChart({
           </span>
         </div>
       </div>
-      {mr && (
-        <p className="rating-average-legend">
-          {locale === "ja"
-            ? "破線：MRの直近10試合移動平均（絞り込み前の履歴を使用）"
-            : "Dashed: 10-match MR moving average (using unfiltered history)"}
-        </p>
-      )}
-      <p className="rating-average-legend">
-        {locale === "ja"
-          ? "縦軸は直近100試合を基準に、表示中の過去データが範囲外なら拡張します。"
-          : "Scale is based on the latest 100 matches and expands when older displayed data falls outside it."}
-      </p>
     </article>
   );
 }

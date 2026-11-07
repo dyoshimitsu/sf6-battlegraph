@@ -1306,6 +1306,20 @@ th {
     400 8px "DM Mono",
     monospace;
 }
+.rating-summary span .rating-snapshot {
+  display: inline;
+  clear: none;
+  padding: 0;
+  white-space: nowrap;
+}
+.rating-line-key {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font:
+    400 10px "DM Mono",
+    monospace;
+}
 .rating-summary em {
   font-style: normal;
 }
@@ -1329,11 +1343,16 @@ th {
 }
 .rating-average-line {
   fill: none;
-  stroke: #f1c9ff;
   stroke-width: 2.5;
   stroke-dasharray: 9 6;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
+}
+.rating-average-line.lp {
+  stroke: #e3ff9a;
+}
+.rating-average-line.mr {
+  stroke: #f1c9ff;
 }
 .rating-average-legend {
   margin: 12px 0 0;
