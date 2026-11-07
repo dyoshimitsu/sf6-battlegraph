@@ -1036,7 +1036,11 @@ export function App() {
                 <section className="recent-form" aria-label={t("recentForm")}>
                   <div className="recent-form-heading">
                     <h3>{t("recentForm")}</h3>
-                    <p>{t("recentFormScope")}</p>
+                    <span>
+                      {locale === "ja"
+                        ? "絞込後 · 勝率は勝敗のみ"
+                        : "Filtered · decided games only"}
+                    </span>
                   </div>
                   <div className="recent-form-grid">
                     {[10, 100].map((limit) => {
@@ -1092,14 +1096,6 @@ export function App() {
                     activeDays: (count) => t("activeDays", { count }),
                   }}
                 />
-                <AdvancedInsights matches={filteredMatches} locale={locale} />
-                {firebaseRuntime.status === "ready" && (
-                  <ProfileHabitsPanel
-                    db={firebaseRuntime.services.db}
-                    userCode={INITIAL_USER_CODE}
-                    locale={locale}
-                  />
-                )}
                 <div className="character-sections">
                   <CharacterPanel
                     eyebrow={t("yourFighters")}
@@ -1125,6 +1121,15 @@ export function App() {
                     priorityEmpty={t("matchupPriorityEmpty")}
                   />
                 </div>
+                <AdvancedInsights matches={filteredMatches} locale={locale} />
+                {firebaseRuntime.status === "ready" && (
+                  <ProfileHabitsPanel
+                    key={storedManifest?.sourceSyncId ?? "initial"}
+                    db={firebaseRuntime.services.db}
+                    userCode={INITIAL_USER_CODE}
+                    locale={locale}
+                  />
+                )}
               </section>
             </section>
           )}
@@ -1178,8 +1183,8 @@ function ProfileHabitsPanel({
   locale: "ja" | "en";
 }) {
   const [snapshots, setSnapshots] = useState<ProfileHabits[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const ja = locale === "ja";
   const fields = [
     ["drive_impact", ja ? "ドライブインパクト" : "Drive impact"],
@@ -1188,37 +1193,46 @@ function ProfileHabitsPanel({
     ["throw_count", ja ? "投げ" : "Throws"],
     ["corner_time", ja ? "相手を画面端に追い詰めた時間" : "Corner time"],
   ] as const;
-  async function load() {
+  useEffect(() => {
+    let active = true;
     setLoading(true);
-    setError(false);
-    try {
-      setSnapshots(await loadProfileHabits(db, userCode));
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }
+    setError(null);
+    void loadProfileHabits(db, userCode)
+      .then((value) => {
+        if (active) setSnapshots(value);
+      })
+      .catch((cause: unknown) => {
+        if (active) setError(cause instanceof Error ? cause.message : "Unknown error");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [db, userCode]);
   return (
-    <section className="insights-card">
+    <section className="insights-card habits-card">
+      <p className="eyebrow">PLAYSTYLE SNAPSHOT</p>
       <h3>{ja ? "プレイ傾向の変化" : "Playstyle changes"}</h3>
-      <p>
-        {ja
-          ? "保存済みの直近10回の同期から最大2件を読み込みます。追加のFirestore読み取りが発生します。"
-          : "Loads up to two profiles from the latest 10 syncs; additional Firestore reads apply."}
-      </p>
-      <button type="button" disabled={loading} onClick={() => void load()}>
-        {loading ? (ja ? "読み込み中…" : "Loading…") : ja ? "傾向を読み込む" : "Load trends"}
-      </button>
-      {error && <p>{ja ? "読み込みに失敗しました。" : "Unable to load profiles."}</p>}
+      <span className="insights-caption">
+        {ja ? "直近100戦平均 · フィルター対象外" : "Last 100 games · unfiltered"}
+      </span>
+      {loading && <p role="status">{ja ? "読み込み中…" : "Loading…"}</p>}
+      {error && (
+        <p role="alert">
+          {ja ? "プロフィール記録を読み込めませんでした" : "Unable to load profile snapshots"}:{" "}
+          {error}
+        </p>
+      )}
       {snapshots &&
         (snapshots.length ? (
           <>
-            <p>
+            <small>
               {ja
-                ? "Bucklerの過去100戦平均。取得時点の値で、前回との差は期間内の成績ではありません。現在の絞り込みは適用されません。"
-                : "Buckler's last-100-match averages at capture; differences are not period-only statistics. Current filters do not apply."}
-            </p>
+                ? "取得時点の値。前回との差は期間内だけの成績ではありません。"
+                : "Snapshot differences are not period-only statistics."}
+            </small>
             {snapshots.map((snapshot, index) => (
               <p key={snapshot.fetchedAt}>
                 {index === 0 ? (ja ? "今回" : "Latest") : ja ? "前回" : "Previous"}:{" "}
@@ -1227,18 +1241,26 @@ function ProfileHabitsPanel({
                 })}
               </p>
             ))}
-            {fields.map(([key, label]) => {
-              const value = snapshots[0]?.values[key],
-                previous = snapshots[1]?.values[key];
-              return (
-                <p key={key}>
-                  {label}: {value ?? "—"}
-                  {value !== undefined && previous !== undefined
-                    ? ` (${value - previous >= 0 ? "+" : ""}${(value - previous).toFixed(1)})`
-                    : ""}
-                </p>
-              );
-            })}
+            <div className="habits-grid">
+              {fields.map(([key, label]) => {
+                const value = snapshots[0]?.values[key],
+                  previous = snapshots[1]?.values[key];
+                return (
+                  <article key={key}>
+                    <span>{label}</span>
+                    <strong>{value ?? "—"}</strong>
+                    {value !== undefined && previous !== undefined ? (
+                      <small>
+                        {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
+                        {(value - previous).toFixed(1)}
+                      </small>
+                    ) : (
+                      ""
+                    )}
+                  </article>
+                );
+              })}
+            </div>
           </>
         ) : (
           <p>{ja ? "対象のプロフィール記録がありません。" : "No profile snapshots found."}</p>
@@ -1258,25 +1280,33 @@ function AdvancedInsights({
   const ja = locale === "ja";
   const summary = (record: ReturnType<typeof recentMatchSummary>) =>
     `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
+  const statRow = (label: string, item: ReturnType<typeof recentMatchSummary>) => (
+    <div className="insight-row">
+      <span>{label}</span>
+      <strong>{formatWinRate(item.winRate)}</strong>
+      <small>
+        {item.wins}–{item.losses} · n={item.matches}
+      </small>
+    </div>
+  );
   const record = (items: NormalizedMatch[]) => recentMatchSummary(items, items.length);
   const days = ja
     ? ["日", "月", "火", "水", "木", "金", "土"]
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const maxHour = Math.max(1, ...data.weekdays.flat());
-  const hourLabels = Array.from({ length: 24 }, (_, hour) => String(hour));
+  const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + 6) % 24));
   const gameLabels = ja ? ["1試合目", "2試合目", "3試合目"] : ["Game 1", "Game 2", "Game 3"];
   return (
-    <details className="insights-card">
-      <summary>
+    <section className="insights-card">
+      <p className="eyebrow">MATCH INSIGHTS</p>
+      <h3 className="insights-title">
         {ja
           ? "詳細分析：ラウンド・対戦相手・時間帯"
           : "Detailed analysis: rounds, opponents and time"}
-      </summary>
-      <p>
-        {ja
-          ? "すべて現在の絞り込みに基づく参考値です。引分・不明は勝率の分母から除きます。"
-          : "All figures use the current filters. Draws and unknown results are excluded from win rates."}
-      </p>
+      </h3>
+      <span className="insights-caption">
+        {ja ? "絞込後 · 勝率は勝敗のみ" : "Filtered · decided games only"}
+      </span>
       <div className="insights-grid">
         <section>
           <h4>{ja ? "ラウンド成績" : "Round record"}</h4>
@@ -1299,24 +1329,18 @@ function AdvancedInsights({
         </section>
         <section>
           <h4>{ja ? "ラウンド先取と接戦" : "First round and close games"}</h4>
-          <p>
-            {ja ? "先取" : "Won first"}: {summary(record(data.rounds.firstWon))}
-          </p>
-          <p>
-            {ja ? "先取された" : "Lost first"}: {summary(record(data.rounds.firstLost))}
-          </p>
-          <p>
-            {ja ? "3ラウンド接戦（推定）" : "Three-round close games (estimated)"}:{" "}
-            {summary(record(data.rounds.deciding))}
-          </p>
+          {statRow(ja ? "先取" : "Won first", record(data.rounds.firstWon))}
+          {statRow(ja ? "先取された" : "Lost first", record(data.rounds.firstLost))}
+          {statRow(
+            ja ? "3ラウンド接戦（推定）" : "Three-round close games (estimated)",
+            record(data.rounds.deciding),
+          )}
         </section>
         <section>
           <h4>{ja ? "相手MR帯" : "Opponent MR"}</h4>
           {data.bands.length ? (
             data.bands.map(({ band, record: item }) => (
-              <p key={band}>
-                {band}–{band + 99}: {summary(item)}
-              </p>
+              <div key={band}>{statRow(`${band}–${band + 99}`, item)}</div>
             ))
           ) : (
             <p>—</p>
@@ -1333,9 +1357,7 @@ function AdvancedInsights({
             ? ["相手が50以上低い", "差±49", "相手が50以上高い"]
             : ["Opponent −50 or less", "Within ±49", "Opponent +50 or more"]
           ).map((label, i) => (
-            <p key={label}>
-              {label}: {summary(data.relative[i])}
-            </p>
+            <div key={label}>{statRow(label, data.relative[i])}</div>
           ))}
         </section>
         <section>
@@ -1376,9 +1398,7 @@ function AdvancedInsights({
               : "Horizontal: win rate 0–100%; vertical: number of matches"}
           </small>
           {data.matchups.slice(0, 10).map((item) => (
-            <p key={item.characterSlug}>
-              {item.characterName}: {summary(item)}
-            </p>
+            <div key={item.characterSlug}>{statRow(item.characterName, item)}</div>
           ))}
           <small>
             {ja
@@ -1389,9 +1409,7 @@ function AdvancedInsights({
         <section>
           <h4>{ja ? "同じ相手との連戦（推定）" : "Consecutive games (estimated)"}</h4>
           {gameLabels.map((label, i) => (
-            <p key={label}>
-              {label}: {summary(data.sessions[i])}
-            </p>
+            <div key={label}>{statRow(label, data.sessions[i])}</div>
           ))}
           <small>
             {ja
@@ -1402,7 +1420,9 @@ function AdvancedInsights({
       </div>
       <section className="insights-time">
         <h4>
-          {ja ? "曜日・時間帯別の試合数（日本時間）" : "Games by weekday and hour (Japan time)"}
+          {ja
+            ? "曜日・時間帯別の試合数（日本時間・6時始まり、曜日は暦日）"
+            : "Games by calendar weekday and hour (Japan time, starting at 06:00)"}
         </h4>
         <div className="insights-scroll">
           <table>
@@ -1451,7 +1471,7 @@ function AdvancedInsights({
           })}
         </div>
       </section>
-    </details>
+    </section>
   );
 }
 
@@ -1564,48 +1584,51 @@ function DailyTrend({
               </text>
             </svg>
           </div>
-          <div className="daily-legend" aria-hidden="true">
-            <span className="daily-key-win">{labels.wins}</span>
-            <span className="daily-key-loss">{labels.losses}</span>
-            <span className="daily-key-other">{labels.other}</span>
-          </div>
-          <div className="daily-grid">
-            {recent.map((record) => {
-              const other = record.draws + record.unknown;
-              return (
-                <div className="daily-day" key={record.date}>
-                  <div className="daily-day-heading">
-                    <time dateTime={record.date}>
-                      {date.format(new Date(`${record.date}T00:00:00+09:00`))}
-                    </time>
-                    <span>
-                      {record.matches} {labels.matches}
-                    </span>
+          <details className="daily-detail-toggle">
+            <summary>{locale === "ja" ? "日ごとの内訳" : "Daily breakdown"}</summary>
+            <div className="daily-legend" aria-hidden="true">
+              <span className="daily-key-win">{labels.wins}</span>
+              <span className="daily-key-loss">{labels.losses}</span>
+              <span className="daily-key-other">{labels.other}</span>
+            </div>
+            <div className="daily-grid">
+              {recent.map((record) => {
+                const other = record.draws + record.unknown;
+                return (
+                  <div className="daily-day" key={record.date}>
+                    <div className="daily-day-heading">
+                      <time dateTime={record.date}>
+                        {date.format(new Date(`${record.date}T00:00:00+09:00`))}
+                      </time>
+                      <span>
+                        {record.matches} {labels.matches}
+                      </span>
+                    </div>
+                    {record.matches ? (
+                      <>
+                        <div className="daily-result-bar" aria-hidden="true">
+                          <i className="daily-win" style={{ flexGrow: record.wins }} />
+                          <i className="daily-loss" style={{ flexGrow: record.losses }} />
+                          <i className="daily-other" style={{ flexGrow: other }} />
+                        </div>
+                        <div className="daily-result-detail">
+                          <span>
+                            {labels.wins} {record.wins} · {labels.losses} {record.losses}
+                            {other > 0 ? ` · ${labels.other} ${other}` : ""}
+                          </span>
+                          <strong>
+                            {labels.winRate} {formatWinRate(record.winRate)}
+                          </strong>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="daily-empty">{labels.noMatches}</p>
+                    )}
                   </div>
-                  {record.matches ? (
-                    <>
-                      <div className="daily-result-bar" aria-hidden="true">
-                        <i className="daily-win" style={{ flexGrow: record.wins }} />
-                        <i className="daily-loss" style={{ flexGrow: record.losses }} />
-                        <i className="daily-other" style={{ flexGrow: other }} />
-                      </div>
-                      <div className="daily-result-detail">
-                        <span>
-                          {labels.wins} {record.wins} · {labels.losses} {record.losses}
-                          {other > 0 ? ` · ${labels.other} ${other}` : ""}
-                        </span>
-                        <strong>
-                          {labels.winRate} {formatWinRate(record.winRate)}
-                        </strong>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="daily-empty">{labels.noMatches}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </details>
         </>
       )}
     </article>

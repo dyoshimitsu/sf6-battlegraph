@@ -470,8 +470,12 @@ h3 {
     monospace;
   text-transform: uppercase;
 }
+.filter-bar label {
+  min-width: 0;
+}
 .filter-bar input,
 .filter-bar select {
+  min-width: 0;
   width: 100%;
   height: 36px;
   padding: 0 9px;
@@ -725,7 +729,21 @@ th {
   padding: 22px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: #171a1f;
+  background: linear-gradient(145deg, rgba(22, 25, 30, 0.92), rgba(14, 16, 20, 0.96));
+}
+.insights-title {
+  display: inline;
+  margin: 0;
+  font:
+    600 23px "Space Grotesk",
+    sans-serif;
+}
+.insights-caption {
+  margin-left: 12px;
+  color: var(--muted);
+  font:
+    400 10px "DM Mono",
+    monospace;
 }
 .insights-card > summary {
   cursor: pointer;
@@ -742,15 +760,82 @@ th {
   font-size: 15px;
 }
 .insights-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  columns: 2;
+  column-gap: 12px;
+  margin-top: 18px;
 }
 .insights-grid section {
-  padding: 15px;
+  break-inside: avoid;
+  margin-bottom: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(145deg, #171b20, #101216);
+}
+.insights-grid section h4 {
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--line);
+  font:
+    600 15px "Space Grotesk",
+    sans-serif;
+}
+.insight-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.insight-row span {
+  color: #c4c9d0;
+  font-size: 12px;
+}
+.insight-row strong {
+  color: var(--accent);
+  font:
+    600 17px "Space Grotesk",
+    sans-serif;
+}
+.insight-row small {
+  color: var(--muted);
+  font:
+    400 10px "DM Mono",
+    monospace;
+  text-align: right;
+}
+.habits-card h3 {
+  font:
+    600 23px "Space Grotesk",
+    sans-serif;
+}
+.habits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.habits-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 14px;
+  background: #101216;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #101217;
+}
+.habits-grid span,
+.habits-grid small {
+  color: var(--muted);
+  font:
+    400 10px "DM Mono",
+    monospace;
+}
+.habits-grid strong {
+  color: var(--accent);
+  font:
+    600 25px "Space Grotesk",
+    sans-serif;
 }
 .insights-grid p {
   margin: 7px 0;
@@ -783,7 +868,7 @@ th {
 }
 @media (max-width: 700px) {
   .insights-grid {
-    grid-template-columns: 1fr;
+    columns: 1;
   }
 }
 .recent-form {
@@ -794,8 +879,16 @@ th {
   border-radius: 16px;
 }
 .recent-form-heading h3 {
+  display: inline;
   margin: 0;
   font-size: 18px;
+}
+.recent-form-heading span {
+  margin-left: 12px;
+  color: var(--muted);
+  font:
+    400 10px "DM Mono",
+    monospace;
 }
 .recent-form-heading p {
   margin: 7px 0 14px;
@@ -806,6 +899,7 @@ th {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  margin-top: 14px;
 }
 .recent-form-card {
   display: flex;
@@ -823,7 +917,9 @@ th {
 }
 .recent-form-card strong {
   color: var(--accent);
-  font-size: 26px;
+  font:
+    600 26px "Space Grotesk",
+    sans-serif;
   line-height: 1.1;
 }
 @media (max-width: 480px) {
@@ -848,12 +944,21 @@ th {
 .daily-trend-chart svg {
   display: block;
   width: 100%;
-  height: 160px;
+  height: 120px;
   overflow: visible;
 }
 .daily-trend-chart text {
   fill: #b9bec6;
   font-size: 10px;
+  font-family: "DM Mono", monospace;
+}
+.daily-detail-toggle {
+  margin-top: 12px;
+}
+.daily-detail-toggle > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
 }
 .daily-legend {
   display: flex;
@@ -1421,7 +1526,7 @@ footer {
   margin-top: 10px;
 }
 .filter-bar {
-  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
 }
 /* Keep display typography unchanged while making supporting text easier to read. */
 .brand small,
