@@ -4,7 +4,6 @@ import type { CharacterRecord } from "../domain/statistics/aggregateMatches";
 import { formatWinRate } from "./format";
 
 export function CharacterPanel({
-  eyebrow,
   title,
   records,
   matches,
@@ -17,7 +16,6 @@ export function CharacterPanel({
   priorityDescription,
   priorityEmpty,
 }: {
-  eyebrow: string;
   title: string;
   records: CharacterRecord[];
   matches: BucklerBundlePreview["matches"];
@@ -32,7 +30,6 @@ export function CharacterPanel({
 }) {
   return (
     <article className="analysis-card character-panel is-roster ui-card">
-      <p className="eyebrow">{eyebrow}</p>
       <h3 className="ui-title">{title}</h3>
       {side === "opponent" && priorityMatchups && (
         <div className="matchup-priorities">

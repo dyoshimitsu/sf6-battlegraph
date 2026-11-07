@@ -12,6 +12,7 @@ export function AdvancedInsights({
   locale: "ja" | "en";
 }) {
   const data = useMemo(() => advancedInsights(matches), [matches]);
+  const hasMasterRating = data.bands.length > 0;
   const ja = locale === "ja";
   const summary = (record: ReturnType<typeof recentMatchSummary>) =>
     `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
@@ -35,7 +36,6 @@ export function AdvancedInsights({
   const gameLabels = ja ? ["1試合目", "2試合目", "3試合目"] : ["Game 1", "Game 2", "Game 3"];
   return (
     <section className="insights-card ui-card">
-      <p className="eyebrow">MATCH INSIGHTS</p>
       <h3 className="insights-title ui-title">
         {ja
           ? "詳細分析：ラウンド・対戦相手・時間帯"
@@ -88,24 +88,27 @@ export function AdvancedInsights({
           )}
         </section>
         <section>
-          <h4>{ja ? "相手MR帯" : "Opponent MR"}</h4>
-          {data.bands.length ? (
-            data.bands.map(({ band, record: item }) => (
-              <div key={band}>{statRow(`${band}–${band + 99}`, item)}</div>
-            ))
+          <h4>{ja ? "相手MR" : "Opponent MR"}</h4>
+          {hasMasterRating ? (
+            <>
+              {data.bands.map(({ band, record: item }) => (
+                <div key={band}>{statRow(`${band}–${band + 99}`, item)}</div>
+              ))}
+              {(ja
+                ? ["相手が50以上低い", "差±49", "相手が50以上高い"]
+                : ["Opponent −50 or less", "Within ±49", "Opponent +50 or more"]
+              ).map((label, i) => (
+                <div key={label}>{statRow(label, data.relative[i])}</div>
+              ))}
+              <small>{ja ? "記録時点は未検証" : "Recorded timing unverified"}</small>
+            </>
           ) : (
-            <p>—</p>
+            <small>
+              {ja
+                ? "絞込対象にMRが記録されたランクマッチがありません"
+                : "No ranked matches with a recorded MR in this filter"}
+            </small>
           )}
-          <small>{ja ? "記録時点は未検証" : "Recorded timing unverified"}</small>
-        </section>
-        <section>
-          <h4>{ja ? "MR差別" : "Relative MR"}</h4>
-          {(ja
-            ? ["相手が50以上低い", "差±49", "相手が50以上高い"]
-            : ["Opponent −50 or less", "Within ±49", "Opponent +50 or more"]
-          ).map((label, i) => (
-            <div key={label}>{statRow(label, data.relative[i])}</div>
-          ))}
         </section>
         <section>
           <h4>{ja ? "対面：遭遇数と勝率" : "Matchups: frequency and win rate"}</h4>
@@ -139,12 +142,10 @@ export function AdvancedInsights({
                 </circle>
               ))}
           </svg>
-          <small>{ja ? "勝率 → · 試合数 ↑" : "Win rate → · games ↑"}</small>
-          {data.matchups.slice(0, 10).map((item) => (
-            <div key={item.characterSlug}>{statRow(item.characterName, item)}</div>
-          ))}
           <small>
-            {ja ? "遭遇数順 · 少数は参考値" : "Most frequent · small samples are indicative"}
+            {ja
+              ? "勝率 → · 試合数 ↑ · 点にカーソルでキャラクター名 · 少数は参考値"
+              : "Win rate → · games ↑ · hover a dot for the character · small samples are indicative"}
           </small>
         </section>
         <section>

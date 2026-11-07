@@ -50,6 +50,7 @@ import { hasCollectionConsent, rememberCollectionConsent } from "./collectionCon
 import { isConnectorCompatible } from "./connectorVersions";
 import { DailyTrend } from "./DailyTrend";
 import { formatWinRate } from "./format";
+import { CharacterShareCard, RecordBreakdownCard } from "./OverviewCards";
 import { ProfileHabitsPanel } from "./ProfileHabitsPanel";
 import { RatingChart } from "./RatingChart";
 
@@ -999,36 +1000,17 @@ export function App() {
                   </button>
                 </div>
                 <div className="analysis-overview">
-                  <div className="record-banner">
-                    <article>
-                      <span>{t("winRate")}</span>
-                      <strong>{formatWinRate(statistics.overall.winRate)}</strong>
-                    </article>
-                    {statistics.bySide.map((record) => (
-                      <article key={record.side}>
-                        <span>
-                          {t(record.side === 1 ? "playerOneWinRate" : "playerTwoWinRate")}
-                        </span>
-                        <strong>{formatWinRate(record.winRate)}</strong>
-                        <small>
-                          {t("sideRecord", { wins: record.wins, matches: record.matches })}
-                        </small>
-                      </article>
-                    ))}
-                    <article>
-                      <span>{t("wins")}</span>
-                      <strong>{statistics.overall.wins}</strong>
-                    </article>
-                    <article>
-                      <span>{t("losses")}</span>
-                      <strong>{statistics.overall.losses}</strong>
-                    </article>
-                    <article>
-                      <span>{t("undecided")}</span>
-                      <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
-                    </article>
-                  </div>
-                  <section className="recent-form ui-card" aria-label={t("recentForm")}>
+                  <RecordBreakdownCard statistics={statistics} t={t} />
+                  <CharacterShareCard
+                    records={statistics.bySubjectCharacter}
+                    colorOrder={allStatistics.bySubjectCharacter}
+                    locale={locale}
+                    t={t}
+                  />
+                  <section
+                    className="recent-form overview-card ui-card"
+                    aria-label={t("recentForm")}
+                  >
                     <div className="recent-form-heading">
                       <h3 className="ui-title">{t("recentForm")}</h3>
                       <span>
@@ -1069,7 +1051,6 @@ export function App() {
                     allowCurrent={!toDate && !actId && !battleVersion}
                     locale={locale}
                     labels={{
-                      eyebrow: t("ratingHistory"),
                       title: t("ratingChartTitle"),
                       character: t("ratingCharacter"),
                       latest: t("latestRating"),
@@ -1085,7 +1066,6 @@ export function App() {
                     records={statistics.byDay}
                     locale={locale}
                     labels={{
-                      eyebrow: t("dailyTrend"),
                       title: t("dailyTrendTitle"),
                       matches: t("dailyMatches"),
                       winRate: t("winRate"),
@@ -1100,16 +1080,6 @@ export function App() {
                 </div>
                 <div className="character-sections">
                   <CharacterPanel
-                    eyebrow={t("yourFighters")}
-                    title={t("yourCharacterRecords")}
-                    records={statistics.bySubjectCharacter}
-                    matches={filteredMatches}
-                    side="subject"
-                    locale={locale}
-                    recordLine={t}
-                  />
-                  <CharacterPanel
-                    eyebrow={t("matchups")}
                     title={t("opponentCharacterRecords")}
                     records={opponentRecords}
                     matches={filteredMatches}

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { type Locale, type TranslationKey, translations } from "./translations";
 
+export type Translate = (
+  key: TranslationKey,
+  variables?: Record<string, string | number>,
+) => string;
+
 const STORAGE_KEY = "sf6-battlegraph.locale";
 
 function initialLocale(): Locale {

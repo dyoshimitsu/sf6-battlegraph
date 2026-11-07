@@ -10,15 +10,7 @@ export function DailyTrend({
   records: DailyRecord[];
   locale: "ja" | "en";
   labels: Record<
-    | "eyebrow"
-    | "title"
-    | "matches"
-    | "winRate"
-    | "wins"
-    | "losses"
-    | "other"
-    | "noMatches"
-    | "empty",
+    "title" | "matches" | "winRate" | "wins" | "losses" | "other" | "noMatches" | "empty",
     string
   > & {
     activeDays: (count: number) => string;
@@ -43,7 +35,6 @@ export function DailyTrend({
     <article className="daily-card ui-card">
       <div className="card-heading">
         <div>
-          <p className="eyebrow">{labels.eyebrow}</p>
           <h3 className="ui-title">{labels.title}</h3>
         </div>
         <span>{recent.length ? labels.activeDays(recent.length) : labels.empty}</span>

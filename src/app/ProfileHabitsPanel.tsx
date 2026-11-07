@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { NormalizedMatch } from "../domain/buckler/types";
 import { bestProfileHabits, type ProfileHabits } from "../domain/statistics/profileHabits";
 import { loadProfileHabits } from "../firebase/loadProfileHabits";
+import { CATEGORICAL_COLORS, DonutChart } from "./DonutChart";
 import { formatWinRate } from "./format";
 
 export function ProfileHabitsPanel({
@@ -22,7 +23,6 @@ export function ProfileHabitsPanel({
   const ja = locale === "ja";
   const groups: {
     title: string;
-    percent?: boolean;
     compareWithBest?: boolean;
     fields: [keyof ProfileHabits["values"], string][];
   }[] = [
@@ -59,7 +59,6 @@ export function ProfileHabitsPanel({
     },
     {
       title: ja ? "ドライブゲージ使用実績" : "Drive gauge usage",
-      percent: true,
       compareWithBest: true,
       fields: [
         ["gauge_rate_drive_guard", ja ? "ドライブパリィ" : "Drive parry"],
@@ -76,7 +75,6 @@ export function ProfileHabitsPanel({
     },
     {
       title: ja ? "SAゲージ使用割合" : "Super gauge usage",
-      percent: true,
       fields: [
         ["gauge_rate_sa_lv1", "SA1"],
         ["gauge_rate_sa_lv2", "SA2"],
@@ -106,7 +104,6 @@ export function ProfileHabitsPanel({
   }, [db, userCode]);
   return (
     <section className="insights-card habits-card ui-card">
-      <p className="eyebrow">PLAYSTYLE SNAPSHOT</p>
       <h3 className="ui-title">{ja ? "プレイ傾向の変化" : "Playstyle changes"}</h3>
       <span className="insights-caption">
         {ja ? "直近100戦平均 · フィルター対象外" : "Last 100 games · unfiltered"}
@@ -132,70 +129,73 @@ export function ProfileHabitsPanel({
               ))}
               <span>{ja ? "※100戦平均は重複あり" : "Overlapping 100-game averages"}</span>
             </div>
-            {[groups[2], groups[3], groups[0], groups[1]].map((group) => (
+            <div className="habits-share">
+              {[groups[2], groups[3]].map((group) => {
+                const latest = snapshots[0];
+                const previousValues = snapshots[1]?.values;
+                const segments = group.fields.map(([key, label], index) => {
+                  const value = latest?.values[key];
+                  const comparison = group.compareWithBest
+                    ? best?.snapshot.values[key]
+                    : previousValues?.[key];
+                  return {
+                    key,
+                    label,
+                    value: value ?? 0,
+                    color: CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length],
+                    figure: value === undefined ? "—" : `${(value * 100).toFixed(1)}%`,
+                    detail:
+                      value !== undefined && comparison !== undefined
+                        ? `${group.compareWithBest ? (ja ? "高勝率時" : "Best window") : ja ? "前回" : "Previous"} ${(comparison * 100).toFixed(1)}% · ${value - comparison >= 0 ? "+" : ""}${((value - comparison) * 100).toFixed(1)}pt`
+                        : undefined,
+                  };
+                });
+                const top = [...segments].sort((a, b) => b.value - a.value)[0];
+                return (
+                  <section className="habits-group habits-share-card" key={group.title}>
+                    <h4 className="ui-subtitle">{group.title}</h4>
+                    <DonutChart
+                      segments={segments}
+                      centerValue={top?.figure ?? "—"}
+                      centerLabel={top?.label ?? ""}
+                      ariaLabel={`${group.title}: ${segments.map((segment) => `${segment.label} ${segment.figure}`).join(", ")}`}
+                    />
+                    {group.compareWithBest && (
+                      <small className="ui-note">
+                        {best
+                          ? ja
+                            ? `高勝率時：${new Date(best.snapshot.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}取得 · 勝率 ${formatWinRate(best.record.winRate)}（直近10同期のうち、取得前の保存済み100戦が最も高いもの）。パリィ・ダメージの項目対応はBuckler表示との照合待ち。`
+                            : `Best window: captured ${new Date(best.snapshot.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })} · ${formatWinRate(best.record.winRate)} (highest 100 saved matches before capture among the latest 10 syncs). Parry/damage mappings need verification.`
+                          : ja
+                            ? "高勝率時との比較には、保存済み100戦とその後に取得したプロフィールが必要です。"
+                            : "Comparison needs 100 saved matches before a captured profile."}
+                      </small>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+            {[groups[0], groups[1]].map((group) => (
               <section className="habits-group" key={group.title}>
-                <h4>{group.title}</h4>
+                <h4 className="ui-subtitle">{group.title}</h4>
                 <div className="habits-grid">
                   {group.fields.map(([key, label]) => {
                     const value = snapshots[0]?.values[key],
                       previous = snapshots[1]?.values[key];
-                    const multiplier = group.percent ? 100 : 1;
-                    const bestValue = best?.snapshot.values[key];
                     return (
                       <article key={key}>
                         <span className="ui-label">{label}</span>
-                        <strong className="ui-value ui-value--accent">
-                          {value === undefined
-                            ? "—"
-                            : group.percent
-                              ? `${(value * 100).toFixed(2)}%`
-                              : value}
-                        </strong>
-                        {group.compareWithBest && value !== undefined && bestValue !== undefined ? (
-                          <small>
-                            {ja ? "高勝率時" : "Best window"} {(bestValue * 100).toFixed(2)}% ·{" "}
-                            {value - bestValue >= 0 ? "+" : ""}
-                            {((value - bestValue) * 100).toFixed(2)}pt
-                          </small>
-                        ) : value !== undefined && previous !== undefined ? (
-                          <small>
+                        <strong className="ui-value ui-value--accent">{value ?? "—"}</strong>
+                        {value !== undefined && previous !== undefined && (
+                          <small className="ui-note">
                             {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
-                            {((value - previous) * multiplier).toFixed(group.percent ? 2 : 1)}
-                            {group.percent ? "pt" : ""}
+                            {(value - previous).toFixed(1)}
                           </small>
-                        ) : (
-                          ""
-                        )}
-                        {group.percent && value !== undefined && (
-                          <div className="habits-meter" aria-hidden="true">
-                            <i style={{ width: `${Math.min(100, value * 100)}%` }} />
-                            {group.compareWithBest && bestValue !== undefined && (
-                              <b style={{ left: `${Math.min(100, bestValue * 100)}%` }} />
-                            )}
-                          </div>
                         )}
                       </article>
                     );
                   })}
                 </div>
-                {group.compareWithBest && (
-                  <small>
-                    {best
-                      ? ja
-                        ? `線：高勝率時 ${new Date(best.snapshot.fetchedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })} · 勝率 ${formatWinRate(best.record.winRate)}（直近10同期から、取得前の保存済み100戦）`
-                        : `Marker: best window ${new Date(best.snapshot.fetchedAt).toLocaleDateString("en-US", { timeZone: "Asia/Tokyo" })} · ${formatWinRate(best.record.winRate)} (100 saved matches before capture, among the latest 10 syncs)`
-                      : ja
-                        ? "比較には保存済み100戦と、その後に取得したプロフィールが必要です。"
-                        : "Comparison needs 100 saved matches before a captured profile."}
-                  </small>
-                )}
-                {group.compareWithBest && (
-                  <small>
-                    {ja
-                      ? " ※パリィ・ダメージの項目対応はBuckler表示との照合待ち。履歴欠落があると100戦の対象が一致しない場合があります。"
-                      : " Parry/damage field mappings need verification; missing history may change the 100-game window."}
-                  </small>
-                )}
               </section>
             ))}
           </>

@@ -25,7 +25,6 @@ export function RatingChart({
   allowCurrent: boolean;
   locale: "ja" | "en";
   labels: Record<
-    | "eyebrow"
     | "title"
     | "character"
     | "latest"
@@ -191,7 +190,6 @@ export function RatingChart({
       <article className="lp-card ui-card">
         <div className="lp-heading">
           <div>
-            <p className="eyebrow">{labels.eyebrow}</p>
             <h3 className="ui-title">{labels.title}</h3>
           </div>
           {characterSelector}
@@ -203,9 +201,8 @@ export function RatingChart({
     <article className="lp-card ui-card">
       <div className="lp-heading">
         <div>
-          <p className="eyebrow">{labels.eyebrow}</p>
           <h3 className="ui-title">{labels.title}</h3>
-          <span className="rating-line-key">
+          <span className="rating-line-key ui-caption">
             {locale === "ja"
               ? "実線：実績 · 破線：10試合平均"
               : "Solid: recorded · dashed: 10-game average"}
@@ -214,32 +211,26 @@ export function RatingChart({
         <div className="rating-controls">
           {characterSelector}
           <div className="rating-metrics">
-            {([lp, mr] as const).map((item, index) => (
-              <div className={`rating-summary ${index ? "mr" : "lp"}`} key={index ? "mr" : "lp"}>
-                <b>{index ? "MR" : "LP"}</b>
-                {item ? (
-                  <>
-                    <span>
-                      {labels.latest}
-                      <strong>{number.format(item.latest)}</strong>
-                      {item.coordinates.at(-1)?.snapshot && (
-                        <small className="rating-snapshot">
-                          {locale === "ja" ? "（同期時点）" : " (at sync)"}
-                        </small>
-                      )}
-                    </span>
-                    <small>
-                      {labels.highest} {number.format(item.highest)} · {labels.lowest}{" "}
-                      {number.format(item.lowest)} · {labels.change}{" "}
-                      <em className={item.change >= 0 ? "positive" : "negative"}>
-                        {item.change >= 0 ? "+" : ""}
-                        {number.format(item.change)}
-                      </em>
+            {seriesList.map((item) => (
+              <div className={`rating-summary ${item.kind}`} key={item.kind}>
+                <b>{item.kind.toUpperCase()}</b>
+                <span>
+                  {labels.latest}
+                  <strong>{number.format(item.latest)}</strong>
+                  {item.coordinates.at(-1)?.snapshot && (
+                    <small className="rating-snapshot">
+                      {locale === "ja" ? "（同期時点）" : " (at sync)"}
                     </small>
-                  </>
-                ) : (
-                  <small>{labels.noData}</small>
-                )}
+                  )}
+                </span>
+                <small>
+                  {labels.highest} {number.format(item.highest)} · {labels.lowest}{" "}
+                  {number.format(item.lowest)} · {labels.change}{" "}
+                  <em className={item.change >= 0 ? "positive" : "negative"}>
+                    {item.change >= 0 ? "+" : ""}
+                    {number.format(item.change)}
+                  </em>
+                </small>
               </div>
             ))}
           </div>
