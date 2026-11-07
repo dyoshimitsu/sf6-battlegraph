@@ -26,6 +26,7 @@ import {
   ratingCharacterKey,
   ratingMatches,
 } from "../domain/statistics/ratingMatches";
+import { ratingScale } from "../domain/statistics/ratingScale";
 import { createSyncId } from "../domain/storage/createSyncId";
 import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
 import { exportFirestoreArchive } from "../domain/storage/exportArchive";
@@ -1265,9 +1266,10 @@ function RatingChart({
     : latestRatingCharacterKey(matches);
   const chartMatches = characterGroups.get(effectiveCharacter) ?? [];
   const ordered = [...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch).slice(-100);
-  const latestAll = ratingMatches(allMatches)
-    .filter((match) => ratingCharacterKey(match) === effectiveCharacter)
-    .sort((a, b) => b.playedAtEpoch - a.playedAtEpoch)[0];
+  const allCharacterMatches = ratingMatches(allMatches).filter(
+    (match) => ratingCharacterKey(match) === effectiveCharacter,
+  );
+  const latestAll = [...allCharacterMatches].sort((a, b) => b.playedAtEpoch - a.playedAtEpoch)[0];
   const latestShown = ordered.at(-1);
   const snapshotRating =
     allowCurrent &&
@@ -1297,16 +1299,18 @@ function RatingChart({
     if (currentValue && latestShown)
       points.push({ match: latestShown, matchIndex: ordered.length, value: currentValue });
     if (!points.length) return null;
-    const values = points.map((point) => point.value),
-      highest = Math.max(...values),
-      lowest = Math.min(...values),
-      step = kind === "lp" ? 1000 : 100;
-    let min = Math.floor(lowest / step) * step,
-      max = Math.ceil(highest / step) * step;
-    if (min === max) {
-      min -= step;
-      max += step;
-    }
+    const values = points.map((point) => point.value);
+    const highest = Math.max(...values),
+      lowest = Math.min(...values);
+    const scaleValues = allCharacterMatches
+      .map((match) => (kind === "lp" ? match.subject.league_point : match.subject.master_rating))
+      .filter((value): value is number => typeof value === "number" && value > 0);
+    const current = currentRatings?.ratings.find(
+      (rating) => `id:${rating.characterId}` === effectiveCharacter,
+    );
+    const currentScaleValue = kind === "lp" ? current?.leaguePoint : current?.masterRating;
+    if (currentScaleValue && currentScaleValue > 0) scaleValues.push(currentScaleValue);
+    const { min, max, step } = ratingScale([...scaleValues, ...values], kind === "lp" ? 1000 : 100);
     const y = (value: number) => padY + ((max - value) * (height - padY * 2)) / (max - min);
     const coordinates = points.map((point) => ({
       x:
@@ -1320,7 +1324,7 @@ function RatingChart({
       replayId: point.match.replayId,
       snapshot: point.matchIndex === ordered.length,
     }));
-    const ticks = Array.from({ length: Math.round((max - min) / step) + 1 }, (_, index) => ({
+    const ticks = Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, index) => ({
       value: min + index * step,
       y: y(min + index * step),
     }));
