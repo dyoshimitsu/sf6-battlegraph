@@ -23,6 +23,7 @@ import {
   recentMatchSummary,
 } from "../domain/statistics/aggregateMatches";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
+import { dailyRatingChanges, streaks } from "../domain/statistics/matchPatterns";
 import { recentRankedMatchupPriorities } from "../domain/statistics/matchupPriorities";
 import { createSyncId } from "../domain/storage/createSyncId";
 import { executeSyncPlan, type SyncProgress } from "../domain/storage/executeSyncPlan";
@@ -192,6 +193,8 @@ export function App() {
       ),
     [locale, statistics.byOpponentCharacter],
   );
+  const dailyChanges = useMemo(() => dailyRatingChanges(filteredMatches), [filteredMatches]);
+  const currentStreaks = useMemo(() => streaks(filteredMatches), [filteredMatches]);
   const priorityMatchups = useMemo(
     () => recentRankedMatchupPriorities(filteredMatches),
     [filteredMatches],
@@ -1054,6 +1057,30 @@ export function App() {
                         );
                       })}
                     </div>
+                    <dl className="overview-sides">
+                      <div>
+                        <dt>{locale === "ja" ? "現在" : "Current"}</dt>
+                        <dd>
+                          <strong>
+                            {currentStreaks.current
+                              ? locale === "ja"
+                                ? `${currentStreaks.current.length}${currentStreaks.current.result === "win" ? "連勝" : "連敗"}`
+                                : `${currentStreaks.current.length} ${currentStreaks.current.result === "win" ? "W" : "L"} streak`
+                              : "—"}
+                          </strong>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{locale === "ja" ? "最長" : "Longest"}</dt>
+                        <dd>
+                          <strong>
+                            {locale === "ja"
+                              ? `${currentStreaks.longestWin}連勝 / ${currentStreaks.longestLoss}連敗`
+                              : `${currentStreaks.longestWin}W / ${currentStreaks.longestLoss}L`}
+                          </strong>
+                        </dd>
+                      </div>
+                    </dl>
                   </section>
                 </div>
                 <div className="analysis-trends">
@@ -1077,6 +1104,7 @@ export function App() {
                   />
                   <DailyTrend
                     records={statistics.byDay}
+                    ratingChanges={dailyChanges}
                     locale={locale}
                     labels={{
                       title: t("dailyTrendTitle"),

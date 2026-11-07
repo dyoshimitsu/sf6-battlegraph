@@ -164,7 +164,7 @@ export function ProfileHabitsPanel({
                   ? "ランキング上位との比較は、次回の同期でランキングを取得すると表示されます。"
                   : "The ranking comparison appears after a sync collects the ranking."}
             </p>
-            <div className="habits-share">
+            <div className="share-pair">
               {[groups[2], groups[3]].map((group) => {
                 const latest = snapshots[0];
                 const previousValues = snapshots[1]?.values;
@@ -192,7 +192,7 @@ export function ProfileHabitsPanel({
                 });
                 const top = [...segments].sort((a, b) => b.value - a.value)[0];
                 return (
-                  <section className="habits-group habits-share-card" key={group.title}>
+                  <section className="share-card" key={group.title}>
                     <h4 className="ui-subtitle">{group.title}</h4>
                     <DonutChart
                       segments={segments}

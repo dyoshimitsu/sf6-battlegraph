@@ -1378,7 +1378,7 @@ th {
   font: 400 var(--ui-text-xs) var(--ui-font-label);
 }
 .rating-detail {
-  color: #adb77f;
+  color: #b8bdc4;
 }
 .opponent-identity {
   color: #646a73;
@@ -1853,17 +1853,17 @@ strong.ui-value {
     width: 100%;
   }
 }
-.habits-share {
+.share-pair {
   display: grid;
   gap: var(--space-4);
   margin-top: var(--space-4);
 }
 @media (min-width: 800px) {
-  .habits-share {
+  .share-pair {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-.habits-share .habits-share-card {
+.share-pair .share-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -1909,4 +1909,18 @@ strong.ui-value {
 .daily-card .rate-column-track {
   flex: 1;
   height: auto;
+}
+.rate-column-change {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.rate-column-change em {
+  font-style: normal;
+}
+.rate-column-change .positive {
+  color: var(--win);
+}
+.rate-column-change .negative {
+  color: var(--loss);
 }

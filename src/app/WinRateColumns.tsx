@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { RecordSummary } from "../domain/statistics/aggregateMatches";
 
 export interface WinRateColumn {
@@ -7,6 +7,8 @@ export interface WinRateColumn {
   record: RecordSummary;
   /** Text read by assistive technology for this column. */
   description: string;
+  /** Optional extra figures under the match count. */
+  note?: ReactNode;
 }
 
 /** Vertical win-rate bars with the match count under each label. */
@@ -31,7 +33,7 @@ export function WinRateColumns({
   return (
     <div className="rate-columns-scroll">
       <ul className="rate-columns" aria-label={ariaLabel} style={style}>
-        {columns.map(({ key, label, record, description }) => {
+        {columns.map(({ key, label, record, description, note }) => {
           const lowSample = record.wins + record.losses < lowSampleThreshold;
           return (
             <li
@@ -53,6 +55,7 @@ export function WinRateColumns({
                 {record.matches}
                 {matchUnit}
               </small>
+              {note}
             </li>
           );
         })}

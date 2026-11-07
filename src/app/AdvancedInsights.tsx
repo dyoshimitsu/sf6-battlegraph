@@ -1,7 +1,17 @@
 import { useMemo } from "react";
+import { getCharacterNameBySlug } from "../domain/buckler/characterNames";
+import { getRoundDetails } from "../domain/buckler/roundResults";
 import type { NormalizedMatch } from "../domain/buckler/types";
 import { advancedInsights } from "../domain/statistics/advancedInsights";
 import { recentMatchSummary } from "../domain/statistics/aggregateMatches";
+import {
+  FINISH_METHOD_CODES,
+  finishMethodBreakdown,
+  frequentOpponents,
+  opponentInputTypeRecords,
+  sessionPositionRecords,
+} from "../domain/statistics/matchPatterns";
+import { CATEGORICAL_COLORS, DonutChart, formatShare } from "./DonutChart";
 import { formatWinRate } from "./format";
 import { WinRateColumns } from "./WinRateColumns";
 
@@ -13,7 +23,66 @@ export function AdvancedInsights({
   locale: "ja" | "en";
 }) {
   const data = useMemo(() => advancedInsights(matches), [matches]);
+  const patterns = useMemo(
+    () => ({
+      sessionPositions: sessionPositionRecords(matches),
+      finishMethods: finishMethodBreakdown(matches),
+      inputTypes: opponentInputTypeRecords(matches),
+      opponents: frequentOpponents(matches),
+    }),
+    [matches],
+  );
   const ja = locale === "ja";
+  const inputTypeLabel = (type: number | null) =>
+    type === 0
+      ? ja
+        ? "クラシック"
+        : "Classic"
+      : type === 1
+        ? ja
+          ? "モダン"
+          : "Modern"
+        : type === 2
+          ? ja
+            ? "ダイナミック"
+            : "Dynamic"
+          : ja
+            ? `不明${type === null ? "" : ` (${type})`}`
+            : `Unknown${type === null ? "" : ` (${type})`}`;
+  const finishDonut = (counts: Map<number, number>, title: string) => {
+    const total = [...counts.values()].reduce((sum, value) => sum + value, 0);
+    const codes = [
+      ...FINISH_METHOD_CODES,
+      ...[...counts.keys()].filter(
+        (code) => !(FINISH_METHOD_CODES as readonly number[]).includes(code),
+      ),
+    ];
+    const segments = codes.map((code, index) => {
+      const [detail] = getRoundDetails([code], [0], locale);
+      const value = counts.get(code) ?? 0;
+      return {
+        key: String(code),
+        label: `${detail.method} · ${detail.description}`,
+        value,
+        color: CATEGORICAL_COLORS[index % CATEGORICAL_COLORS.length],
+        figure: `${formatShare(value, total)} (${value})`,
+      };
+    });
+    const top = [...segments].sort((a, b) => b.value - a.value)[0];
+    return (
+      <section className="share-card">
+        <h4 className="ui-subtitle">{title}</h4>
+        <DonutChart
+          segments={segments}
+          centerValue={String(total)}
+          centerLabel={
+            total && top ? `${top.label.split(" · ")[0]} ${formatShare(top.value, total)}` : "—"
+          }
+          ariaLabel={`${title}: ${segments.map((segment) => `${segment.label} ${segment.figure}`).join(", ")}`}
+        />
+      </section>
+    );
+  };
   const summary = (record: ReturnType<typeof recentMatchSummary>) =>
     `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
   const statRow = (label: string, item: ReturnType<typeof recentMatchSummary>) => (
@@ -146,6 +215,55 @@ export function AdvancedInsights({
           </small>
         </section>
         <section>
+          <h4>{ja ? "連続プレイ中の試合順（推定）" : "Position in a play session (estimated)"}</h4>
+          {patterns.sessionPositions.map(({ from, to, record: item }) => (
+            <div key={from}>
+              {statRow(
+                to === null
+                  ? ja
+                    ? `${from}試合目以降`
+                    : `Game ${from}+`
+                  : ja
+                    ? `${from}〜${to}試合目`
+                    : `Games ${from}–${to}`,
+                item,
+              )}
+            </div>
+          ))}
+          <small>
+            {ja
+              ? "前の試合から30分以上空いたら新しいプレイとして数え直す"
+              : "A gap of more than 30 minutes starts a new session"}
+          </small>
+        </section>
+        <section>
+          <h4>{ja ? "相手の操作タイプ" : "Opponent control type"}</h4>
+          {patterns.inputTypes.length ? (
+            patterns.inputTypes.map(({ inputType, record: item }) => (
+              <div key={inputType ?? "unknown"}>{statRow(inputTypeLabel(inputType), item)}</div>
+            ))
+          ) : (
+            <p>—</p>
+          )}
+        </section>
+        <section>
+          <h4>{ja ? "よく当たる相手（3戦以上）" : "Frequent opponents (3+ games)"}</h4>
+          {patterns.opponents.length ? (
+            patterns.opponents.map((opponent) => (
+              <div key={opponent.userCode}>
+                {statRow(
+                  `${opponent.fighterId ?? opponent.userCode} · ${opponent.characterSlugs
+                    .map((slug) => getCharacterNameBySlug(slug, locale))
+                    .join(" / ")}`,
+                  opponent.record,
+                )}
+              </div>
+            ))
+          ) : (
+            <p>—</p>
+          )}
+        </section>
+        <section>
           <h4>{ja ? "同じ相手との連戦（推定）" : "Consecutive games (estimated)"}</h4>
           {gameLabels.map((label, i) => (
             <div key={label}>{statRow(label, data.sessions[i])}</div>
@@ -156,6 +274,16 @@ export function AdvancedInsights({
               : "Same opponent/mode within 10 min; gaps and character changes ignored"}
           </small>
         </section>
+      </div>
+      <div className="share-pair">
+        {finishDonut(
+          patterns.finishMethods.won,
+          ja ? "取ったラウンドの決着方法" : "How you won rounds",
+        )}
+        {finishDonut(
+          patterns.finishMethods.lost,
+          ja ? "落としたラウンドの決着方法" : "How you lost rounds",
+        )}
       </div>
       <section className="insights-time">
         <h4>
