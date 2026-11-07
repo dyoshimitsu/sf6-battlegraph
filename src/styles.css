@@ -16,10 +16,16 @@
   --ui-font-display: "Space Grotesk", system-ui, sans-serif;
   --ui-font-label: "DM Mono", monospace;
   --ui-font-body: Manrope, system-ui, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
   --ui-panel-background: linear-gradient(145deg, rgba(22, 25, 30, 0.92), rgba(14, 16, 20, 0.96));
   --ui-panel-border: var(--line);
   --ui-panel-radius: 16px;
-  --ui-panel-padding: 24px;
+  --ui-panel-padding: var(--space-6);
   --ui-title-size: 23px;
   --ui-value-size: 26px;
   --ui-label-size: 11px;
@@ -1795,6 +1801,84 @@ table,
   border-radius: var(--ui-panel-radius);
   padding: var(--ui-panel-padding);
 }
+/* Analysis spacing scale: sections, panel contents and nested records. */
+.analysis-zone {
+  margin-top: var(--space-8);
+  padding: var(--space-6);
+}
+.analysis-zone > .section-heading {
+  margin-bottom: var(--space-4);
+}
+.filter-bar {
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+}
+.filter-bar label span {
+  margin-bottom: var(--space-2);
+}
+.analysis-card,
+.daily-card,
+.insights-card,
+.lp-card,
+.recent-form {
+  margin-top: var(--space-4);
+}
+.character-sections {
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.character-sections > .analysis-card {
+  margin-top: 0;
+}
+.insights-grid {
+  column-gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.insights-grid section {
+  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+}
+.insights-grid section h4 {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+.insight-row {
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+.habits-grid,
+.recent-form-grid,
+.daily-grid {
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.habits-grid article,
+.recent-form-card,
+.daily-day {
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+.insights-time,
+.daily-trend-chart,
+.lp-chart {
+  margin-top: var(--space-4);
+}
+.daily-detail-toggle {
+  margin-top: var(--space-3);
+}
+@media (min-width: 1200px) {
+  .analysis-overview,
+  .analysis-trends {
+    gap: var(--space-4);
+  }
+  .analysis-overview .recent-form {
+    margin-top: 0;
+  }
+  .analysis-overview .record-banner article {
+    padding: var(--space-4);
+  }
+}
 :is(h3, h4).ui-title {
   margin: 0;
   color: #edf0f2;
@@ -1816,6 +1900,9 @@ strong.ui-value--accent {
   font: 400 var(--ui-note-size) var(--ui-font-body);
 }
 @media (max-width: 480px) {
+  .analysis-zone {
+    padding: var(--space-4);
+  }
   .ui-card {
     padding: 18px;
   }
