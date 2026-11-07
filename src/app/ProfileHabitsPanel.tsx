@@ -23,6 +23,7 @@ export function ProfileHabitsPanel({
   const groups: {
     title: string;
     percent?: boolean;
+    compareWithBest?: boolean;
     fields: [keyof ProfileHabits["values"], string][];
   }[] = [
     {
@@ -59,6 +60,7 @@ export function ProfileHabitsPanel({
     {
       title: ja ? "ドライブゲージ使用実績" : "Drive gauge usage",
       percent: true,
+      compareWithBest: true,
       fields: [
         ["gauge_rate_drive_guard", ja ? "ドライブパリィ" : "Drive parry"],
         ["gauge_rate_drive_impact", ja ? "ドライブインパクト" : "Drive impact"],
@@ -149,9 +151,7 @@ export function ProfileHabitsPanel({
                               ? `${(value * 100).toFixed(2)}%`
                               : value}
                         </strong>
-                        {group.title === (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") &&
-                        value !== undefined &&
-                        bestValue !== undefined ? (
+                        {group.compareWithBest && value !== undefined && bestValue !== undefined ? (
                           <small>
                             {ja ? "高勝率時" : "Best window"} {(bestValue * 100).toFixed(2)}% ·{" "}
                             {value - bestValue >= 0 ? "+" : ""}
@@ -169,18 +169,16 @@ export function ProfileHabitsPanel({
                         {group.percent && value !== undefined && (
                           <div className="habits-meter" aria-hidden="true">
                             <i style={{ width: `${Math.min(100, value * 100)}%` }} />
-                            {group.title ===
-                              (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") &&
-                              bestValue !== undefined && (
-                                <b style={{ left: `${Math.min(100, bestValue * 100)}%` }} />
-                              )}
+                            {group.compareWithBest && bestValue !== undefined && (
+                              <b style={{ left: `${Math.min(100, bestValue * 100)}%` }} />
+                            )}
                           </div>
                         )}
                       </article>
                     );
                   })}
                 </div>
-                {group.title === (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") && (
+                {group.compareWithBest && (
                   <small>
                     {best
                       ? ja
@@ -191,7 +189,7 @@ export function ProfileHabitsPanel({
                         : "Comparison needs 100 saved matches before a captured profile."}
                   </small>
                 )}
-                {group.title === (ja ? "ドライブゲージ使用実績" : "Drive gauge usage") && (
+                {group.compareWithBest && (
                   <small>
                     {ja
                       ? " ※パリィ・ダメージの項目対応はBuckler表示との照合待ち。履歴欠落があると100戦の対象が一致しない場合があります。"
