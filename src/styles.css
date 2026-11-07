@@ -1091,6 +1091,19 @@ th {
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
+.rating-average-line {
+  fill: none;
+  stroke: #f1c9ff;
+  stroke-width: 2.5;
+  stroke-dasharray: 9 6;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.rating-average-legend {
+  margin: 12px 0 0;
+  color: #d7c2df;
+  font-size: 11px;
+}
 .rating-series circle {
   fill: #0d0f12;
   stroke-width: 2;

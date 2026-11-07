@@ -21,6 +21,7 @@ import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateM
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
 import { buildDailyWindow } from "../domain/statistics/dailyWindow";
 import { recentRankedMatchupPriorities } from "../domain/statistics/matchupPriorities";
+import { movingAverage } from "../domain/statistics/movingAverage";
 import {
   latestRatingCharacterKey,
   ratingCharacterKey,
@@ -1269,6 +1270,19 @@ function RatingChart({
   const allCharacterMatches = ratingMatches(allMatches).filter(
     (match) => ratingCharacterKey(match) === effectiveCharacter,
   );
+  const chronologicalHistory = [...allCharacterMatches].sort(
+    (a, b) => a.playedAtEpoch - b.playedAtEpoch,
+  );
+  const averages = movingAverage(
+    chronologicalHistory.map((match) => {
+      const value = match.subject.master_rating;
+      return typeof value === "number" && value > 0 ? value : null;
+    }),
+    10,
+  );
+  const averagesByReplay = new Map(
+    chronologicalHistory.map((match, index) => [match.replayId, averages[index]]),
+  );
   const latestAll = [...allCharacterMatches].sort((a, b) => b.playedAtEpoch - a.playedAtEpoch)[0];
   const latestShown = ordered.at(-1);
   const snapshotRating =
@@ -1324,6 +1338,21 @@ function RatingChart({
       replayId: point.match.replayId,
       snapshot: point.matchIndex === ordered.length,
     }));
+    const averageSegments: string[][] = [];
+    if (kind === "mr") {
+      let segment: string[] = [];
+      for (let index = 0; index < ordered.length; index++) {
+        const average = averagesByReplay.get(ordered[index].replayId);
+        const coordinate = coordinates.find(
+          (point) => !point.snapshot && point.replayId === ordered[index].replayId,
+        );
+        if (average == null || !coordinate) {
+          if (segment.length) averageSegments.push(segment);
+          segment = [];
+        } else segment.push(`${coordinate.x},${y(average)}`);
+      }
+      if (segment.length) averageSegments.push(segment);
+    }
     const ticks = Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, index) => ({
       value: min + index * step,
       y: y(min + index * step),
@@ -1333,6 +1362,7 @@ function RatingChart({
       coordinates,
       ticks,
       line: coordinates.map((point) => `${point.x},${point.y}`).join(" "),
+      averageSegments,
       latest: values.at(-1) as number,
       highest,
       lowest,
@@ -1457,6 +1487,9 @@ function RatingChart({
               ))}
             </g>
           ))}
+          {mr?.averageSegments.map((segment) => (
+            <polyline className="rating-average-line" points={segment.join(" ")} key={segment[0]} />
+          ))}
         </svg>
         <div className="match-axis">
           <span>{labels.firstMatch}</span>
@@ -1465,6 +1498,13 @@ function RatingChart({
           </span>
         </div>
       </div>
+      {mr && (
+        <p className="rating-average-legend">
+          {locale === "ja"
+            ? "破線：MRの直近10試合移動平均（絞り込み前の履歴を使用）"
+            : "Dashed: 10-match MR moving average (using unfiltered history)"}
+        </p>
+      )}
     </article>
   );
 }
