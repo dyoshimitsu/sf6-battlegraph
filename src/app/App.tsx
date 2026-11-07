@@ -1429,9 +1429,10 @@ function AdvancedInsights({
       </div>
       <section className="insights-time">
         <h4>
-          {ja
-            ? "曜日・時間帯別の勝率（日本時間・6時始まり）"
-            : "Win rate by weekday and hour (Japan time, starting at 06:00)"}
+          {ja ? "曜日・時間帯別の勝率" : "Win rate by weekday and hour"}{" "}
+          <span className="ui-note">
+            {ja ? "（日本時間・6時始まり）" : "(Japan time · from 06:00)"}
+          </span>
         </h4>
         <span className="ui-note">
           {ja
@@ -1483,20 +1484,45 @@ function AdvancedInsights({
             </tbody>
           </table>
         </div>
-        <p>{ja ? "時間別勝率（全曜日）" : "Win rate by hour (all weekdays)"}</p>
-        <div className="insights-hours">
-          {hourLabels.map((hour) => {
-            const item = data.hours[Number(hour)];
-            return (
-              <span key={hour}>
-                {hour}:00{" "}
-                {item.wins + item.losses >= 10
-                  ? summary(item)
-                  : `${item.matches} ${ja ? "試合・参考不足" : "games · insufficient"}`}
-              </span>
-            );
-          })}
+        <h4 className="hourly-chart-title">
+          {ja ? "時間別勝率" : "Win rate by hour"}{" "}
+          <span className="ui-note">{ja ? "（全曜日）" : "(all weekdays)"}</span>
+        </h4>
+        <div className="hourly-scroll">
+          <ul
+            className="hourly-chart"
+            aria-label={ja ? "全曜日を合算した時間別勝率" : "Win rates by hour across all weekdays"}
+          >
+            {hourLabels.map((hour) => {
+              const item = data.hours[Number(hour)];
+              const lowSample = item.wins + item.losses < 10;
+              return (
+                <li
+                  className={`hourly-column${lowSample ? " hourly-low-sample" : ""}`}
+                  key={hour}
+                  aria-label={`${hour}:00 · ${summary(item)}${lowSample ? (ja ? " · 参考不足" : " · small sample") : ""}`}
+                >
+                  <span className="hourly-value">
+                    {item.winRate === null ? "–" : `${Math.round(item.winRate)}%`}
+                  </span>
+                  <div className="hourly-track">
+                    <i style={{ height: `${item.winRate ?? 0}%` }} />
+                  </div>
+                  <strong>{hour}</strong>
+                  <small>
+                    {item.matches}
+                    {ja ? "戦" : "g"}
+                  </small>
+                </li>
+              );
+            })}
+          </ul>
         </div>
+        <small className="ui-note">
+          {ja
+            ? "薄い棒は勝敗判明10戦未満。数字は勝率と対戦数です。"
+            : "Muted bars have fewer than 10 decided games; labels show win rate and games."}
+        </small>
       </section>
     </section>
   );

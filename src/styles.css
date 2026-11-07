@@ -870,11 +870,15 @@ th {
   overflow-x: auto;
 }
 .insights-scroll table {
-  min-width: 850px;
+  width: 1300px;
+  min-width: 1300px;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 .insights-scroll th,
 .insights-scroll td {
+  width: 52px;
+  height: 44px;
   padding: 6px 3px;
   text-align: center;
 }
@@ -894,11 +898,53 @@ th {
     600 10px "DM Mono",
     monospace;
 }
-.insights-hours {
+.insights-time h4.hourly-chart-title {
+  margin-top: var(--space-6);
+}
+.hourly-scroll {
+  overflow-x: auto;
+}
+.hourly-chart {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 6px;
-  font-size: 12px;
+  grid-template-columns: repeat(24, minmax(42px, 1fr));
+  min-width: 1008px;
+  gap: var(--space-1);
+  margin: 0;
+  list-style: none;
+  padding-block: var(--space-3);
+}
+.hourly-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  font: 400 10px var(--ui-font-label);
+}
+.hourly-value,
+.hourly-column strong {
+  color: #e8e9eb;
+}
+.hourly-column small {
+  color: var(--muted);
+}
+.hourly-track {
+  width: 100%;
+  max-width: 24px;
+  height: 80px;
+  display: flex;
+  align-items: end;
+  overflow: hidden;
+  background: #252a30;
+  border-radius: 4px 4px 2px 2px;
+}
+.hourly-track i {
+  display: block;
+  width: 100%;
+  background: var(--accent);
+}
+.hourly-low-sample {
+  opacity: 0.5;
 }
 @media (min-width: 1200px) {
   .analysis-overview {
