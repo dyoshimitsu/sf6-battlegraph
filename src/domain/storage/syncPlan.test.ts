@@ -175,6 +175,57 @@ describe("buildSyncPlan", () => {
     });
   });
 
+  it("records the first sighting of the current Act from the profile", () => {
+    const profile = (actId: number, fetchedAt: string) => ({
+      format: "sf6-battlegraph.collector",
+      version: 1,
+      userCode: 100,
+      buildId: "build",
+      exportedAt: fetchedAt,
+      pages: [],
+      profileSnapshot: {
+        fetchedAt,
+        response: {
+          pageProps: { sid: 100, common: { statusCode: 200 }, play: { current_season_id: actId } },
+        },
+      },
+    });
+    const first = buildSyncPlan(profile(15, "2027-02-02T00:00:00Z"), preview(), "s1", "g1");
+    expect(first.manifest.data.currentAct).toEqual({
+      actId: 15,
+      observedAt: "2027-02-02T00:00:00Z",
+    });
+    const previous = {
+      activeGeneration: "g1",
+      chunks: [],
+      totalMatches: 1,
+      currentAct: first.manifest.data.currentAct as StoredManifest["currentAct"],
+    };
+    const again = buildSyncPlan(
+      profile(15, "2027-02-10T00:00:00Z"),
+      preview(),
+      "s2",
+      "g2",
+      "private",
+      [],
+      previous,
+    );
+    expect(again.manifest.data.currentAct).toEqual(previous.currentAct);
+    const next = buildSyncPlan(
+      profile(16, "2027-05-02T00:00:00Z"),
+      preview(),
+      "s3",
+      "g3",
+      "private",
+      [],
+      previous,
+    );
+    expect(next.manifest.data.currentAct).toEqual({
+      actId: 16,
+      observedAt: "2027-05-02T00:00:00Z",
+    });
+  });
+
   it("keeps the complete replay object in the match document", () => {
     const plan = buildSyncPlan({}, preview(), "sync-2", "generation-2");
     const complete = plan.writesBeforeManifest.find((write) =>

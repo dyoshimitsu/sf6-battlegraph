@@ -1,4 +1,4 @@
-import { actForEpoch } from "../buckler/acts";
+import { type ActPeriod, actForEpoch } from "../buckler/acts";
 import { compareCharacterSlugs } from "../buckler/characterOrder";
 import type {
   BucklerPlayerInfo,
@@ -11,6 +11,8 @@ export interface MatchFilters {
   fromDate?: string;
   toDate?: string;
   actId?: number;
+  /** Act periods to resolve `actId`, including estimated Acts. */
+  acts?: readonly ActPeriod[];
   battleVersion?: number;
   mode?: BucklerSourceType;
   subjectCharacterId?: number;
@@ -82,7 +84,10 @@ export function filterMatches(
     const date = toTokyoDate(match.playedAtEpoch);
     if (filters.fromDate && date < filters.fromDate) return false;
     if (filters.toDate && date > filters.toDate) return false;
-    if (filters.actId !== undefined && actForEpoch(match.playedAtEpoch)?.id !== filters.actId)
+    if (
+      filters.actId !== undefined &&
+      actForEpoch(match.playedAtEpoch, filters.acts)?.id !== filters.actId
+    )
       return false;
     if (filters.battleVersion !== undefined && match.battleVersion !== filters.battleVersion)
       return false;

@@ -1,3 +1,4 @@
+import type { ObservedAct } from "../buckler/acts";
 import { inferBattleMode } from "../buckler/battleModes";
 import type { CurrentRatings } from "../buckler/currentRatings";
 import type { BucklerPlayerInfo, BucklerReplay, NormalizedMatch } from "../buckler/types";
@@ -15,6 +16,8 @@ export interface StoredManifest {
   syncedAtEpoch?: number;
   currentRatings?: CurrentRatings | null;
   rankingLeaders?: StoredRankingLeaders | null;
+  /** Earliest observation of the latest Act reported by a profile snapshot. */
+  currentAct?: ObservedAct | null;
 }
 
 /** The sync whose raw snapshot holds the latest ranking leader profiles. */

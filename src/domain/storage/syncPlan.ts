@@ -1,4 +1,4 @@
-import { parseCurrentRatings } from "../buckler/currentRatings";
+import { parseCurrentRatings, parseObservedAct } from "../buckler/currentRatings";
 import type {
   BucklerBundlePreview,
   BucklerCollectorBundle,
@@ -220,6 +220,15 @@ export function buildSyncPlan(
     ? parseCurrentRatings(bundle.profileSnapshot, userCode)
     : undefined;
   const pages = rawPages(source);
+  const observedAct = bundle?.profileSnapshot
+    ? parseObservedAct(bundle.profileSnapshot, userCode)
+    : undefined;
+  const previousAct = previousManifest?.currentAct ?? null;
+  // Keep the first sighting of an Act, which bounds when it started.
+  const currentAct =
+    observedAct && (!previousAct || observedAct.actId > previousAct.actId)
+      ? observedAct
+      : previousAct;
   const ranking = bundle?.rankingSnapshot;
   const rankingLeaders: StoredRankingLeaders | null =
     ranking?.topProfiles.length && Number.isFinite(Date.parse(ranking.fetchedAt))
@@ -332,6 +341,7 @@ export function buildSyncPlan(
       currentRatings: currentRatings ?? null,
       // Leaders are refreshed only now and then, so keep pointing at the last sync that stored them.
       rankingLeaders,
+      currentAct,
       previousGeneration: previousManifest
         ? { generation: previousManifest.activeGeneration, chunks: previousManifest.chunks }
         : null,

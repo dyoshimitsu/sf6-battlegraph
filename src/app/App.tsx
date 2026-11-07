@@ -7,7 +7,7 @@ import {
   readCollectorStatusMessage,
   readConnectorReadyMessage,
 } from "../collector/bridge";
-import { availableActsForEpochs } from "../domain/buckler/acts";
+import { actPeriods, availableActsForEpochs } from "../domain/buckler/acts";
 import { getCharacterName, getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import { compareCharacterSlugs } from "../domain/buckler/characterOrder";
 import { parseCollectorImport } from "../domain/buckler/parseCollectorBundle";
@@ -146,9 +146,11 @@ export function App() {
   const formatTimestamp = (timestamp?: number) =>
     timestamp === undefined ? "—" : dateTimeFormatter.format(new Date(timestamp * 1000));
 
+  const acts = useMemo(() => actPeriods(storedManifest?.currentAct), [storedManifest]);
   const filteredMatches = useMemo(
     () =>
       filterMatches(imported?.preview.matches ?? [], {
+        acts,
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
         actId: actId ? Number(actId) : undefined,
@@ -156,7 +158,7 @@ export function App() {
         mode: mode ? (mode as BucklerBundlePreview["matches"][number]["mode"]) : undefined,
         subjectCharacterId: subjectCharacterId ? Number(subjectCharacterId) : undefined,
       }),
-    [actId, battleVersion, fromDate, imported, mode, subjectCharacterId, toDate],
+    [acts, actId, battleVersion, fromDate, imported, mode, subjectCharacterId, toDate],
   );
   const statistics = useMemo(() => aggregateMatches(filteredMatches), [filteredMatches]);
   const allStatistics = useMemo(
@@ -172,8 +174,11 @@ export function App() {
   );
   const availableActs = useMemo(
     () =>
-      availableActsForEpochs((imported?.preview.matches ?? []).map((match) => match.playedAtEpoch)),
-    [imported],
+      availableActsForEpochs(
+        (imported?.preview.matches ?? []).map((match) => match.playedAtEpoch),
+        acts,
+      ),
+    [acts, imported],
   );
   const availableBattleVersions = useMemo(
     () =>
@@ -959,6 +964,7 @@ export function App() {
                         {[...availableActs].reverse().map((act) => (
                           <option key={act.id} value={act.id}>
                             {t("actLabel", { id: act.id })}
+                            {act.estimated ? ` · ${t("estimatedStart")}` : ""}
                           </option>
                         ))}
                       </select>

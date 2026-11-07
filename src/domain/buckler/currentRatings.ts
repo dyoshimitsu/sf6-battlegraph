@@ -1,3 +1,5 @@
+import type { ObservedAct } from "./acts";
+
 export interface CurrentRatings {
   fetchedAt: string;
   ratings: { characterId: number; leaguePoint?: number; masterRating?: number }[];
@@ -46,4 +48,25 @@ export function parseCurrentRatings(
       ratings.push({ characterId, leaguePoint, masterRating });
   }
   return { fetchedAt: snapshot.fetchedAt, ratings };
+}
+
+/** The current Act a valid profile snapshot reports, with the time it was fetched. */
+export function parseObservedAct(
+  snapshot: { fetchedAt: string; response: unknown },
+  userCode: number,
+): ObservedAct | undefined {
+  const props = record(record(snapshot.response)?.pageProps);
+  const common = record(props?.common);
+  const actId = record(props?.play)?.current_season_id;
+  if (
+    props?.sid !== userCode ||
+    common?.statusCode !== 200 ||
+    common?.isError === true ||
+    !Number.isFinite(Date.parse(snapshot.fetchedAt)) ||
+    typeof actId !== "number" ||
+    !Number.isSafeInteger(actId) ||
+    actId < 0
+  )
+    return undefined;
+  return { actId, observedAt: snapshot.fetchedAt };
 }
