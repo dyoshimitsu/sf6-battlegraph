@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- 収集結果をBattlegraphへ返せなかった場合も、Bucklerの収集タブを閉じるように修正
+- 実行環境のロケールによって、raw snapshotのSHA-256検証結果が変わる可能性があった問題を修正
+
+### Security
+
+- Chrome拡張がBuckler Battle Log以外のURLを収集タブとして開かないように制限
+
 ## [1.1.1] - 2026-08-14
 
 ### Fixed
