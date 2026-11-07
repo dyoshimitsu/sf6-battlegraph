@@ -1051,6 +1051,10 @@ export function App() {
                     title: t("dailyTrendTitle"),
                     matches: t("dailyMatches"),
                     winRate: t("winRate"),
+                    wins: t("wins"),
+                    losses: t("losses"),
+                    other: t("dailyOther"),
+                    noMatches: t("dailyNoMatches"),
                     empty: t("noRecords"),
                     activeDays: (count) => t("activeDays", { count }),
                   }}
@@ -1131,12 +1135,22 @@ function DailyTrend({
 }: {
   records: DailyRecord[];
   locale: "ja" | "en";
-  labels: Record<"eyebrow" | "title" | "matches" | "winRate" | "empty", string> & {
+  labels: Record<
+    | "eyebrow"
+    | "title"
+    | "matches"
+    | "winRate"
+    | "wins"
+    | "losses"
+    | "other"
+    | "noMatches"
+    | "empty",
+    string
+  > & {
     activeDays: (count: number) => string;
   };
 }) {
   const recent = buildDailyWindow(records, 14);
-  const maxMatches = Math.max(1, ...recent.map((record) => record.matches));
   const date = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     month: "short",
     day: "numeric",
@@ -1152,29 +1166,50 @@ function DailyTrend({
         <span>{recent.length ? labels.activeDays(recent.length) : labels.empty}</span>
       </div>
       {recent.length > 0 && (
-        <div
-          className="daily-bars"
-          style={{ gridTemplateColumns: `repeat(${recent.length}, minmax(24px, 1fr))` }}
-        >
-          {recent.map((record) => (
-            <div
-              className="daily-column"
-              key={record.date}
-              title={`${record.date} · ${record.matches} ${labels.matches} · ${labels.winRate} ${formatWinRate(record.winRate)}`}
-            >
-              <div className="daily-plot">
-                <i
-                  className="daily-volume"
-                  style={{ height: `${(record.matches / maxMatches) * 100}%` }}
-                >
-                  <b style={{ height: `${record.winRate ?? 0}%` }} />
-                </i>
-              </div>
-              <strong>{record.matches}</strong>
-              <span>{date.format(new Date(`${record.date}T00:00:00+09:00`))}</span>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="daily-legend" aria-hidden="true">
+            <span className="daily-key-win">{labels.wins}</span>
+            <span className="daily-key-loss">{labels.losses}</span>
+            <span className="daily-key-other">{labels.other}</span>
+          </div>
+          <div className="daily-grid">
+            {recent.map((record) => {
+              const other = record.draws + record.unknown;
+              return (
+                <div className="daily-day" key={record.date}>
+                  <div className="daily-day-heading">
+                    <time dateTime={record.date}>
+                      {date.format(new Date(`${record.date}T00:00:00+09:00`))}
+                    </time>
+                    <span>
+                      {record.matches} {labels.matches}
+                    </span>
+                  </div>
+                  {record.matches ? (
+                    <>
+                      <div className="daily-result-bar" aria-hidden="true">
+                        <i className="daily-win" style={{ flexGrow: record.wins }} />
+                        <i className="daily-loss" style={{ flexGrow: record.losses }} />
+                        <i className="daily-other" style={{ flexGrow: other }} />
+                      </div>
+                      <div className="daily-result-detail">
+                        <span>
+                          {labels.wins} {record.wins} · {labels.losses} {record.losses}
+                          {other > 0 ? ` · ${labels.other} ${other}` : ""}
+                        </span>
+                        <strong>
+                          {labels.winRate} {formatWinRate(record.winRate)}
+                        </strong>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="daily-empty">{labels.noMatches}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </article>
   );
