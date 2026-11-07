@@ -109,7 +109,7 @@ export function CharacterPanel({
               </small>
               <div className={`win-rate${side === "opponent" ? " opponent-win-rate" : ""}`}>
                 <i style={{ width: `${winRate}%`, background: opponentColor }} />
-                <span>{formatWinRate(winRate)}</span>
+                <span>{formatWinRate(record.winRate)}</span>
               </div>
             </div>
           );
