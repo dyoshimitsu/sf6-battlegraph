@@ -20,7 +20,10 @@ export function AdvancedInsights({
     <div className="insight-row">
       <span>{label}</span>
       <div className="insight-row-bar" aria-hidden="true">
-        <i style={{ width: `${item.winRate ?? 0}%` }} />
+        <i
+          className={item.winRate !== null && item.winRate < 50 ? "is-losing" : undefined}
+          style={{ width: `${item.winRate ?? 0}%` }}
+        />
       </div>
       <strong>{formatWinRate(item.winRate)}</strong>
       <small>
@@ -128,7 +131,7 @@ export function AdvancedInsights({
                       125
                   }
                   r="5"
-                  fill="#c7ff4a"
+                  style={{ fill: (item.winRate ?? 0) < 50 ? "var(--loss)" : "var(--win)" }}
                 >
                   <title>
                     {item.characterName}: {summary(item)}

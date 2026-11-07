@@ -57,10 +57,6 @@ export function CharacterPanel({
               (match[side].playing_character_id ?? match[side].character_id) === record.characterId,
           );
           const winRate = record.winRate ?? 0;
-          const opponentColor =
-            side === "opponent" && record.winRate !== null
-              ? `hsl(${winRate >= 50 ? 145 : 5} 60% ${25 + (Math.abs(winRate - 50) / 50) * 17}%)`
-              : undefined;
           const characterName = sample
             ? getCharacterName(sample[side], locale)
             : record.characterName;
@@ -105,7 +101,12 @@ export function CharacterPanel({
                 )}
               </small>
               <div className={`win-rate${side === "opponent" ? " opponent-win-rate" : ""}`}>
-                <i style={{ width: `${winRate}%`, background: opponentColor }} />
+                <i
+                  className={
+                    record.winRate !== null && record.winRate < 50 ? "is-losing" : undefined
+                  }
+                  style={{ width: `${winRate}%` }}
+                />
                 <span>{formatWinRate(record.winRate)}</span>
               </div>
             </div>

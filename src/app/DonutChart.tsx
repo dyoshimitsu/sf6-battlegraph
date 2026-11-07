@@ -55,7 +55,7 @@ export function DonutChart({
                 cy="60"
                 r={RADIUS}
                 fill="none"
-                stroke={segment.color}
+                style={{ stroke: segment.color }}
                 strokeWidth={STROKE}
                 strokeDasharray={dash}
                 strokeDashoffset={dashOffset}

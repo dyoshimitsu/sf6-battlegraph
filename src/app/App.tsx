@@ -1027,9 +1027,7 @@ export function App() {
                             <span className="ui-label">
                               {t("recentGames", { limit, count: record.matches })}
                             </span>
-                            <strong className="ui-value ui-value--accent">
-                              {formatWinRate(record.winRate)}
-                            </strong>
+                            <strong className="ui-value">{formatWinRate(record.winRate)}</strong>
                             <small className="ui-note">
                               {t("recentRecord", {
                                 wins: record.wins,

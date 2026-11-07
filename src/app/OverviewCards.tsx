@@ -4,7 +4,11 @@ import type { Translate } from "../i18n/useI18n";
 import { CATEGORICAL_COLORS, DonutChart, formatShare, OTHER_COLOR } from "./DonutChart";
 import { formatWinRate } from "./format";
 
-const RECORD_COLORS = { win: "#c7ff4a", loss: "#ff765f", other: OTHER_COLOR } as const;
+const RECORD_COLORS = {
+  win: "var(--win)",
+  loss: "var(--loss)",
+  other: "var(--neutral-data)",
+} as const;
 const MAX_CHARACTER_SEGMENTS = 6;
 
 export function RecordBreakdownCard({

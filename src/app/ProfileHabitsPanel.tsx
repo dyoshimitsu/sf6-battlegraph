@@ -185,7 +185,7 @@ export function ProfileHabitsPanel({
                     return (
                       <article key={key}>
                         <span className="ui-label">{label}</span>
-                        <strong className="ui-value ui-value--accent">{value ?? "—"}</strong>
+                        <strong className="ui-value">{value ?? "—"}</strong>
                         {value !== undefined && previous !== undefined && (
                           <small className="ui-note">
                             {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
