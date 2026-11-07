@@ -18,9 +18,24 @@ async function forgetRequest(sourceTabId) {
   await chrome.storage.session.remove(requestKey(sourceTabId));
 }
 
+async function reportStartError(targetTabId, reason) {
+  await chrome.tabs
+    .sendMessage(targetTabId, {
+      type: STATUS_TYPE,
+      version: 1,
+      status: "error",
+      message: `Could not open the Buckler tab: ${reason}`,
+    })
+    .catch(() => {});
+}
+
 chrome.runtime.onMessage.addListener((message, sender) => {
   if (message?.type === START_TYPE && sender.tab?.id !== undefined) {
     const targetTabId = sender.tab.id;
+    if (!Sf6BattlegraphBackgroundPolicy.isBucklerBattleLogUrl(message.url)) {
+      void reportStartError(targetTabId, "the requested URL is not a Buckler Battle Log page");
+      return;
+    }
     void (async () => {
       let sourceTabId;
       try {
@@ -34,35 +49,31 @@ chrome.runtime.onMessage.addListener((message, sender) => {
           await forgetRequest(sourceTabId).catch(() => {});
           await chrome.tabs.remove(sourceTabId).catch(() => {});
         }
-        await chrome.tabs.sendMessage(targetTabId, {
-          type: STATUS_TYPE,
-          version: 1,
-          status: "error",
-          message: `Could not open the Buckler tab: ${error instanceof Error ? error.message : String(error)}`,
-        });
+        await reportStartError(targetTabId, error instanceof Error ? error.message : String(error));
       }
     })();
     return;
   }
   if (message?.type === RESULT_TYPE && sender.tab?.id !== undefined) {
     const sourceTabId = sender.tab.id;
-    findTargetTab(sourceTabId).then((targetTabId) => {
+    void (async () => {
+      const targetTabId = await findTargetTab(sourceTabId);
       if (targetTabId === undefined) return;
-      return chrome.tabs
-        .sendMessage(targetTabId, message)
-        .then(() => forgetRequest(sourceTabId))
-        .then(() => chrome.tabs.remove(sourceTabId));
-    });
+      // Close the collection tab even when Battlegraph is gone; the bundle cannot be delivered.
+      await chrome.tabs.sendMessage(targetTabId, message).catch(() => {});
+      await forgetRequest(sourceTabId).catch(() => {});
+      await chrome.tabs.remove(sourceTabId).catch(() => {});
+    })().catch(() => {});
   }
   if (message?.type === STATUS_TYPE && sender.tab?.id !== undefined) {
     const sourceTabId = sender.tab.id;
-    findTargetTab(sourceTabId).then((targetTabId) => {
+    void (async () => {
+      const targetTabId = await findTargetTab(sourceTabId);
       if (targetTabId === undefined) return;
-      return chrome.tabs.sendMessage(targetTabId, message).then(() => {
-        if (Sf6BattlegraphBackgroundPolicy.shouldActivateBucklerTab(message.status))
-          return chrome.tabs.update(sourceTabId, { active: true });
-      });
-    });
+      await chrome.tabs.sendMessage(targetTabId, message);
+      if (Sf6BattlegraphBackgroundPolicy.shouldActivateBucklerTab(message.status))
+        await chrome.tabs.update(sourceTabId, { active: true });
+    })().catch(() => {});
   }
 });
 
