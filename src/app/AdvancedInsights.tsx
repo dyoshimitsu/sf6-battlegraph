@@ -2,7 +2,7 @@ import { type ReactNode, useMemo } from "react";
 import { getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import { getRoundDetails } from "../domain/buckler/roundResults";
 import type { NormalizedMatch } from "../domain/buckler/types";
-import { advancedInsights } from "../domain/statistics/advancedInsights";
+import { advancedInsights, DAY_START_HOUR } from "../domain/statistics/advancedInsights";
 import { recentMatchSummary } from "../domain/statistics/aggregateMatches";
 import {
   FINISH_METHOD_CODES,
@@ -109,7 +109,9 @@ export function AdvancedInsights({
   const days = ja
     ? ["日", "月", "火", "水", "木", "金", "土"]
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + 6) % 24));
+  // Rows start on Monday; getUTCDay() numbers Sunday as 0.
+  const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
+  const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + DAY_START_HOUR) % 24));
   return (
     <section className="insights-card ui-card">
       <h3 className="insights-title ui-title">
@@ -282,7 +284,9 @@ export function AdvancedInsights({
         <h4>
           {ja ? "曜日・時間帯別の勝率" : "Win rate by weekday and hour"}{" "}
           <span className="ui-note">
-            {ja ? "（日本時間・6時始まり）" : "(Japan time · from 06:00)"}
+            {ja
+              ? `日本時間・月曜始まり・${DAY_START_HOUR}時始まり、0〜${DAY_START_HOUR - 1}時は前日の行`
+              : `Japan time · Monday first · rows run ${String(DAY_START_HOUR).padStart(2, "0")}:00 to ${String(DAY_START_HOUR - 1).padStart(2, "0")}:59`}
           </span>
         </h4>
         <span className="ui-note">
@@ -301,9 +305,9 @@ export function AdvancedInsights({
               </tr>
             </thead>
             <tbody>
-              {days.map((day, dayIndex) => (
-                <tr key={day}>
-                  <th>{day}</th>
+              {weekdayOrder.map((dayIndex) => (
+                <tr key={dayIndex}>
+                  <th>{days[dayIndex]}</th>
                   {hourLabels.map((hour) => {
                     const item = data.weekdays[dayIndex][Number(hour)];
                     return (
@@ -337,7 +341,7 @@ export function AdvancedInsights({
         </div>
         <h4 className="rate-columns-title">
           {ja ? "時間別勝率" : "Win rate by hour"}{" "}
-          <span className="ui-note">{ja ? "（全曜日）" : "(all weekdays)"}</span>
+          <span className="ui-note">{ja ? "全曜日" : "all weekdays"}</span>
         </h4>
         <WinRateColumns
           ariaLabel={ja ? "全曜日を合算した時間別勝率" : "Win rates by hour across all weekdays"}

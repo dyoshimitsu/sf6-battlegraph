@@ -3,6 +3,9 @@ import type { NormalizedMatch } from "../buckler/types";
 import { aggregateMatches, recentMatchSummary } from "./aggregateMatches";
 import { isRankedMatch, ratingMatches } from "./ratingMatches";
 
+/** Hour (Japan time) at which a weekday row of the weekday/hour grid begins. */
+export const DAY_START_HOUR = 6;
+
 export function advancedInsights(matches: NormalizedMatch[]) {
   const rounds = {
     won: 0,
@@ -53,8 +56,10 @@ export function advancedInsights(matches: NormalizedMatch[]) {
   );
   for (const match of matches) {
     const local = new Date((match.playedAtEpoch + 9 * 3600) * 1000);
+    // The weekday grid starts each day at 06:00, so 00:00-05:59 belongs to the previous day.
+    const gameDay = new Date((match.playedAtEpoch + (9 - DAY_START_HOUR) * 3600) * 1000);
     hours[local.getUTCHours()].push(match);
-    weekdays[local.getUTCDay()][local.getUTCHours()].push(match);
+    weekdays[gameDay.getUTCDay()][local.getUTCHours()].push(match);
   }
   // Ranked sets are at most two games against the same opponent with the same characters, so the
   // second game is the one right after a first game against that opponent. Other modes have no

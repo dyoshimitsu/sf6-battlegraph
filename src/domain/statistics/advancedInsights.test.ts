@@ -26,8 +26,10 @@ describe("advanced insights", () => {
   it("groups Tokyo hours, rounds, rating differences, and estimated sessions", () => {
     const first = Date.parse("2026-08-12T15:00:00Z") / 1000;
     const result = advancedInsights([match("a", first), match("b", first + 60)]);
-    expect(result.weekdays[4][0]).toMatchObject({ matches: 2, wins: 2, winRate: 100 });
-    expect(result.weekdays[4][1]).toMatchObject({ matches: 0, winRate: null });
+    // 00:00 on Thursday in Japan belongs to the Wednesday row, which runs until 05:59.
+    expect(result.weekdays[3][0]).toMatchObject({ matches: 2, wins: 2, winRate: 100 });
+    expect(result.weekdays[4][0]).toMatchObject({ matches: 0, winRate: null });
+    expect(result.weekdays[3][1]).toMatchObject({ matches: 0, winRate: null });
     expect(result.rounds.won).toBe(4);
     expect(result.rounds.lost).toBe(2);
     expect(result.rounds.deciding).toHaveLength(2);
@@ -84,7 +86,7 @@ describe("advanced insights", () => {
       { ...match("b", first + 60), result: "draw" },
       { ...match("c", first + 120), result: "loss" },
     ]);
-    expect(result.weekdays[4][0]).toMatchObject({
+    expect(result.weekdays[3][0]).toMatchObject({
       matches: 3,
       wins: 1,
       losses: 1,
