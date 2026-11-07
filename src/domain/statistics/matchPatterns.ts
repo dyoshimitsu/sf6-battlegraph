@@ -1,7 +1,7 @@
 import { getRoundDetails } from "../buckler/roundResults";
 import type { NormalizedMatch } from "../buckler/types";
 import { type RecordSummary, recentMatchSummary, toTokyoDate } from "./aggregateMatches";
-import { ratingCharacterKey, ratingMatches } from "./ratingMatches";
+import { isRankedMatch, ratingCharacterKey, ratingMatches } from "./ratingMatches";
 
 function chronological(matches: NormalizedMatch[]): NormalizedMatch[] {
   return [...matches].sort(
@@ -264,4 +264,135 @@ export function frequentOpponents(
         right.lastPlayedAtEpoch - left.lastPlayedAtEpoch,
     )
     .slice(0, limit);
+}
+
+export interface RankedSet {
+  first: NormalizedMatch;
+  second?: NormalizedMatch;
+}
+
+/**
+ * Ranked sets are at most two games against the same opponent with the same characters, so the
+ * game right after a first game against that opponent is the second game of the set.
+ */
+export function rankedSets(matches: NormalizedMatch[]): RankedSet[] {
+  const sets: RankedSet[] = [];
+  let previous: NormalizedMatch | undefined;
+  let open: RankedSet | undefined;
+  for (const match of chronological(matches)) {
+    if (isRankedMatch(match)) {
+      const secondGame =
+        open !== undefined &&
+        previous === open.first &&
+        match.opponent.player.short_id > 0 &&
+        open.first.opponent.player.short_id === match.opponent.player.short_id;
+      if (secondGame && open) {
+        open.second = match;
+        open = undefined;
+      } else {
+        open = { first: match };
+        sets.push(open);
+      }
+    } else open = undefined;
+    previous = match;
+  }
+  return sets;
+}
+
+export interface RankedSetBreakdown {
+  firstGames: RecordSummary;
+  secondGames: RecordSummary;
+  afterFirstWin: RecordSummary;
+  afterFirstLoss: RecordSummary;
+  twoWins: number;
+  split: number;
+  twoLosses: number;
+  singleGame: number;
+  /** Sets with a draw or unknown result. */
+  other: number;
+}
+
+export function rankedSetBreakdown(matches: NormalizedMatch[]): RankedSetBreakdown {
+  const sets = rankedSets(matches);
+  const seconds = sets.flatMap((set) => (set.second ? [set] : []));
+  const decided = (match: NormalizedMatch) => match.result === "win" || match.result === "loss";
+  const result = { twoWins: 0, split: 0, twoLosses: 0, singleGame: 0, other: 0 };
+  for (const set of sets) {
+    if (!set.second) result.singleGame += 1;
+    else if (!decided(set.first) || !decided(set.second)) result.other += 1;
+    else {
+      const wins = [set.first, set.second].filter((game) => game.result === "win").length;
+      if (wins === 2) result.twoWins += 1;
+      else if (wins === 1) result.split += 1;
+      else result.twoLosses += 1;
+    }
+  }
+  return {
+    firstGames: summary(sets.map((set) => set.first)),
+    secondGames: summary(seconds.map((set) => set.second as NormalizedMatch)),
+    afterFirstWin: summary(
+      seconds
+        .filter((set) => set.first.result === "win")
+        .map((set) => set.second as NormalizedMatch),
+    ),
+    afterFirstLoss: summary(
+      seconds
+        .filter((set) => set.first.result === "loss")
+        .map((set) => set.second as NormalizedMatch),
+    ),
+    ...result,
+  };
+}
+
+export interface LeaguePointDifferenceRecord {
+  /** Inclusive lower bound of opponent LP minus own LP, or null when unbounded. */
+  from: number | null;
+  /** Inclusive upper bound, or null when unbounded. */
+  to: number | null;
+  record: RecordSummary;
+}
+
+const LP_DIFFERENCE_EDGES = [-1000, -300, 300, 1000];
+
+/**
+ * Ranked record by opponent LP minus own LP, for matches outside Master League where both
+ * players have LP. Whether LP is recorded before or after the match is unverified.
+ */
+export function leaguePointDifferenceRecords(
+  matches: NormalizedMatch[],
+): LeaguePointDifferenceRecord[] {
+  const groups = Array.from(
+    { length: LP_DIFFERENCE_EDGES.length + 1 },
+    () => [] as NormalizedMatch[],
+  );
+  for (const match of ratingMatches(matches)) {
+    const own = positive(match.subject.league_point);
+    const theirs = positive(match.opponent.league_point);
+    if (
+      own === undefined ||
+      theirs === undefined ||
+      positive(match.subject.master_rating) !== undefined ||
+      positive(match.opponent.master_rating) !== undefined
+    )
+      continue;
+    const difference = theirs - own;
+    const index =
+      difference <= LP_DIFFERENCE_EDGES[0]
+        ? 0
+        : difference <= LP_DIFFERENCE_EDGES[1]
+          ? 1
+          : difference < LP_DIFFERENCE_EDGES[2]
+            ? 2
+            : difference < LP_DIFFERENCE_EDGES[3]
+              ? 3
+              : 4;
+    groups[index].push(match);
+  }
+  return [
+    { from: null, to: -1000 },
+    { from: -999, to: -300 },
+    { from: -299, to: 299 },
+    { from: 300, to: 999 },
+    { from: 1000, to: null },
+  ].map((band, index) => ({ ...band, record: summary(groups[index]) }));
 }

@@ -2004,3 +2004,11 @@ strong.ui-value {
   fill: var(--muted);
   font: 400 var(--ui-text-xs) var(--ui-font-label);
 }
+.insights-subheading {
+  margin: var(--space-3) 0 var(--space-1);
+  color: var(--muted);
+  font: 400 var(--ui-text-sm) var(--ui-font-label);
+}
+.share-card .insight-row {
+  grid-column: 1 / -1;
+}

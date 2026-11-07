@@ -4,7 +4,9 @@ import {
   dailyRatingChanges,
   finishMethodBreakdown,
   frequentOpponents,
+  leaguePointDifferenceRecords,
   opponentInputTypeRecords,
+  rankedSetBreakdown,
   sessionPositionPoints,
   sessionTrend,
   smoothedWinRates,
@@ -193,5 +195,51 @@ describe("frequentOpponents", () => {
       [8, "ryu", 2, 2],
     ]);
     expect(opponents[0].fighterId).toBe("Opponent7");
+  });
+});
+
+describe("rankedSetBreakdown", () => {
+  it("pairs second games with the first game against the same opponent", () => {
+    const games = [
+      match(0, "win", { opponent: 7 }),
+      match(1, "loss", { opponent: 7 }),
+      match(2, "win", { opponent: 7 }),
+      match(3, "loss", { opponent: 8 }),
+      match(4, "loss", { opponent: 8 }),
+      match(5, "win", { opponent: 9 }),
+      match(6, "win", { opponent: 9, ranked: false }),
+      match(7, "win", { opponent: 9 }),
+    ];
+    const breakdown = rankedSetBreakdown(games);
+    expect(breakdown).toMatchObject({
+      twoWins: 0,
+      split: 1,
+      twoLosses: 1,
+      singleGame: 3,
+      other: 0,
+    });
+    expect(breakdown.afterFirstWin).toMatchObject({ matches: 1, losses: 1 });
+    expect(breakdown.afterFirstLoss).toMatchObject({ matches: 1, losses: 1 });
+    expect(breakdown.firstGames.matches).toBe(5);
+    expect(breakdown.secondGames.matches).toBe(2);
+  });
+});
+
+describe("leaguePointDifferenceRecords", () => {
+  it("groups ranked matches by opponent LP minus own LP outside Master League", () => {
+    const withOpponent = (index: number, own: number, theirs: number, mr?: number) => {
+      const game = match(index, "win", { lp: own, mr });
+      game.opponent = { ...game.opponent, league_point: theirs };
+      return game;
+    };
+    const records = leaguePointDifferenceRecords([
+      withOpponent(0, 20_000, 18_900),
+      withOpponent(1, 20_000, 19_700),
+      withOpponent(2, 20_000, 20_299),
+      withOpponent(3, 20_000, 20_300),
+      withOpponent(4, 20_000, 21_000),
+      withOpponent(5, 25_000, 25_000, 1500),
+    ]);
+    expect(records.map((item) => item.record.matches)).toEqual([1, 1, 1, 1, 1]);
   });
 });

@@ -43,7 +43,7 @@ import { createFirestoreRestorePort } from "../firebase/firestoreRestorePort";
 import { createFirestoreSyncPort } from "../firebase/firestoreSyncPort";
 import { useAdminAuth } from "../firebase/useAdminAuth";
 import { useI18n } from "../i18n/useI18n";
-import { AdvancedInsights } from "./AdvancedInsights";
+import { OpponentInsights, RoundInsights, TimeInsights } from "./AdvancedInsights";
 import { shouldAutoSyncCollectorBundle } from "./autoSync";
 import { CharacterPanel } from "./CharacterPanel";
 import { CollectionConsent } from "./CollectionConsent";
@@ -1123,6 +1123,7 @@ export function App() {
                     }}
                   />
                 </div>
+                <TimeInsights matches={filteredMatches} locale={locale} />
                 <div className="character-sections">
                   <CharacterPanel
                     title={t("opponentCharacterRecords")}
@@ -1138,7 +1139,8 @@ export function App() {
                     priorityEmpty={t("matchupPriorityEmpty")}
                   />
                 </div>
-                <AdvancedInsights matches={filteredMatches} locale={locale} />
+                <OpponentInsights matches={filteredMatches} locale={locale} />
+                <RoundInsights matches={filteredMatches} locale={locale} />
                 {firebaseRuntime.status === "ready" && (
                   <ProfileHabitsPanel
                     key={storedManifest?.sourceSyncId ?? "initial"}

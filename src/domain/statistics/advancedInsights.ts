@@ -1,7 +1,8 @@
 import { getRoundDetails } from "../buckler/roundResults";
 import type { NormalizedMatch } from "../buckler/types";
 import { aggregateMatches, recentMatchSummary } from "./aggregateMatches";
-import { isRankedMatch, ratingMatches } from "./ratingMatches";
+import { rankedSets } from "./matchPatterns";
+import { ratingMatches } from "./ratingMatches";
 
 /** Hour (Japan time) at which a weekday row of the weekday/hour grid begins. */
 export const DAY_START_HOUR = 6;
@@ -61,27 +62,11 @@ export function advancedInsights(matches: NormalizedMatch[]) {
     hours[local.getUTCHours()].push(match);
     weekdays[gameDay.getUTCDay()][local.getUTCHours()].push(match);
   }
-  // Ranked sets are at most two games against the same opponent with the same characters, so the
-  // second game is the one right after a first game against that opponent.
-  const rankedSets = [[], []] as NormalizedMatch[][];
-  const chronological = [...matches].sort(
-    (a, b) => a.playedAtEpoch - b.playedAtEpoch || a.replayId.localeCompare(b.replayId),
-  );
-  let previous: NormalizedMatch | undefined,
-    position = 0;
-  for (const match of chronological) {
-    if (isRankedMatch(match)) {
-      const secondGame =
-        previous !== undefined &&
-        isRankedMatch(previous) &&
-        position === 0 &&
-        match.opponent.player.short_id > 0 &&
-        previous.opponent.player.short_id === match.opponent.player.short_id;
-      position = secondGame ? 1 : 0;
-      rankedSets[position].push(match);
-    }
-    previous = match;
-  }
+  const sets = rankedSets(matches);
+  const rankedSetGames = [
+    sets.map((set) => set.first),
+    sets.flatMap((set) => (set.second ? [set.second] : [])),
+  ];
   return {
     rounds,
     bands: [...bands]
@@ -90,7 +75,7 @@ export function advancedInsights(matches: NormalizedMatch[]) {
     relative: relative.map((games) => recentMatchSummary(games, games.length)),
     hours: hours.map((games) => recentMatchSummary(games, games.length)),
     weekdays: weekdays.map((day) => day.map((games) => recentMatchSummary(games, games.length))),
-    rankedSets: rankedSets.map((games) => recentMatchSummary(games, games.length)),
+    rankedSets: rankedSetGames.map((games) => recentMatchSummary(games, games.length)),
     matchups: aggregateMatches(matches).byOpponentCharacter,
   };
 }
