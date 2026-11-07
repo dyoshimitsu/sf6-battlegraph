@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- 完全matchに対戦日時のFirestore Timestamp `playedAt`と、初回保存時刻`firstSeenAt`を保存
+
 ### Fixed
 
 - 対戦キャラクター一覧で、0戦または勝敗不明だけのキャラクターの勝率を「0.0%」ではなく「—」と表示

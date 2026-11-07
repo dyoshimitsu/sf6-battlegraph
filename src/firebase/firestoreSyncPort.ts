@@ -3,6 +3,7 @@ import {
   doc,
   type Firestore,
   serverTimestamp,
+  Timestamp,
   writeBatch,
 } from "firebase/firestore/lite";
 import type { SyncWritePort } from "../domain/storage/executeSyncPlan";
@@ -10,6 +11,9 @@ import type { PlannedWrite } from "../domain/storage/syncPlan";
 
 function withServerMetadata(write: PlannedWrite): Record<string, unknown> {
   const data = { ...write.data };
+  for (const [field, epochSeconds] of Object.entries(write.timestampFields ?? {}))
+    data[field] = Timestamp.fromMillis(epochSeconds * 1000);
+  for (const field of write.serverTimestampFields ?? []) data[field] = serverTimestamp();
   if (/\/matches\/[^/]+$/.test(write.path)) {
     data.sourceSyncIds = arrayUnion(...((write.data.sourceSyncIds as string[] | undefined) ?? []));
     data.lastSeenAt = serverTimestamp();

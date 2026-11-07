@@ -453,6 +453,7 @@ export function App() {
         deploymentConfig.visibility,
         existing,
         previousManifest,
+        new Set(stored.map((match) => match.replayId)),
       );
       await executeSyncPlan(
         createFirestoreSyncPort(firebaseRuntime.services.db),

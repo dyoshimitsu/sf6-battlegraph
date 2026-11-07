@@ -17,6 +17,10 @@ export const PARSER_VERSION = 1;
 export interface PlannedWrite {
   path: string;
   data: Record<string, unknown>;
+  /** Fields the storage adapter writes as timestamps, given in Unix seconds. */
+  timestampFields?: Record<string, number>;
+  /** Fields the storage adapter sets to the server commit time. */
+  serverTimestampFields?: string[];
 }
 
 export interface SyncPlan {
@@ -167,6 +171,11 @@ export function buildSyncPlan(
   visibility: "private" | "public" = "private",
   archivedMatches: NormalizedMatch[] = [],
   previousManifest?: StoredManifest,
+  /**
+   * Replay IDs that were already stored before this sync. When provided, matches outside
+   * this set record their first-seen server time. Omit it when the stored set is unknown.
+   */
+  previouslyStoredReplayIds?: ReadonlySet<string>,
 ): SyncPlan {
   if (!syncId.trim()) throw new Error("syncId must not be empty");
   const userCode = preview.userCode;
@@ -178,6 +187,7 @@ export function buildSyncPlan(
   const allMatches = mergeStoredMatches(archivedMatches, preview.matches);
   const chunks = buildQueryChunkGeneration(allMatches, generation);
   const latestPlayer = playerInfo(preview);
+  const incomingReplayIds = new Set(preview.matches.map((match) => match.replayId));
   const base = `players/${userCode}`;
   const obsoleteChunkIds = [
     ...new Set([
@@ -237,11 +247,17 @@ export function buildSyncPlan(
       }),
     ),
     ...allMatches
-      .filter((match) => preview.matches.some((item) => item.replayId === match.replayId))
-      .map((match) => ({
-        path: `${base}/matches/${match.replayId}`,
-        data: completeMatch(match, syncId),
-      })),
+      .filter((match) => incomingReplayIds.has(match.replayId))
+      .map(
+        (match): PlannedWrite => ({
+          path: `${base}/matches/${match.replayId}`,
+          data: completeMatch(match, syncId),
+          timestampFields: { playedAt: match.playedAtEpoch },
+          ...(previouslyStoredReplayIds && !previouslyStoredReplayIds.has(match.replayId)
+            ? { serverTimestampFields: ["firstSeenAt"] }
+            : {}),
+        }),
+      ),
     ...chunks.chunks.map((chunk) => chunkWrite(userCode, chunk)),
     {
       path: `${base}/syncs/${syncId}`,

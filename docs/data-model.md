@@ -93,6 +93,8 @@ players/{userCode}/syncs/{syncId}
 
 日時は Firestore Timestamp と Unix 秒を保持する。表示は `Asia/Tokyo`、`playedDate` も日本時間の日付とする。
 
+`playedAt`は`playedAtEpoch`から作るFirestore Timestampで、同期で書き込むmatchごとに保存する。`firstSeenAt`は、同期開始時に読み込んだ保存済み履歴に含まれないmatchを初めて書き込んだときのserver timestampで、再取得時は更新しない。manifest切替前に失敗した同期で書いたmatchは保存済み履歴に含まれないため、再試行した同期の時刻で上書きされる。この2項目を導入する前に保存したmatchは、再取得されるまで`playedAt`を持たず、`firstSeenAt`は後から補完しない。
+
 ## Raw snapshot
 
 ```json

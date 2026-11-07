@@ -195,4 +195,41 @@ describe("buildSyncPlan", () => {
   it("rejects an empty sync identifier", () => {
     expect(() => buildSyncPlan({}, preview(), "", "generation-4")).toThrow(/syncId/);
   });
+
+  it("asks the adapter for played-at and first-seen timestamps", () => {
+    const matchWrite = (plan: ReturnType<typeof buildSyncPlan>) =>
+      plan.writesBeforeManifest.find((write) => write.path === "players/100/matches/REPLAY1");
+    const first = matchWrite(
+      buildSyncPlan(
+        {},
+        preview(),
+        "sync-new",
+        "generation-new",
+        "private",
+        [],
+        undefined,
+        new Set(),
+      ),
+    );
+    expect(first?.timestampFields).toEqual({ playedAt: 1738368001 });
+    expect(first?.serverTimestampFields).toEqual(["firstSeenAt"]);
+    const again = matchWrite(
+      buildSyncPlan(
+        {},
+        preview(),
+        "sync-again",
+        "generation-again",
+        "private",
+        [normalizedMatch()],
+        undefined,
+        new Set(["REPLAY1"]),
+      ),
+    );
+    expect(again?.timestampFields).toEqual({ playedAt: 1738368001 });
+    expect(again?.serverTimestampFields).toBeUndefined();
+    expect(
+      matchWrite(buildSyncPlan({}, preview(), "sync-unknown", "generation-unknown"))
+        ?.serverTimestampFields,
+    ).toBeUndefined();
+  });
 });
