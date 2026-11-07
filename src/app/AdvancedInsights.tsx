@@ -3,6 +3,7 @@ import type { NormalizedMatch } from "../domain/buckler/types";
 import { advancedInsights } from "../domain/statistics/advancedInsights";
 import { recentMatchSummary } from "../domain/statistics/aggregateMatches";
 import { formatWinRate } from "./format";
+import { WinRateColumns } from "./WinRateColumns";
 
 export function AdvancedInsights({
   matches,
@@ -12,7 +13,6 @@ export function AdvancedInsights({
   locale: "ja" | "en";
 }) {
   const data = useMemo(() => advancedInsights(matches), [matches]);
-  const hasMasterRating = data.bands.length > 0;
   const ja = locale === "ja";
   const summary = (record: ReturnType<typeof recentMatchSummary>) =>
     `${formatWinRate(record.winRate)} (${record.wins}–${record.losses}; n=${record.matches})`;
@@ -88,27 +88,21 @@ export function AdvancedInsights({
           )}
         </section>
         <section>
-          <h4>{ja ? "相手MR" : "Opponent MR"}</h4>
-          {hasMasterRating ? (
-            <>
-              {data.bands.map(({ band, record: item }) => (
-                <div key={band}>{statRow(`${band}–${band + 99}`, item)}</div>
-              ))}
-              {(ja
-                ? ["相手が50以上低い", "差±49", "相手が50以上高い"]
-                : ["Opponent −50 or less", "Within ±49", "Opponent +50 or more"]
-              ).map((label, i) => (
-                <div key={label}>{statRow(label, data.relative[i])}</div>
-              ))}
-              <small>{ja ? "記録時点は未検証" : "Recorded timing unverified"}</small>
-            </>
+          <h4>{ja ? "相手MR帯・MR差" : "Opponent MR and difference"}</h4>
+          {data.bands.length ? (
+            data.bands.map(({ band, record: item }) => (
+              <div key={band}>{statRow(`${band}–${band + 99}`, item)}</div>
+            ))
           ) : (
-            <small>
-              {ja
-                ? "絞込対象にMRが記録されたランクマッチがありません"
-                : "No ranked matches with a recorded MR in this filter"}
-            </small>
+            <p>—</p>
           )}
+          {(ja
+            ? ["相手が50以上低い", "差±49", "相手が50以上高い"]
+            : ["Opponent −50 or less", "Within ±49", "Opponent +50 or more"]
+          ).map((label, i) => (
+            <div key={label}>{statRow(label, data.relative[i])}</div>
+          ))}
+          <small>{ja ? "記録時点は未検証" : "Recorded timing unverified"}</small>
         </section>
         <section>
           <h4>{ja ? "対面：遭遇数と勝率" : "Matchups: frequency and win rate"}</h4>
@@ -217,40 +211,24 @@ export function AdvancedInsights({
             </tbody>
           </table>
         </div>
-        <h4 className="hourly-chart-title">
+        <h4 className="rate-columns-title">
           {ja ? "時間別勝率" : "Win rate by hour"}{" "}
           <span className="ui-note">{ja ? "（全曜日）" : "(all weekdays)"}</span>
         </h4>
-        <div className="hourly-scroll">
-          <ul
-            className="hourly-chart"
-            aria-label={ja ? "全曜日を合算した時間別勝率" : "Win rates by hour across all weekdays"}
-          >
-            {hourLabels.map((hour) => {
-              const item = data.hours[Number(hour)];
-              const lowSample = item.wins + item.losses < 10;
-              return (
-                <li
-                  className={`hourly-column${lowSample ? " hourly-low-sample" : ""}`}
-                  key={hour}
-                  aria-label={`${hour}:00 · ${summary(item)}${lowSample ? (ja ? " · 参考不足" : " · small sample") : ""}`}
-                >
-                  <span className="hourly-value">
-                    {item.winRate === null ? "–" : `${Math.round(item.winRate)}%`}
-                  </span>
-                  <div className="hourly-track">
-                    <i style={{ height: `${item.winRate ?? 0}%` }} />
-                  </div>
-                  <strong>{hour}</strong>
-                  <small>
-                    {item.matches}
-                    {ja ? "戦" : "g"}
-                  </small>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <WinRateColumns
+          ariaLabel={ja ? "全曜日を合算した時間別勝率" : "Win rates by hour across all weekdays"}
+          matchUnit={ja ? "戦" : "g"}
+          lowSampleThreshold={10}
+          columns={hourLabels.map((hour) => {
+            const item = data.hours[Number(hour)];
+            return {
+              key: hour,
+              label: hour,
+              record: item,
+              description: `${hour}:00 · ${summary(item)}`,
+            };
+          })}
+        />
         <small className="ui-note">
           {ja ? "薄色：勝敗判明10戦未満" : "Muted: fewer than 10 decided games"}
         </small>

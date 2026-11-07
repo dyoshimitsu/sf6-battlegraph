@@ -1067,12 +1067,10 @@ export function App() {
                     locale={locale}
                     labels={{
                       title: t("dailyTrendTitle"),
-                      matches: t("dailyMatches"),
                       winRate: t("winRate"),
                       wins: t("wins"),
                       losses: t("losses"),
                       other: t("dailyOther"),
-                      noMatches: t("dailyNoMatches"),
                       empty: t("noRecords"),
                       activeDays: (count) => t("activeDays", { count }),
                     }}

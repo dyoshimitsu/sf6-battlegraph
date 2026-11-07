@@ -885,22 +885,20 @@ th {
   min-width: 44px;
   font: 600 var(--ui-text-xs) var(--ui-font-label);
 }
-.insights-time h4.hourly-chart-title {
+.insights-time h4.rate-columns-title {
   margin-top: var(--space-6);
 }
-.hourly-scroll {
+.rate-columns-scroll {
   overflow-x: auto;
 }
-.hourly-chart {
+.rate-columns {
   display: grid;
-  grid-template-columns: repeat(24, minmax(42px, 1fr));
-  min-width: 1008px;
   gap: var(--space-1);
   margin: 0;
+  padding: var(--space-3) 0;
   list-style: none;
-  padding-block: var(--space-3);
 }
-.hourly-column {
+.rate-column {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -908,29 +906,29 @@ th {
   min-width: 0;
   font: 400 var(--ui-text-xs) var(--ui-font-label);
 }
-.hourly-value,
-.hourly-column strong {
+.rate-column span,
+.rate-column strong {
   color: #e8e9eb;
 }
-.hourly-column small {
+.rate-column small {
   color: var(--muted);
 }
-.hourly-track {
+.rate-column-track {
+  display: flex;
+  align-items: end;
   width: 100%;
   max-width: 24px;
   height: 80px;
-  display: flex;
-  align-items: end;
   overflow: hidden;
   background: #252a30;
   border-radius: 4px 4px 2px 2px;
 }
-.hourly-track i {
+.rate-column-track i {
   display: block;
   width: 100%;
   background: var(--accent);
 }
-.hourly-low-sample {
+.rate-column--low-sample {
   opacity: 0.5;
 }
 @media (min-width: 1200px) {
@@ -990,131 +988,19 @@ th {
     grid-template-columns: 1fr;
   }
 }
+.daily-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
 .daily-card h3 {
   margin: 0;
   font-size: var(--ui-title-size);
 }
-.daily-trend-chart {
-  margin-top: var(--space-4);
-}
-.daily-trend-chart p {
-  color: #c4c9d0;
-  font-size: var(--ui-text-md);
-}
-.daily-trend-chart svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.daily-trend-chart text {
-  fill: #b9bec6;
-  font-size: var(--ui-text-xs);
-  font-family: var(--ui-font-label);
-}
-.daily-detail-toggle {
-  margin-top: var(--space-3);
-}
-.daily-detail-toggle > summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-size: var(--ui-text-md);
-}
-.daily-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  margin: var(--space-4) 0 var(--space-3);
-  color: var(--muted);
-  font-size: var(--ui-text-md);
-}
-.daily-legend span::before {
-  content: "";
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  margin-right: var(--space-1);
-  border-radius: 2px;
-  background: #66717d;
-}
-.daily-legend .daily-key-win::before,
-.daily-result-bar .daily-win {
-  background: var(--accent);
-}
-.daily-legend .daily-key-loss::before,
-.daily-result-bar .daily-loss {
-  background: #f08270;
-}
-.daily-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-.daily-day {
-  min-width: 0;
-  min-height: 91px;
-  padding: var(--space-3);
-  background: #181b20;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-}
-.daily-day-heading,
-.daily-result-detail {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1);
-}
-.daily-day-heading {
-  font-size: var(--ui-text-md);
-}
-.daily-day-heading time {
-  font-weight: 700;
-  color: #eef0f2;
-}
-.daily-day-heading span,
-.daily-empty {
-  color: var(--muted);
-}
-.daily-result-bar {
-  display: flex;
-  height: 8px;
-  overflow: hidden;
-  margin: var(--space-3) 0 var(--space-2);
-  background: #303640;
-  border-radius: 99px;
-}
-.daily-result-bar i {
-  flex-basis: 0;
-  min-width: 0;
-}
-.daily-result-bar .daily-other {
-  background: #66717d;
-}
-.daily-result-detail {
-  flex-wrap: wrap;
-  font-size: var(--ui-text-sm);
-  color: #c9cdd3;
-}
-.daily-result-detail strong {
-  color: #eef0f2;
-  white-space: nowrap;
-}
-.daily-empty {
-  margin: var(--space-3) 0 0;
-  font-size: var(--ui-text-md);
-}
-@media (max-width: 800px) {
-  .daily-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+
 @media (max-width: 380px) {
   .daily-card {
     padding: var(--space-4);
-  }
-  .daily-grid {
-    grid-template-columns: 1fr;
   }
 }
 .character-records .character-name {
@@ -1791,25 +1677,20 @@ table,
   padding-block: var(--space-2);
 }
 .habits-grid,
-.recent-form-grid,
-.daily-grid {
+.recent-form-grid {
   gap: var(--space-2);
   margin-top: var(--space-4);
 }
 .habits-grid article,
-.recent-form-card,
-.daily-day {
+.recent-form-card {
   gap: var(--space-2);
   padding: var(--space-4);
 }
 .insights-time,
-.daily-trend-chart,
 .lp-chart {
   margin-top: var(--space-4);
 }
-.daily-detail-toggle {
-  margin-top: var(--space-3);
-}
+
 :is(h3, h4).ui-title {
   margin: 0;
   color: #edf0f2;
@@ -2000,4 +1881,41 @@ strong.ui-value--accent {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: linear-gradient(145deg, #171b20, #101216);
+}
+.lp-heading .rating-controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-2);
+}
+.lp-heading .rating-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.lp-heading .rating-summary {
+  min-width: 0;
+}
+@media (max-width: 800px) {
+  .lp-heading .rating-controls,
+  .lp-heading .rating-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+/* Let the daily bars use the height the rating card sets for the row. */
+.daily-card {
+  display: flex;
+  flex-direction: column;
+}
+.daily-card .rate-columns-scroll {
+  display: flex;
+  flex: 1;
+}
+.daily-card .rate-columns {
+  flex: 1;
+  min-height: 160px;
+}
+.daily-card .rate-column-track {
+  flex: 1;
+  height: auto;
 }

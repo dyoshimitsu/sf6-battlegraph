@@ -211,28 +211,37 @@ export function RatingChart({
         <div className="rating-controls">
           {characterSelector}
           <div className="rating-metrics">
-            {seriesList.map((item) => (
-              <div className={`rating-summary ${item.kind}`} key={item.kind}>
-                <b>{item.kind.toUpperCase()}</b>
-                <span>
-                  {labels.latest}
-                  <strong>{number.format(item.latest)}</strong>
-                  {item.coordinates.at(-1)?.snapshot && (
-                    <small className="rating-snapshot">
-                      {locale === "ja" ? "（同期時点）" : " (at sync)"}
-                    </small>
+            {(["lp", "mr"] as const).map((kind) => {
+              const item = kind === "lp" ? lp : mr;
+              return (
+                <div className={`rating-summary ${kind}`} key={kind}>
+                  <b>{kind.toUpperCase()}</b>
+                  {item ? (
+                    <>
+                      <span>
+                        {labels.latest}
+                        <strong>{number.format(item.latest)}</strong>
+                        {item.coordinates.at(-1)?.snapshot && (
+                          <small className="rating-snapshot">
+                            {locale === "ja" ? "（同期時点）" : " (at sync)"}
+                          </small>
+                        )}
+                      </span>
+                      <small>
+                        {labels.highest} {number.format(item.highest)} · {labels.lowest}{" "}
+                        {number.format(item.lowest)} · {labels.change}{" "}
+                        <em className={item.change >= 0 ? "positive" : "negative"}>
+                          {item.change >= 0 ? "+" : ""}
+                          {number.format(item.change)}
+                        </em>
+                      </small>
+                    </>
+                  ) : (
+                    <small>{labels.noData}</small>
                   )}
-                </span>
-                <small>
-                  {labels.highest} {number.format(item.highest)} · {labels.lowest}{" "}
-                  {number.format(item.lowest)} · {labels.change}{" "}
-                  <em className={item.change >= 0 ? "positive" : "negative"}>
-                    {item.change >= 0 ? "+" : ""}
-                    {number.format(item.change)}
-                  </em>
-                </small>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
