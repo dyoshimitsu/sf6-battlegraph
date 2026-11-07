@@ -111,6 +111,15 @@ function addResult(summary: RecordSummary, result: MatchResult) {
   summary.winRate = decided > 0 ? (summary.wins / decided) * 100 : null;
 }
 
+export function recentMatchSummary(matches: NormalizedMatch[], limit: number): RecordSummary {
+  const summary = emptySummary();
+  const recent = [...matches]
+    .sort((a, b) => b.playedAtEpoch - a.playedAtEpoch || a.replayId.localeCompare(b.replayId))
+    .slice(0, limit);
+  for (const match of recent) addResult(summary, match.result);
+  return summary;
+}
+
 function groupByCharacter(
   matches: NormalizedMatch[],
   selectPlayer: (match: NormalizedMatch) => BucklerPlayerInfo,

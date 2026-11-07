@@ -17,7 +17,11 @@ import {
   BucklerValidationError,
   type NormalizedMatch,
 } from "../domain/buckler/types";
-import { aggregateMatches, filterMatches } from "../domain/statistics/aggregateMatches";
+import {
+  aggregateMatches,
+  filterMatches,
+  recentMatchSummary,
+} from "../domain/statistics/aggregateMatches";
 import { completeOpponentRoster } from "../domain/statistics/completeOpponentRoster";
 import { buildDailyWindow } from "../domain/statistics/dailyWindow";
 import { recentRankedMatchupPriorities } from "../domain/statistics/matchupPriorities";
@@ -1026,6 +1030,30 @@ export function App() {
                     <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
                   </article>
                 </div>
+                <section className="recent-form" aria-label={t("recentForm")}>
+                  <div className="recent-form-heading">
+                    <h3>{t("recentForm")}</h3>
+                    <p>{t("recentFormScope")}</p>
+                  </div>
+                  <div className="recent-form-grid">
+                    {[10, 100].map((limit) => {
+                      const record = recentMatchSummary(filteredMatches, limit);
+                      return (
+                        <article className="recent-form-card" key={limit}>
+                          <span>{t("recentGames", { limit, count: record.matches })}</span>
+                          <strong>{formatWinRate(record.winRate)}</strong>
+                          <small>
+                            {t("recentRecord", {
+                              wins: record.wins,
+                              losses: record.losses,
+                              other: record.draws + record.unknown,
+                            })}
+                          </small>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
                 <RatingChart
                   matches={filteredMatches}
                   allMatches={imported.preview.matches}

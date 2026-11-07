@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { MatchResult, NormalizedMatch } from "../buckler/types";
-import { aggregateMatches, filterMatches, toTokyoDate } from "./aggregateMatches";
+import {
+  aggregateMatches,
+  filterMatches,
+  recentMatchSummary,
+  toTokyoDate,
+} from "./aggregateMatches";
 
 function match(
   id: string,
@@ -48,6 +53,28 @@ describe("Tokyo date handling", () => {
   it("uses Asia/Tokyo across the UTC date boundary", () => {
     expect(toTokyoDate(Date.parse("2026-08-12T14:59:59Z") / 1000)).toBe("2026-08-12");
     expect(toTokyoDate(Date.parse("2026-08-12T15:00:00Z") / 1000)).toBe("2026-08-13");
+  });
+});
+
+describe("recentMatchSummary", () => {
+  it("uses the newest matches and excludes draws and unknowns from the win rate", () => {
+    const matches = [
+      match("a", "win", 1, 1, 1),
+      match("b", "loss", 4, 1, 1),
+      match("c", "draw", 3, 1, 1),
+      match("d", "unknown", 2, 1, 1),
+    ];
+    expect(recentMatchSummary(matches, 3)).toEqual({
+      matches: 3,
+      wins: 0,
+      losses: 1,
+      draws: 1,
+      unknown: 1,
+      winRate: 0,
+    });
+    expect(recentMatchSummary(matches, 100).winRate).toBe(50);
+    expect(recentMatchSummary(matches.slice(2), 10).winRate).toBeNull();
+    expect(recentMatchSummary([], 10).matches).toBe(0);
   });
 });
 
