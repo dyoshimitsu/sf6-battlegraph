@@ -12,6 +12,18 @@
   --accent: #c7ff4a;
   --accent-soft: rgba(199, 255, 74, 0.1);
   --danger: #ff765f;
+  /* UI primitives: keep roles consistent across analysis panels. */
+  --ui-font-display: "Space Grotesk", system-ui, sans-serif;
+  --ui-font-label: "DM Mono", monospace;
+  --ui-font-body: Manrope, system-ui, sans-serif;
+  --ui-panel-background: linear-gradient(145deg, rgba(22, 25, 30, 0.92), rgba(14, 16, 20, 0.96));
+  --ui-panel-border: var(--line);
+  --ui-panel-radius: 16px;
+  --ui-panel-padding: 24px;
+  --ui-title-size: 23px;
+  --ui-value-size: 26px;
+  --ui-label-size: 11px;
+  --ui-note-size: 11px;
 }
 * {
   box-sizing: border-box;
@@ -1726,4 +1738,37 @@ table,
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+
+/* Semantic UI primitives. Component-specific layout remains in its own class. */
+.ui-card {
+  background: var(--ui-panel-background);
+  border: 1px solid var(--ui-panel-border);
+  border-radius: var(--ui-panel-radius);
+  padding: var(--ui-panel-padding);
+}
+:is(h3, h4).ui-title {
+  margin: 0;
+  color: #edf0f2;
+  font: 600 var(--ui-title-size) var(--ui-font-display);
+}
+:is(span, small).ui-label {
+  color: var(--muted);
+  font: 400 var(--ui-label-size) var(--ui-font-label);
+}
+strong.ui-value {
+  color: #edf0f2;
+  font: 600 var(--ui-value-size) var(--ui-font-display);
+}
+strong.ui-value--accent {
+  color: var(--accent);
+}
+:is(p, small, span).ui-note {
+  color: var(--muted);
+  font: 400 var(--ui-note-size) var(--ui-font-body);
+}
+@media (max-width: 480px) {
+  .ui-card {
+    padding: 18px;
+  }
 }

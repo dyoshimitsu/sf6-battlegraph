@@ -1033,9 +1033,9 @@ export function App() {
                     <strong>{statistics.overall.unknown + statistics.overall.draws}</strong>
                   </article>
                 </div>
-                <section className="recent-form" aria-label={t("recentForm")}>
+                <section className="recent-form ui-card" aria-label={t("recentForm")}>
                   <div className="recent-form-heading">
-                    <h3>{t("recentForm")}</h3>
+                    <h3 className="ui-title">{t("recentForm")}</h3>
                     <span>
                       {locale === "ja"
                         ? "絞込後 · 勝率は勝敗のみ"
@@ -1047,9 +1047,13 @@ export function App() {
                       const record = recentMatchSummary(filteredMatches, limit);
                       return (
                         <article className="recent-form-card" key={limit}>
-                          <span>{t("recentGames", { limit, count: record.matches })}</span>
-                          <strong>{formatWinRate(record.winRate)}</strong>
-                          <small>
+                          <span className="ui-label">
+                            {t("recentGames", { limit, count: record.matches })}
+                          </span>
+                          <strong className="ui-value ui-value--accent">
+                            {formatWinRate(record.winRate)}
+                          </strong>
+                          <small className="ui-note">
                             {t("recentRecord", {
                               wins: record.wins,
                               losses: record.losses,
@@ -1212,9 +1216,9 @@ function ProfileHabitsPanel({
     };
   }, [db, userCode]);
   return (
-    <section className="insights-card habits-card">
+    <section className="insights-card habits-card ui-card">
       <p className="eyebrow">PLAYSTYLE SNAPSHOT</p>
-      <h3>{ja ? "プレイ傾向の変化" : "Playstyle changes"}</h3>
+      <h3 className="ui-title">{ja ? "プレイ傾向の変化" : "Playstyle changes"}</h3>
       <span className="insights-caption">
         {ja ? "直近100戦平均 · フィルター対象外" : "Last 100 games · unfiltered"}
       </span>
@@ -1247,8 +1251,8 @@ function ProfileHabitsPanel({
                   previous = snapshots[1]?.values[key];
                 return (
                   <article key={key}>
-                    <span>{label}</span>
-                    <strong>{value ?? "—"}</strong>
+                    <span className="ui-label">{label}</span>
+                    <strong className="ui-value ui-value--accent">{value ?? "—"}</strong>
                     {value !== undefined && previous !== undefined ? (
                       <small>
                         {ja ? "前回比" : "Change"} {value - previous >= 0 ? "+" : ""}
@@ -1297,9 +1301,9 @@ function AdvancedInsights({
   const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + 6) % 24));
   const gameLabels = ja ? ["1試合目", "2試合目", "3試合目"] : ["Game 1", "Game 2", "Game 3"];
   return (
-    <section className="insights-card">
+    <section className="insights-card ui-card">
       <p className="eyebrow">MATCH INSIGHTS</p>
-      <h3 className="insights-title">
+      <h3 className="insights-title ui-title">
         {ja
           ? "詳細分析：ラウンド・対戦相手・時間帯"
           : "Detailed analysis: rounds, opponents and time"}
@@ -1514,11 +1518,11 @@ function DailyTrend({
   }
   if (segment.length) trendSegments.push(segment);
   return (
-    <article className="daily-card">
+    <article className="daily-card ui-card">
       <div className="card-heading">
         <div>
           <p className="eyebrow">{labels.eyebrow}</p>
-          <h3>{labels.title}</h3>
+          <h3 className="ui-title">{labels.title}</h3>
         </div>
         <span>{recent.length ? labels.activeDays(recent.length) : labels.empty}</span>
       </div>
@@ -1812,11 +1816,11 @@ function RatingChart({
   );
   if (!seriesList.length)
     return (
-      <article className="lp-card">
+      <article className="lp-card ui-card">
         <div className="lp-heading">
           <div>
             <p className="eyebrow">{labels.eyebrow}</p>
-            <h3>{labels.title}</h3>
+            <h3 className="ui-title">{labels.title}</h3>
           </div>
           {characterSelector}
         </div>
@@ -1824,11 +1828,11 @@ function RatingChart({
       </article>
     );
   return (
-    <article className="lp-card">
+    <article className="lp-card ui-card">
       <div className="lp-heading">
         <div>
           <p className="eyebrow">{labels.eyebrow}</p>
-          <h3>{labels.title}</h3>
+          <h3 className="ui-title">{labels.title}</h3>
           <span className="rating-line-key">
             {locale === "ja"
               ? "実線：実績 · 破線：10試合平均"
@@ -1967,9 +1971,9 @@ function CharacterPanel({
   priorityEmpty?: string;
 }) {
   return (
-    <article className="analysis-card character-panel is-roster">
+    <article className="analysis-card character-panel is-roster ui-card">
       <p className="eyebrow">{eyebrow}</p>
-      <h3>{title}</h3>
+      <h3 className="ui-title">{title}</h3>
       {side === "opponent" && priorityMatchups && (
         <div className="matchup-priorities">
           <strong>{priorityTitle}</strong>
