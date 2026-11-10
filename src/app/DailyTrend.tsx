@@ -49,11 +49,11 @@ export function DailyTrend({
               const label = day.format(new Date(`${record.date}T00:00:00+09:00`));
               const other = record.draws + record.unknown;
               const change = ratingChanges.get(record.date);
+              // Once a day has an MR change, its LP change is no longer informative.
               const changes = (
-                [
-                  ["LP", change?.leaguePoint],
-                  ["MR", change?.masterRating],
-                ] as const
+                change?.masterRating !== undefined
+                  ? ([["MR", change.masterRating]] as const)
+                  : ([["LP", change?.leaguePoint]] as const)
               ).filter((entry): entry is readonly ["LP" | "MR", number] => entry[1] !== undefined);
               return {
                 note: changes.length ? (
@@ -75,8 +75,8 @@ export function DailyTrend({
           />
           <small className="ui-note">
             {ja
-              ? "薄色：勝敗判明5戦未満 · LP/MR：ランクマッチで同キャラの前試合からの推定増減"
-              : "Muted: fewer than 5 decided games · LP/MR: estimated change from the previous ranked match of the same character"}
+              ? "薄色：勝敗判明5戦未満 · LP/MR：ランクマッチで同キャラの前試合からの推定増減（MR がある日は MR のみ）"
+              : "Muted: fewer than 5 decided games · LP/MR: estimated change from the previous ranked match of the same character (MR only on days with MR)"}
           </small>
         </>
       )}
