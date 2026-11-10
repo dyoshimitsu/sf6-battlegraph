@@ -44,7 +44,7 @@ export function DailyTrend({
             ariaLabel={ja ? "日別の勝率と対戦数" : "Daily win rate and matches"}
             matchUnit={ja ? "戦" : "g"}
             lowSampleThreshold={5}
-            minColumnWidth={36}
+            minColumnWidth={44}
             columns={recent.map((record) => {
               const label = day.format(new Date(`${record.date}T00:00:00+09:00`));
               const other = record.draws + record.unknown;
@@ -60,7 +60,8 @@ export function DailyTrend({
                   <span className="rate-column-change">
                     {changes.map(([kind, value]) => (
                       <em key={kind} className={value >= 0 ? "positive" : "negative"}>
-                        {kind} {signed(value)}
+                        <span>{kind}</span>
+                        <span>{signed(value)}</span>
                       </em>
                     ))}
                   </span>

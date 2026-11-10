@@ -1871,7 +1871,15 @@ strong.ui-value {
   align-items: center;
 }
 .rate-column-change em {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-style: normal;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rate-column-change em span {
+  color: inherit;
 }
 .rate-column-change .positive {
   color: var(--win);
