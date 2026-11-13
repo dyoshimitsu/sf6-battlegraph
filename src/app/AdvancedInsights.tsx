@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo } from "react";
+import { Fragment, type ReactNode, useMemo } from "react";
 import { getCharacterNameBySlug } from "../domain/buckler/characterNames";
 import { getRoundDetails } from "../domain/buckler/roundResults";
 import type { NormalizedMatch } from "../domain/buckler/types";
@@ -132,8 +132,8 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
           {ja ? "曜日・時間帯別の勝率" : "Win rate by weekday and hour"}
           <Tag>
             {ja
-              ? `日本時間・月曜始まり・${DAY_START_HOUR}時始まり、24〜${DAY_START_HOUR + 23}時は翌0〜${DAY_START_HOUR - 1}時`
-              : `Japan time · Monday first · rows run ${DAY_START_HOUR}:00 to ${DAY_START_HOUR + 23}:59; 24+ is past midnight`}
+              ? `日本時間・月曜始まり・${DAY_START_HOUR}時始まり、0〜${DAY_START_HOUR - 1}時は翌日の曜日を右に並べる`
+              : `Japan time · Monday first · rows run ${DAY_START_HOUR}:00 to ${DAY_START_HOUR - 1}:59 with the next day's early hours on the right`}
           </Tag>
         </h4>
         <span className="ui-note">
@@ -146,14 +146,11 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
             <thead>
               <tr>
                 <th>{ja ? "曜日" : "Day"}</th>
-                {hours.map(({ hour, label, clock, afterMidnight }) => (
-                  <th
-                    key={hour}
-                    className={afterMidnight ? "is-after-midnight" : undefined}
-                    title={clock}
-                  >
-                    {label}
-                  </th>
+                {hours.map(({ hour, afterMidnight }) => (
+                  <Fragment key={hour}>
+                    {afterMidnight && <th className="heatmap-next-day">{ja ? "翌日" : "Next"}</th>}
+                    <th>{hour}</th>
+                  </Fragment>
                 ))}
               </tr>
             </thead>
@@ -163,34 +160,32 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
                   <th>{days[dayIndex]}</th>
                   {hours.map(({ hour, clock, afterMidnight }) => {
                     const item = data.weekdays[dayIndex][hour];
-                    const className = [
-                      item.wins + item.losses < 5 ? "heatmap-low-sample" : "",
-                      afterMidnight ? "is-after-midnight" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ");
+                    // Early hours belong to this row's session but fall on the next calendar day.
+                    const calendarDay = days[hour < DAY_START_HOUR ? (dayIndex + 1) % 7 : dayIndex];
                     return (
-                      <td
-                        key={hour}
-                        className={className || undefined}
-                        title={`${days[dayIndex]}${hour < DAY_START_HOUR ? (ja ? "深夜" : " late night") : ""} ${clock} · ${summaryText(item)} · ${ja ? "引分・不明" : "draw / unknown"}: ${item.draws + item.unknown}`}
-                        style={{
-                          backgroundColor:
-                            item.winRate === null
-                              ? undefined
-                              : item.winRate >= 50
-                                ? `rgba(199, 255, 74, ${0.12 + (item.winRate - 50) / 200})`
-                                : `rgba(255, 118, 95, ${0.12 + (50 - item.winRate) / 200})`,
-                        }}
-                      >
-                        {item.winRate === null ? "–" : `${Math.round(item.winRate)}%`}
-                        {item.matches > 0 && (
-                          <small>
-                            {item.matches}
-                            {ja ? "戦" : "g"}
-                          </small>
-                        )}
-                      </td>
+                      <Fragment key={hour}>
+                        {afterMidnight && <th className="heatmap-next-day">{calendarDay}</th>}
+                        <td
+                          className={item.wins + item.losses < 5 ? "heatmap-low-sample" : ""}
+                          title={`${calendarDay} ${clock} · ${summaryText(item)} · ${ja ? "引分・不明" : "draw / unknown"}: ${item.draws + item.unknown}`}
+                          style={{
+                            backgroundColor:
+                              item.winRate === null
+                                ? undefined
+                                : item.winRate >= 50
+                                  ? `rgba(199, 255, 74, ${0.12 + (item.winRate - 50) / 200})`
+                                  : `rgba(255, 118, 95, ${0.12 + (50 - item.winRate) / 200})`,
+                          }}
+                        >
+                          {item.winRate === null ? "–" : `${Math.round(item.winRate)}%`}
+                          {item.matches > 0 && (
+                            <small>
+                              {item.matches}
+                              {ja ? "戦" : "g"}
+                            </small>
+                          )}
+                        </td>
+                      </Fragment>
                     );
                   })}
                 </tr>
