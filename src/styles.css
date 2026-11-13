@@ -834,7 +834,7 @@ th {
   min-width: 44px;
   font: 600 var(--ui-text-xs) var(--ui-font-label);
 }
-.insights-scroll .heatmap-next-day {
+.insights-scroll .is-after-midnight {
   border-left: 2px dashed #6b7480;
 }
 .rate-column.is-after-midnight {
