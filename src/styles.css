@@ -834,6 +834,18 @@ th {
   min-width: 44px;
   font: 600 var(--ui-text-xs) var(--ui-font-label);
 }
+.insights-scroll .is-after-midnight {
+  border-left: 2px dashed #6b7480;
+}
+.rate-column.is-after-midnight {
+  position: relative;
+}
+.rate-column.is-after-midnight::before {
+  position: absolute;
+  inset: 0 auto 0 calc(var(--space-1) / -2 - 1px);
+  border-left: 2px dashed #6b7480;
+  content: "";
+}
 .insights-time h4.rate-columns-title {
   margin-top: var(--space-6);
 }

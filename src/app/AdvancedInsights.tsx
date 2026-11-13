@@ -80,7 +80,16 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   // Rows start on Monday; getUTCDay() numbers Sunday as 0.
   const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
-  const hourLabels = Array.from({ length: 24 }, (_, hour) => String((hour + DAY_START_HOUR) % 24));
+  // Hours after midnight stay on the previous day's row, so they read as 24, 25, ...
+  const hours = Array.from({ length: 24 }, (_, offset) => {
+    const hour = (offset + DAY_START_HOUR) % 24;
+    return {
+      hour,
+      label: String(offset + DAY_START_HOUR),
+      clock: `${String(hour).padStart(2, "0")}:00`,
+      afterMidnight: hour === 0,
+    };
+  });
   const setTotal = sets.twoWins + sets.split + sets.twoLosses + sets.singleGame + sets.other;
   const setSegments = [
     { key: "two-wins", label: ja ? "2勝" : "Won both", value: sets.twoWins, color: "var(--win)" },
@@ -123,8 +132,8 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
           {ja ? "曜日・時間帯別の勝率" : "Win rate by weekday and hour"}
           <Tag>
             {ja
-              ? `日本時間・月曜始まり・${DAY_START_HOUR}時始まり、0〜${DAY_START_HOUR - 1}時は前日の行`
-              : `Japan time · Monday first · rows run ${String(DAY_START_HOUR).padStart(2, "0")}:00 to ${String(DAY_START_HOUR - 1).padStart(2, "0")}:59`}
+              ? `日本時間・月曜始まり・${DAY_START_HOUR}時始まり、24〜${DAY_START_HOUR + 23}時は翌0〜${DAY_START_HOUR - 1}時`
+              : `Japan time · Monday first · rows run ${DAY_START_HOUR}:00 to ${DAY_START_HOUR + 23}:59; 24+ is past midnight`}
           </Tag>
         </h4>
         <span className="ui-note">
@@ -137,8 +146,14 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
             <thead>
               <tr>
                 <th>{ja ? "曜日" : "Day"}</th>
-                {hourLabels.map((hour) => (
-                  <th key={hour}>{hour}</th>
+                {hours.map(({ hour, label, clock, afterMidnight }) => (
+                  <th
+                    key={hour}
+                    className={afterMidnight ? "is-after-midnight" : undefined}
+                    title={clock}
+                  >
+                    {label}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -146,13 +161,19 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
               {weekdayOrder.map((dayIndex) => (
                 <tr key={dayIndex}>
                   <th>{days[dayIndex]}</th>
-                  {hourLabels.map((hour) => {
-                    const item = data.weekdays[dayIndex][Number(hour)];
+                  {hours.map(({ hour, clock, afterMidnight }) => {
+                    const item = data.weekdays[dayIndex][hour];
+                    const className = [
+                      item.wins + item.losses < 5 ? "heatmap-low-sample" : "",
+                      afterMidnight ? "is-after-midnight" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
                     return (
                       <td
                         key={hour}
-                        className={item.wins + item.losses < 5 ? "heatmap-low-sample" : ""}
-                        title={`${days[dayIndex]} ${hour}:00 · ${summaryText(item)} · ${ja ? "引分・不明" : "draw / unknown"}: ${item.draws + item.unknown}`}
+                        className={className || undefined}
+                        title={`${days[dayIndex]}${hour < DAY_START_HOUR ? (ja ? "深夜" : " late night") : ""} ${clock} · ${summaryText(item)} · ${ja ? "引分・不明" : "draw / unknown"}: ${item.draws + item.unknown}`}
                         style={{
                           backgroundColor:
                             item.winRate === null
@@ -185,13 +206,14 @@ export function TimeInsights({ matches, locale }: { matches: NormalizedMatch[]; 
           ariaLabel={ja ? "全曜日を合算した時間別勝率" : "Win rates by hour across all weekdays"}
           matchUnit={ja ? "戦" : "g"}
           lowSampleThreshold={10}
-          columns={hourLabels.map((hour) => {
-            const item = data.hours[Number(hour)];
+          columns={hours.map(({ hour, label, clock, afterMidnight }) => {
+            const item = data.hours[hour];
             return {
-              key: hour,
-              label: hour,
+              key: String(hour),
+              label,
               record: item,
-              description: `${hour}:00 · ${summaryText(item)}`,
+              description: `${clock} · ${summaryText(item)}`,
+              className: afterMidnight ? "is-after-midnight" : undefined,
             };
           })}
         />

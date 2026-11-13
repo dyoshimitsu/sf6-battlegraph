@@ -9,6 +9,8 @@ export interface WinRateColumn {
   description: string;
   /** Optional extra figures under the match count. */
   note?: ReactNode;
+  /** Extra class for the column, e.g. to mark a boundary. */
+  className?: string;
 }
 
 /** Vertical win-rate bars with the match count under each label. */
@@ -33,11 +35,11 @@ export function WinRateColumns({
   return (
     <div className="rate-columns-scroll">
       <ul className="rate-columns" aria-label={ariaLabel} style={style}>
-        {columns.map(({ key, label, record, description, note }) => {
+        {columns.map(({ key, label, record, description, note, className }) => {
           const lowSample = record.wins + record.losses < lowSampleThreshold;
           return (
             <li
-              className={`rate-column${lowSample ? " rate-column--low-sample" : ""}`}
+              className={`rate-column${lowSample ? " rate-column--low-sample" : ""}${className ? ` ${className}` : ""}`}
               key={key}
               aria-label={description}
             >
