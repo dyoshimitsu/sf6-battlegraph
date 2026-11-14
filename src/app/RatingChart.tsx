@@ -11,6 +11,22 @@ import {
 import { ratingScale } from "../domain/statistics/ratingScale";
 import type { StoredManifest } from "../domain/storage/loadStoredMatches";
 
+/** Game counts offered for the chart window; 0 shows every game. */
+const MATCH_LIMITS = [100, 300, 1000, 0] as const;
+type MatchLimit = (typeof MATCH_LIMITS)[number];
+const MATCH_LIMIT_STORAGE_KEY = "sf6-battlegraph:rating-chart-limit";
+/** Above this many games, per-game dots overlap into a solid band, so only the line is drawn. */
+const MAX_DOTTED_MATCHES = 200;
+
+function storedMatchLimit(): MatchLimit {
+  try {
+    const value = Number(localStorage.getItem(MATCH_LIMIT_STORAGE_KEY));
+    return MATCH_LIMITS.find((limit) => limit === value) ?? 100;
+  } catch {
+    return 100;
+  }
+}
+
 export function RatingChart({
   matches,
   allMatches,
@@ -38,6 +54,16 @@ export function RatingChart({
   >;
 }) {
   const [selectedCharacter, setSelectedCharacter] = useState("");
+  const [matchLimit, setMatchLimit] = useState<MatchLimit>(storedMatchLimit);
+  const selectMatchLimit = (limit: MatchLimit) => {
+    setMatchLimit(limit);
+    try {
+      localStorage.setItem(MATCH_LIMIT_STORAGE_KEY, String(limit));
+    } catch {
+      // The choice is a convenience; the chart works without remembering it.
+    }
+  };
+  const lastMatches = <T,>(items: T[]) => (matchLimit ? items.slice(-matchLimit) : items);
   const characterGroups = new Map<string, BucklerBundlePreview["matches"]>();
   for (const match of ratingMatches(matches)) {
     const key = ratingCharacterKey(match);
@@ -59,7 +85,8 @@ export function RatingChart({
     ? selectedCharacter
     : latestRatingCharacterKey(matches);
   const chartMatches = characterGroups.get(effectiveCharacter) ?? [];
-  const ordered = [...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch).slice(-100);
+  const ordered = lastMatches([...chartMatches].sort((a, b) => a.playedAtEpoch - b.playedAtEpoch));
+  const showDots = ordered.length <= MAX_DOTTED_MATCHES;
   const allCharacterMatches = ratingMatches(allMatches).filter(
     (match) => ratingCharacterKey(match) === effectiveCharacter,
   );
@@ -109,8 +136,7 @@ export function RatingChart({
     const values = points.map((point) => point.value);
     const highest = Math.max(...values),
       lowest = Math.min(...values);
-    const scaleValues = chronologicalHistory
-      .slice(-100)
+    const scaleValues = lastMatches(chronologicalHistory)
       .map((match) => (kind === "lp" ? match.subject.league_point : match.subject.master_rating))
       .filter((value): value is number => typeof value === "number" && value > 0);
     const current = currentRatings?.ratings.find(
@@ -185,6 +211,27 @@ export function RatingChart({
       </select>
     </label>
   );
+  const limitSelector = (
+    <label className="rating-character-select">
+      <span>{locale === "ja" ? "表示試合数" : "Games shown"}</span>
+      <select
+        value={matchLimit}
+        onChange={(event) => selectMatchLimit(Number(event.target.value) as MatchLimit)}
+      >
+        {MATCH_LIMITS.map((limit) => (
+          <option key={limit} value={limit}>
+            {limit
+              ? locale === "ja"
+                ? `直近${limit}試合`
+                : `Last ${limit}`
+              : locale === "ja"
+                ? "全試合"
+                : "All games"}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
   if (!seriesList.length)
     return (
       <article className="lp-card ui-card">
@@ -209,7 +256,10 @@ export function RatingChart({
           </span>
         </div>
         <div className="rating-controls">
-          {characterSelector}
+          <div className="rating-selectors">
+            {characterSelector}
+            {limitSelector}
+          </div>
           <div className="rating-metrics">
             {(["lp", "mr"] as const).map((kind) => {
               const item = kind === "lp" ? lp : mr;
@@ -278,19 +328,21 @@ export function RatingChart({
           {seriesList.map((item) => (
             <g className={`rating-series ${item.kind}`} key={item.kind}>
               <polyline points={item.line} />
-              {item.coordinates.map((point) => (
-                <circle
-                  key={`${point.replayId}-${item.kind}-${point.snapshot}`}
-                  cx={point.x}
-                  cy={point.y}
-                  r="3"
-                >
-                  <title>
-                    {number.format(point.value)} {item.kind.toUpperCase()}
-                    {point.snapshot ? (locale === "ja" ? " · 同期時点" : " · at sync") : ""}
-                  </title>
-                </circle>
-              ))}
+              {item.coordinates
+                .filter((point) => showDots || point.snapshot)
+                .map((point) => (
+                  <circle
+                    key={`${point.replayId}-${item.kind}-${point.snapshot}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r="3"
+                  >
+                    <title>
+                      {number.format(point.value)} {item.kind.toUpperCase()}
+                      {point.snapshot ? (locale === "ja" ? " · 同期時点" : " · at sync") : ""}
+                    </title>
+                  </circle>
+                ))}
             </g>
           ))}
           {seriesList.flatMap((item) =>
