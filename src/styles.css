@@ -1259,11 +1259,29 @@ th {
   align-items: end;
   gap: var(--space-2);
 }
-.rating-selectors {
+.lp-title-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: end;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.rating-limit-select {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
   gap: var(--space-2);
+  color: var(--muted);
+  font: 400 var(--ui-text-xs) var(--ui-font-label);
+}
+.rating-limit-select select {
+  height: 32px;
+  padding: 0 var(--space-2);
+  color: #e2e3e6;
+  background: #0c0e11;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color-scheme: dark;
+  font-size: var(--ui-text-xs);
 }
 .rating-metrics {
   flex-wrap: wrap;

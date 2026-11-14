@@ -212,8 +212,8 @@ export function RatingChart({
     </label>
   );
   const limitSelector = (
-    <label className="rating-character-select">
-      <span>{locale === "ja" ? "表示試合数" : "Games shown"}</span>
+    <label className="rating-limit-select">
+      <span>{locale === "ja" ? "表示" : "Show"}</span>
       <select
         value={matchLimit}
         onChange={(event) => selectMatchLimit(Number(event.target.value) as MatchLimit)}
@@ -247,19 +247,19 @@ export function RatingChart({
   return (
     <article className="lp-card ui-card">
       <div className="lp-heading">
-        <div>
-          <h3 className="ui-title">{labels.title}</h3>
-          <span className="rating-line-key ui-caption">
-            {locale === "ja"
-              ? "実線：実績 · 破線：10試合平均"
-              : "Solid: recorded · dashed: 10-game average"}
-          </span>
+        <div className="lp-title-row">
+          <div>
+            <h3 className="ui-title">{labels.title}</h3>
+            <span className="rating-line-key ui-caption">
+              {locale === "ja"
+                ? "実線：実績 · 破線：10試合平均"
+                : "Solid: recorded · dashed: 10-game average"}
+            </span>
+          </div>
+          {limitSelector}
         </div>
         <div className="rating-controls">
-          <div className="rating-selectors">
-            {characterSelector}
-            {limitSelector}
-          </div>
+          {characterSelector}
           <div className="rating-metrics">
             {(["lp", "mr"] as const).map((kind) => {
               const item = kind === "lp" ? lp : mr;
