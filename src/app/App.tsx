@@ -868,13 +868,13 @@ export function App() {
                               }
                             >
                               {match.subjectSide ? `${match.subjectSide}P` : "?P"}
-                            </span>
+                            </span>{" "}
                             <strong className="character-detail">
                               {getCharacterName(match.subject, locale)}
-                            </strong>
+                            </strong>{" "}
                             <small className="input-detail">
                               {getInputType(match.subject.battle_input_type)}
-                            </small>
+                            </small>{" "}
                             <small className="secondary-detail rating-detail">
                               {formatRating(match.subject)}
                             </small>
@@ -882,18 +882,18 @@ export function App() {
                           <td>
                             <strong className="character-detail">
                               {getCharacterName(match.opponent, locale)}
-                            </strong>
+                            </strong>{" "}
                             <small className="input-detail">
                               {getInputType(match.opponent.battle_input_type)}
-                            </small>
+                            </small>{" "}
                             <small className="secondary-detail rating-detail">
                               {formatRating(match.opponent)}
-                            </small>
+                            </small>{" "}
                             {match.opponent.player.fighter_id && (
                               <small className="secondary-detail opponent-identity">
                                 {match.opponent.player.fighter_id}
                               </small>
-                            )}
+                            )}{" "}
                             {match.opponentPeak && (
                               <small
                                 className="secondary-detail opponent-identity"
