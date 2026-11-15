@@ -2103,3 +2103,27 @@ strong.ui-value {
   margin-left: -1px;
   background: var(--text-strong);
 }
+/* Rows in one section share column tracks, so bars start at the same x
+   whatever the width of each row's label and figures. */
+.insights-grid section:has(> .insight-row) {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(50px, 1.2fr) auto auto;
+  column-gap: var(--space-3);
+  align-content: start;
+}
+.insights-grid section:has(> .insight-row) > * {
+  grid-column: 1 / -1;
+}
+.insights-grid section:has(> .insight-row) > .insight-row {
+  grid-template-columns: subgrid;
+}
+/* Grid items do not collapse margins; keep the heading spacing of block flow. */
+.insights-grid section:has(> .insight-row) > h4 + .insights-subheading {
+  margin-top: 0;
+}
+@media (max-width: 700px) {
+  .insights-grid section:has(> .insight-row) {
+    grid-template-columns: minmax(55px, 1fr) minmax(24px, 0.6fr) auto auto;
+    column-gap: var(--space-2);
+  }
+}
